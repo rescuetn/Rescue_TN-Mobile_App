@@ -2,15 +2,13 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:rescuetn/app/constants.dart';
 import 'package:rescuetn/common_widgets/custom_button.dart';
 import 'package:rescuetn/core/services/database_service.dart';
 import 'package:rescuetn/features/1_auth/providers/auth_provider.dart';
 import 'package:rescuetn/models/incident_model.dart';
-// Add these packages to pubspec.yaml:
-// record: ^5.0.0
-// path_provider: ^2.1.0
 import 'package:record/record.dart';
 import 'package:path_provider/path_provider.dart';
 
@@ -81,7 +79,9 @@ class _ReportIncidentScreenState extends ConsumerState<ReportIncidentScreen>
 
     serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) {
-      setState(() => _locationMessage = 'Location services are disabled.');
+      if (mounted) {
+        setState(() => _locationMessage = 'Location services are disabled.');
+      }
       return;
     }
 
@@ -89,36 +89,52 @@ class _ReportIncidentScreenState extends ConsumerState<ReportIncidentScreen>
     if (permission == LocationPermission.denied) {
       permission = await Geolocator.requestPermission();
       if (permission == LocationPermission.denied) {
-        setState(() => _locationMessage = 'Location permissions are denied.');
+        if (mounted) {
+          setState(() => _locationMessage = 'Location permissions are denied.');
+        }
         return;
       }
     }
 
     if (permission == LocationPermission.deniedForever) {
-      setState(() =>
-      _locationMessage = 'Location permissions are permanently denied.');
+      if (mounted) {
+        setState(() =>
+        _locationMessage = 'Location permissions are permanently denied.');
+      }
       return;
     }
 
     try {
       final position = await Geolocator.getCurrentPosition();
-      setState(() {
-        _currentPosition = position;
-        _locationMessage =
-        'Location captured: ${position.latitude.toStringAsFixed(4)}, ${position.longitude.toStringAsFixed(4)}';
-      });
+      if (mounted) {
+        setState(() {
+          _currentPosition = position;
+          _locationMessage =
+          'Location captured: ${position.latitude.toStringAsFixed(4)}, ${position.longitude.toStringAsFixed(4)}';
+        });
+      }
     } catch (e) {
-      setState(() => _locationMessage = 'Could not get location.');
+      if (mounted) {
+        setState(() => _locationMessage = 'Could not get location.');
+      }
     }
   }
 
   Future<void> _pickImage(ImageSource source) async {
-    final pickedFile =
-    await _imagePicker.pickImage(source: source, imageQuality: 50);
-    if (pickedFile != null) {
-      setState(() {
-        _pickedImages.add(File(pickedFile.path));
-      });
+    try {
+      final pickedFile =
+      await _imagePicker.pickImage(source: source, imageQuality: 50);
+      if (pickedFile != null && mounted) {
+        setState(() {
+          _pickedImages.add(File(pickedFile.path));
+        });
+      }
+    } catch (e) {
+      _showSnackBar(
+        message: 'Failed to pick image: $e',
+        icon: Icons.error_outline,
+        backgroundColor: AppColors.error,
+      );
     }
   }
 
@@ -144,23 +160,16 @@ class _ReportIncidentScreenState extends ConsumerState<ReportIncidentScreen>
           path: path,
         );
 
-        setState(() {
-          _isRecording = true;
-          _currentRecordingPath = path;
-          _recordingDuration = Duration.zero;
-        });
+        if (mounted) {
+          setState(() {
+            _isRecording = true;
+            _currentRecordingPath = path;
+            _recordingDuration = Duration.zero;
+          });
+        }
 
         // Update duration every second
-        Future.doWhile(() async {
-          if (!_isRecording) return false;
-          await Future.delayed(const Duration(seconds: 1));
-          if (_isRecording) {
-            setState(() {
-              _recordingDuration += const Duration(seconds: 1);
-            });
-          }
-          return _isRecording;
-        });
+        _updateRecordingDuration();
       } else {
         _showSnackBar(
           message: 'Microphone permission is required',
@@ -177,10 +186,23 @@ class _ReportIncidentScreenState extends ConsumerState<ReportIncidentScreen>
     }
   }
 
+  void _updateRecordingDuration() {
+    Future.doWhile(() async {
+      if (!_isRecording) return false;
+      await Future.delayed(const Duration(seconds: 1));
+      if (_isRecording && mounted) {
+        setState(() {
+          _recordingDuration += const Duration(seconds: 1);
+        });
+      }
+      return _isRecording;
+    });
+  }
+
   Future<void> _stopRecording() async {
     try {
       final path = await _audioRecorder.stop();
-      if (path != null) {
+      if (path != null && mounted) {
         setState(() {
           _audioRecordings.add(path);
           _isRecording = false;
@@ -194,11 +216,13 @@ class _ReportIncidentScreenState extends ConsumerState<ReportIncidentScreen>
         );
       }
     } catch (e) {
-      setState(() {
-        _isRecording = false;
-        _currentRecordingPath = null;
-        _recordingDuration = Duration.zero;
-      });
+      if (mounted) {
+        setState(() {
+          _isRecording = false;
+          _currentRecordingPath = null;
+          _recordingDuration = Duration.zero;
+        });
+      }
       _showSnackBar(
         message: 'Failed to stop recording: $e',
         icon: Icons.error_outline,
@@ -409,13 +433,16 @@ class _ReportIncidentScreenState extends ConsumerState<ReportIncidentScreen>
 
         await ref.read(databaseServiceProvider).addIncident(newIncident);
         // TODO: Upload images and audio files to Firebase Storage
+        // You can implement file upload here using firebase_storage
 
-        _showSnackBar(
-          message: 'Incident reported successfully!',
-          icon: Icons.check_circle_outline,
-          backgroundColor: Colors.green.shade600,
-        );
-        Navigator.of(context).pop();
+        if (mounted) {
+          _showSnackBar(
+            message: 'Incident reported successfully!',
+            icon: Icons.check_circle_outline,
+            backgroundColor: Colors.green.shade600,
+          );
+          Navigator.of(context).pop();
+        }
       } catch (e) {
         _showSnackBar(
           message: 'Failed to report incident: $e',
@@ -433,6 +460,8 @@ class _ReportIncidentScreenState extends ConsumerState<ReportIncidentScreen>
     required IconData icon,
     required Color backgroundColor,
   }) {
+    if (!mounted) return;
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Row(
@@ -530,7 +559,9 @@ class _ReportIncidentScreenState extends ConsumerState<ReportIncidentScreen>
                           child: IconButton(
                             icon: const Icon(Icons.arrow_back_rounded,
                                 color: Colors.white),
-                            onPressed: () => Navigator.of(context).pop(),
+                            onPressed: () {
+                              context.go('/home');
+                            },
                           ),
                         ),
                       ),
@@ -807,7 +838,8 @@ class _ReportIncidentScreenState extends ConsumerState<ReportIncidentScreen>
                               _buildEnhancedSectionHeader(
                                 icon: Icons.mic_rounded,
                                 title: 'Voice Recording',
-                                subtitle: 'Record audio description of the incident',
+                                subtitle:
+                                'Record audio description of the incident',
                                 gradient: [
                                   Colors.pink.shade400,
                                   Colors.pink.shade600
@@ -1272,7 +1304,7 @@ class _ReportIncidentScreenState extends ConsumerState<ReportIncidentScreen>
                     },
                     onEnd: () {
                       // Loop the animation
-                      if (_isRecording) {
+                      if (_isRecording && mounted) {
                         setState(() {});
                       }
                     },

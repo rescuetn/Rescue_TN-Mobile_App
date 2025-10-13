@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:rescuetn/app/constants.dart';
 import 'package:rescuetn/features/7_alerts/providers/alert_provider.dart';
 import 'package:rescuetn/features/7_alerts/widgets/alert_card_widget.dart';
@@ -81,6 +82,24 @@ class _AlertsScreenState extends ConsumerState<AlertsScreen>
                   children: [
                     Row(
                       children: [
+                        // Back Button
+                        Container(
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.25),
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(
+                              color: Colors.white.withOpacity(0.3),
+                              width: 1,
+                            ),
+                          ),
+                          child: IconButton(
+                            icon: const Icon(Icons.arrow_back_rounded, color: Colors.white),
+                            onPressed: () {
+                              context.go('/home');
+                            },
+                          ),
+                        ),
+                        const SizedBox(width: 16),
                         Container(
                           padding: const EdgeInsets.all(14),
                           decoration: BoxDecoration(
@@ -151,7 +170,7 @@ class _AlertsScreenState extends ConsumerState<AlertsScreen>
                                 ),
                               ),
                               const SizedBox(width: 6),
-                              Text(
+                              const Text(
                                 'Live',
                                 style: TextStyle(
                                   color: Colors.white,

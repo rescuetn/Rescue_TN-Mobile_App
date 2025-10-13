@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:rescuetn/app/constants.dart';
 import 'package:rescuetn/features/4_shelter_locator/provider/shelter_provider.dart';
 import 'package:rescuetn/features/4_shelter_locator/widgets/shelter_details_bottom_sheet.dart';
@@ -25,6 +27,8 @@ class _ShelterMapScreenState extends ConsumerState<ShelterMapScreen>
   GoogleMapController? _mapController;
   ShelterStatus? _filterStatus;
   bool _showLegend = true;
+  bool _isLoadingLocation = true;
+  Position? _currentPosition;
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
 
@@ -41,10 +45,136 @@ class _ShelterMapScreenState extends ConsumerState<ShelterMapScreen>
     );
     _animationController.forward();
 
-    // We use a post-frame callback to ensure the context is available
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    // Get location and create markers
+    _initializeMap();
+  }
+
+  Future<void> _initializeMap() async {
+    await _getCurrentLocation();
+    if (mounted) {
       _createMarkers();
-    });
+    }
+  }
+
+  Future<void> _getCurrentLocation() async {
+    try {
+      // Check if location services are enabled
+      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        if (mounted) {
+          setState(() => _isLoadingLocation = false);
+        }
+        _showLocationServiceDialog();
+        return;
+      }
+
+      // Check location permissions
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) {
+          if (mounted) {
+            setState(() => _isLoadingLocation = false);
+          }
+          _showPermissionDeniedSnackBar();
+          return;
+        }
+      }
+
+      if (permission == LocationPermission.deniedForever) {
+        if (mounted) {
+          setState(() => _isLoadingLocation = false);
+        }
+        _showPermissionDeniedForeverDialog();
+        return;
+      }
+
+      // Get current position
+      final position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+      );
+
+      if (mounted) {
+        setState(() {
+          _currentPosition = position;
+          _isLoadingLocation = false;
+        });
+
+        // Move camera to current location
+        if (_mapController != null) {
+          _mapController!.animateCamera(
+            CameraUpdate.newLatLng(
+              LatLng(position.latitude, position.longitude),
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLoadingLocation = false);
+        _showErrorSnackBar('Could not get location: $e');
+      }
+    }
+  }
+
+  void _showLocationServiceDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Location Services Disabled'),
+        content: const Text('Please enable location services to use this feature.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showPermissionDeniedSnackBar() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Location permission denied. Using default location.'),
+        duration: Duration(seconds: 3),
+      ),
+    );
+  }
+
+  void _showPermissionDeniedForeverDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Location Permission Required'),
+        content: const Text(
+          'Location permission is permanently denied. Please enable it in app settings to use this feature.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              Geolocator.openAppSettings();
+            },
+            child: const Text('Open Settings'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showErrorSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.red,
+        duration: const Duration(seconds: 3),
+      ),
+    );
   }
 
   @override
@@ -56,6 +186,8 @@ class _ShelterMapScreenState extends ConsumerState<ShelterMapScreen>
 
   // Helper function to create map markers from our shelter data
   void _createMarkers() {
+    if (!mounted) return;
+
     final shelters = ref.read(shelterListProvider);
     final filteredShelters = _filterStatus == null
         ? shelters
@@ -71,7 +203,7 @@ class _ShelterMapScreenState extends ConsumerState<ShelterMapScreen>
         ),
         icon: _getMarkerIcon(shelter.status),
         onTap: () {
-          // Show a bottom sheet with shelter details when a marker is tapped
+          if (!mounted) return;
           showModalBottomSheet(
             context: context,
             backgroundColor: Colors.transparent,
@@ -82,9 +214,11 @@ class _ShelterMapScreenState extends ConsumerState<ShelterMapScreen>
       );
     }).toSet();
 
-    setState(() {
-      _markers = markers;
-    });
+    if (mounted) {
+      setState(() {
+        _markers = markers;
+      });
+    }
   }
 
   // Helper to get a colored marker based on shelter status
@@ -100,10 +234,12 @@ class _ShelterMapScreenState extends ConsumerState<ShelterMapScreen>
   }
 
   void _onMapCreated(GoogleMapController controller) {
+    if (!mounted) return;
     _mapController = controller;
   }
 
   void _applyFilter(ShelterStatus? status) {
+    if (!mounted) return;
     setState(() {
       _filterStatus = status;
     });
@@ -158,6 +294,30 @@ class _ShelterMapScreenState extends ConsumerState<ShelterMapScreen>
             compassEnabled: false,
           ),
 
+          // Loading Overlay
+          if (_isLoadingLocation)
+            Container(
+              color: Colors.black26,
+              child: const Center(
+                child: Card(
+                  child: Padding(
+                    padding: EdgeInsets.all(20),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        CircularProgressIndicator(),
+                        SizedBox(height: 16),
+                        Text(
+                          'Getting your location...',
+                          style: TextStyle(fontSize: 16),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+
           // Custom UI Overlays
           SafeArea(
             child: Column(
@@ -196,7 +356,11 @@ class _ShelterMapScreenState extends ConsumerState<ShelterMapScreen>
                                     Icons.arrow_back,
                                     color: AppColors.primary,
                                   ),
-                                  onPressed: () => Navigator.of(context).pop(),
+                                  onPressed: () {
+                                    if (mounted) {
+                                      context.go('/home');
+                                    }
+                                  },
                                 ),
                               ),
                               const SizedBox(width: AppPadding.medium),
@@ -235,9 +399,11 @@ class _ShelterMapScreenState extends ConsumerState<ShelterMapScreen>
                                     color: AppColors.accent,
                                   ),
                                   onPressed: () {
-                                    setState(() {
-                                      _showLegend = !_showLegend;
-                                    });
+                                    if (mounted) {
+                                      setState(() {
+                                        _showLegend = !_showLegend;
+                                      });
+                                    }
                                   },
                                   tooltip: 'Toggle Legend',
                                 ),
@@ -330,12 +496,17 @@ class _ShelterMapScreenState extends ConsumerState<ShelterMapScreen>
                           iconSize: 28,
                           padding: const EdgeInsets.all(AppPadding.medium),
                           onPressed: () async {
-                            if (_mapController != null) {
-                              _mapController!.animateCamera(
-                                CameraUpdate.newCameraPosition(
-                                  _initialCameraPosition,
+                            if (_currentPosition != null && mounted) {
+                              _mapController?.animateCamera(
+                                CameraUpdate.newLatLng(
+                                  LatLng(
+                                    _currentPosition!.latitude,
+                                    _currentPosition!.longitude,
+                                  ),
                                 ),
                               );
+                            } else {
+                              _getCurrentLocation();
                             }
                           },
                           tooltip: 'My Location',
@@ -366,7 +537,7 @@ class _ShelterMapScreenState extends ConsumerState<ShelterMapScreen>
                               children: [
                                 Row(
                                   children: [
-                                    Icon(
+                                    const Icon(
                                       Icons.info_outline,
                                       size: 18,
                                       color: AppColors.primary,

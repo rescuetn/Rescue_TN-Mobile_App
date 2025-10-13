@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:rescuetn/app/router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:rescuetn/app/constants.dart';
@@ -13,7 +14,7 @@ class PersonRegistryScreen extends ConsumerStatefulWidget {
 }
 
 class _PersonRegistryScreenState extends ConsumerState<PersonRegistryScreen>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   late TabController _tabController;
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
@@ -81,6 +82,24 @@ class _PersonRegistryScreenState extends ConsumerState<PersonRegistryScreen>
                   children: [
                     Row(
                       children: [
+                        // Back Button
+                        Container(
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.25),
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(
+                              color: Colors.white.withOpacity(0.3),
+                              width: 1,
+                            ),
+                          ),
+                          child: IconButton(
+                            icon: const Icon(Icons.arrow_back_rounded, color: Colors.white),
+                            onPressed: () {
+                              context.go('/home');
+                            },
+                          ),
+                        ),
+                        const SizedBox(width: 16),
                         Container(
                           padding: const EdgeInsets.all(14),
                           decoration: BoxDecoration(

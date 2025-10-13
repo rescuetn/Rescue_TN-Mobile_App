@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:rescuetn/app/constants.dart';
 import 'package:rescuetn/features/5_task_management/providers/task_data_provider.dart';
+import 'package:go_router/go_router.dart';
 import 'package:rescuetn/models/task_model.dart';
 
 class TaskDetailsScreen extends ConsumerStatefulWidget {
@@ -316,7 +317,9 @@ class _TaskDetailsScreenState extends ConsumerState<TaskDetailsScreen>
                         child: IconButton(
                           icon: const Icon(Icons.arrow_back_rounded,
                               color: Colors.white),
-                          onPressed: () => Navigator.of(context).pop(),
+                          onPressed: () {
+                            context.go('/home');
+                          },
                         ),
                       ),
                     ],
@@ -382,7 +385,9 @@ class _TaskDetailsScreenState extends ConsumerState<TaskDetailsScreen>
                           child: IconButton(
                             icon: const Icon(Icons.arrow_back_rounded,
                                 color: Colors.white),
-                            onPressed: () => Navigator.of(context).pop(),
+                            onPressed: () {
+                              context.go('/home');
+                            },
                           ),
                         ),
                       ),
