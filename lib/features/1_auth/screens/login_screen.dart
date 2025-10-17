@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:rescuetn/app/constants.dart';
 import 'package:rescuetn/common_widgets/custom_button.dart';
 import 'package:rescuetn/features/1_auth/providers/auth_provider.dart';
@@ -63,12 +64,19 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with SingleTickerProv
 
     try {
       final authService = ref.read(authRepositoryProvider);
-      final AppUser loggedInUser = await authService.signInWithEmailAndPassword(
+      // Simply call the sign-in method. We no longer need to get the user object back.
+      await authService.signInWithEmailAndPassword(
         email: _emailController.text.trim(),
         password: _passwordController.text.trim(),
       );
-      ref.read(userStateProvider.notifier).state = loggedInUser;
-    } catch (e) {
+      // Navigation is now handled automatically by the router listening to authStateChangesProvider.
+    } on FirebaseAuthException catch (e) {
+      // Handle specific Firebase errors for better user feedback.
+      String errorMessage = 'An error occurred. Please try again.';
+      if (e.code == 'user-not-found' || e.code == 'wrong-password' || e.code == 'invalid-credential') {
+        errorMessage = 'Invalid email or password.';
+      }
+
       final snackBar = SnackBar(
         content: Row(
           children: [
@@ -76,7 +84,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with SingleTickerProv
             const SizedBox(width: AppPadding.small),
             Expanded(
               child: Text(
-                e.toString().replaceFirst('Exception: ', ''),
+                errorMessage,
                 style: const TextStyle(fontSize: 14, color: AppColors.onPrimary),
               ),
             ),

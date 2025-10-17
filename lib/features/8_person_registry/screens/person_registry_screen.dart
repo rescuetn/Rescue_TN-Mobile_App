@@ -3,8 +3,14 @@ import 'package:rescuetn/app/router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:rescuetn/app/constants.dart';
-import 'package:rescuetn/features/8_person_registry/providers/person_status_provider.dart';
+import 'package:rescuetn/core/services/database_service.dart';
 import 'package:rescuetn/models/person_status_model.dart';
+
+// Firebase Stream Provider for real-time person status updates
+final personStatusStreamProvider = StreamProvider<List<PersonStatus>>((ref) {
+  final databaseService = ref.watch(databaseServiceProvider);
+  return databaseService.getPersonStatusStream();
+});
 
 class PersonRegistryScreen extends ConsumerStatefulWidget {
   const PersonRegistryScreen({super.key});
@@ -51,227 +57,335 @@ class _PersonRegistryScreenState extends ConsumerState<PersonRegistryScreen>
 
   @override
   Widget build(BuildContext context) {
-    final allPeople = ref.watch(personStatusProvider);
-    final safePeople = allPeople.where((p) => p.status == PersonSafetyStatus.safe).toList();
-    final missingPeople = allPeople.where((p) => p.status == PersonSafetyStatus.missing).toList();
+    // Watch the Firebase stream for real-time updates
+    final personStatusAsync = ref.watch(personStatusStreamProvider);
     final textTheme = Theme.of(context).textTheme;
 
     return Scaffold(
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              Colors.blue.shade700,
-              Colors.blue.shade600,
-              Colors.blue.shade500,
-              AppColors.background,
-            ],
-            stops: const [0.0, 0.15, 0.3, 0.3],
-          ),
-        ),
-        child: SafeArea(
-          child: Column(
-            children: [
-              // Enhanced Header
-              Container(
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
+      body: personStatusAsync.when(
+        data: (allPeople) {
+          final safePeople = allPeople
+              .where((p) => p.status == PersonSafetyStatus.safe)
+              .toList();
+          final missingPeople = allPeople
+              .where((p) => p.status == PersonSafetyStatus.missing)
+              .toList();
+
+          return Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  Colors.blue.shade700,
+                  Colors.blue.shade600,
+                  Colors.blue.shade500,
+                  AppColors.background,
+                ],
+                stops: const [0.0, 0.15, 0.3, 0.3],
+              ),
+            ),
+            child: SafeArea(
+              child: Column(
+                children: [
+                  // Enhanced Header
+                  Container(
+                    padding: const EdgeInsets.all(20),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Back Button
-                        Container(
-                          decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.25),
-                            borderRadius: BorderRadius.circular(14),
-                            border: Border.all(
-                              color: Colors.white.withOpacity(0.3),
-                              width: 1,
-                            ),
-                          ),
-                          child: IconButton(
-                            icon: const Icon(Icons.arrow_back_rounded, color: Colors.white),
-                            onPressed: () {
-                              context.go('/home');
-                            },
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-                        Container(
-                          padding: const EdgeInsets.all(14),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.25),
-                            borderRadius: BorderRadius.circular(16),
-                            border: Border.all(
-                              color: Colors.white.withOpacity(0.3),
-                              width: 1,
-                            ),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.1),
-                                blurRadius: 8,
-                                offset: const Offset(0, 4),
-                              ),
-                            ],
-                          ),
-                          child: const Icon(
-                            Icons.people_rounded,
-                            color: Colors.white,
-                            size: 28,
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Safety Registry',
-                                style: textTheme.titleLarge?.copyWith(
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.white,
-                                  fontSize: 24,
+                        Row(
+                          children: [
+                            // Back Button
+                            Container(
+                              decoration: BoxDecoration(
+                                color: Colors.white.withOpacity(0.25),
+                                borderRadius: BorderRadius.circular(14),
+                                border: Border.all(
+                                  color: Colors.white.withOpacity(0.3),
+                                  width: 1,
                                 ),
                               ),
-                              const SizedBox(height: 2),
-                              Text(
-                                '${allPeople.length} total ${allPeople.length == 1 ? 'person' : 'people'}',
-                                style: textTheme.bodyMedium?.copyWith(
-                                  color: Colors.white.withOpacity(0.9),
-                                ),
+                              child: IconButton(
+                                icon: const Icon(Icons.arrow_back_rounded,
+                                    color: Colors.white),
+                                onPressed: () {
+                                  context.go('/home');
+                                },
                               ),
-                            ],
-                          ),
+                            ),
+                            const SizedBox(width: 16),
+                            Container(
+                              padding: const EdgeInsets.all(14),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withOpacity(0.25),
+                                borderRadius: BorderRadius.circular(16),
+                                border: Border.all(
+                                  color: Colors.white.withOpacity(0.3),
+                                  width: 1,
+                                ),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withOpacity(0.1),
+                                    blurRadius: 8,
+                                    offset: const Offset(0, 4),
+                                  ),
+                                ],
+                              ),
+                              child: const Icon(
+                                Icons.people_rounded,
+                                color: Colors.white,
+                                size: 28,
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Safety Registry',
+                                    style: textTheme.titleLarge?.copyWith(
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.white,
+                                      fontSize: 24,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    '${allPeople.length} total ${allPeople.length == 1 ? 'person' : 'people'}',
+                                    style: textTheme.bodyMedium?.copyWith(
+                                      color: Colors.white.withOpacity(0.9),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Container(
+                              padding: const EdgeInsets.all(10),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withOpacity(0.25),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: const Icon(
+                                Icons.search_rounded,
+                                color: Colors.white,
+                                size: 24,
+                              ),
+                            ),
+                          ],
                         ),
-                        Container(
-                          padding: const EdgeInsets.all(10),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.25),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: const Icon(
-                            Icons.search_rounded,
-                            color: Colors.white,
-                            size: 24,
-                          ),
+                        const SizedBox(height: 20),
+
+                        // Stats Cards
+                        Row(
+                          children: [
+                            Expanded(
+                              child: _buildStatCard(
+                                'Safe',
+                                safePeople.length.toString(),
+                                Icons.check_circle_rounded,
+                                [Colors.green.shade400, Colors.green.shade600],
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: _buildStatCard(
+                                'Missing',
+                                missingPeople.length.toString(),
+                                Icons.error_rounded,
+                                [
+                                  Colors.orange.shade400,
+                                  Colors.orange.shade600
+                                ],
+                              ),
+                            ),
+                          ],
                         ),
                       ],
                     ),
-                    const SizedBox(height: 20),
-
-                    // Stats Cards
-                    Row(
-                      children: [
-                        Expanded(
-                          child: _buildStatCard(
-                            'Safe',
-                            safePeople.length.toString(),
-                            Icons.check_circle_rounded,
-                            [Colors.green.shade400, Colors.green.shade600],
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: _buildStatCard(
-                            'Missing',
-                            missingPeople.length.toString(),
-                            Icons.error_rounded,
-                            [Colors.orange.shade400, Colors.orange.shade600],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-
-              // Tab Bar
-              Container(
-                margin: const EdgeInsets.symmetric(horizontal: 20),
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.25),
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                    color: Colors.white.withOpacity(0.3),
-                    width: 1,
                   ),
-                ),
-                child: TabBar(
-                  controller: _tabController,
-                  indicator: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [Colors.white, Colors.white],
-                    ),
-                    borderRadius: BorderRadius.circular(14),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.1),
-                        blurRadius: 8,
-                        offset: const Offset(0, 2),
+
+                  // Tab Bar
+                  Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 20),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.25),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: Colors.white.withOpacity(0.3),
+                        width: 1,
                       ),
-                    ],
-                  ),
-                  indicatorSize: TabBarIndicatorSize.tab,
-                  dividerColor: Colors.transparent,
-                  labelColor: Colors.blue.shade700,
-                  unselectedLabelColor: Colors.white,
-                  labelStyle: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 13,
-                  ),
-                  unselectedLabelStyle: const TextStyle(
-                    fontWeight: FontWeight.w600,
-                    fontSize: 13,
-                  ),
-                  tabs: const [
-                    Tab(
-                      icon: Icon(Icons.check_circle_rounded, size: 20),
-                      text: 'MARKED SAFE',
                     ),
-                    Tab(
-                      icon: Icon(Icons.search_rounded, size: 20),
-                      text: 'MISSING',
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 8),
-
-              // Tab Content
-              Expanded(
-                child: FadeTransition(
-                  opacity: _fadeAnimation,
-                  child: SlideTransition(
-                    position: _slideAnimation,
-                    child: Container(
-                      decoration: const BoxDecoration(
-                        color: AppColors.background,
-                        borderRadius: BorderRadius.only(
-                          topLeft: Radius.circular(32),
-                          topRight: Radius.circular(32),
+                    child: TabBar(
+                      controller: _tabController,
+                      indicator: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [Colors.white, Colors.white],
                         ),
-                      ),
-                      child: TabBarView(
-                        controller: _tabController,
-                        children: [
-                          _buildEnhancedPersonList(
-                            safePeople,
-                            PersonSafetyStatus.safe,
-                          ),
-                          _buildEnhancedPersonList(
-                            missingPeople,
-                            PersonSafetyStatus.missing,
+                        borderRadius: BorderRadius.circular(14),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.1),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
                           ),
                         ],
                       ),
+                      indicatorSize: TabBarIndicatorSize.tab,
+                      dividerColor: Colors.transparent,
+                      labelColor: Colors.blue.shade700,
+                      unselectedLabelColor: Colors.white,
+                      labelStyle: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 13,
+                      ),
+                      unselectedLabelStyle: const TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 13,
+                      ),
+                      tabs: const [
+                        Tab(
+                          icon: Icon(Icons.check_circle_rounded, size: 20),
+                          text: 'MARKED SAFE',
+                        ),
+                        Tab(
+                          icon: Icon(Icons.search_rounded, size: 20),
+                          text: 'MISSING',
+                        ),
+                      ],
                     ),
                   ),
-                ),
+                  const SizedBox(height: 8),
+
+                  // Tab Content
+                  Expanded(
+                    child: FadeTransition(
+                      opacity: _fadeAnimation,
+                      child: SlideTransition(
+                        position: _slideAnimation,
+                        child: Container(
+                          decoration: const BoxDecoration(
+                            color: AppColors.background,
+                            borderRadius: BorderRadius.only(
+                              topLeft: Radius.circular(32),
+                              topRight: Radius.circular(32),
+                            ),
+                          ),
+                          child: TabBarView(
+                            controller: _tabController,
+                            children: [
+                              _buildEnhancedPersonList(
+                                safePeople,
+                                PersonSafetyStatus.safe,
+                              ),
+                              _buildEnhancedPersonList(
+                                missingPeople,
+                                PersonSafetyStatus.missing,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
-            ],
+            ),
+          );
+        },
+        loading: () => Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                Colors.blue.shade700,
+                Colors.blue.shade600,
+                Colors.blue.shade500,
+                AppColors.background,
+              ],
+              stops: const [0.0, 0.15, 0.3, 0.3],
+            ),
+          ),
+          child: const Center(
+            child: CircularProgressIndicator(
+              color: Colors.white,
+            ),
+          ),
+        ),
+        error: (error, stack) => Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                Colors.blue.shade700,
+                Colors.blue.shade600,
+                Colors.blue.shade500,
+                AppColors.background,
+              ],
+              stops: const [0.0, 0.15, 0.3, 0.3],
+            ),
+          ),
+          child: Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.25),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.error_outline_rounded,
+                      size: 64,
+                      color: Colors.white,
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  const Text(
+                    'Unable to Load Data',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    error.toString(),
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.white.withOpacity(0.9),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  ElevatedButton.icon(
+                    onPressed: () {
+                      ref.invalidate(personStatusStreamProvider);
+                    },
+                    icon: const Icon(Icons.refresh_rounded),
+                    label: const Text('Retry'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.white,
+                      foregroundColor: Colors.blue.shade700,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 24,
+                        vertical: 12,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ),
         ),
       ),
@@ -360,7 +474,9 @@ class _PersonRegistryScreenState extends ConsumerState<PersonRegistryScreen>
 
     return RefreshIndicator(
       onRefresh: () async {
-        await Future.delayed(const Duration(seconds: 1));
+        // Refresh the Firebase stream
+        ref.invalidate(personStatusStreamProvider);
+        await Future.delayed(const Duration(milliseconds: 500));
       },
       color: status == PersonSafetyStatus.safe
           ? Colors.green.shade600
@@ -420,7 +536,7 @@ class _PersonRegistryScreenState extends ConsumerState<PersonRegistryScreen>
             child: Row(
               children: [
                 Hero(
-                  tag: 'person_${person.name}',
+                  tag: 'person_${person.id}', // Use unique ID instead of name
                   child: Container(
                     width: 60,
                     height: 60,
@@ -437,7 +553,9 @@ class _PersonRegistryScreenState extends ConsumerState<PersonRegistryScreen>
                     ),
                     child: Center(
                       child: Text(
-                        person.name[0].toUpperCase(),
+                        person.name.isNotEmpty
+                            ? person.name[0].toUpperCase()
+                            : '?',
                         style: const TextStyle(
                           fontSize: 24,
                           fontWeight: FontWeight.bold,
@@ -496,7 +614,7 @@ class _PersonRegistryScreenState extends ConsumerState<PersonRegistryScreen>
                           Expanded(
                             child: Text(
                               person.lastKnownLocation,
-                              style: TextStyle(
+                              style: const TextStyle(
                                 fontSize: 13,
                                 color: AppColors.textSecondary,
                               ),
@@ -527,6 +645,15 @@ class _PersonRegistryScreenState extends ConsumerState<PersonRegistryScreen>
                               color: gradient[1],
                             ),
                           ),
+                          const Spacer(),
+                          if (person.timestamp != null)
+                            Text(
+                              _formatTimestamp(person.timestamp!),
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: AppColors.textSecondary.withOpacity(0.7),
+                              ),
+                            ),
                         ],
                       ),
                     ],
@@ -543,6 +670,23 @@ class _PersonRegistryScreenState extends ConsumerState<PersonRegistryScreen>
         ),
       ),
     );
+  }
+
+  String _formatTimestamp(DateTime timestamp) {
+    final now = DateTime.now();
+    final difference = now.difference(timestamp);
+
+    if (difference.inMinutes < 1) {
+      return 'Just now';
+    } else if (difference.inHours < 1) {
+      return '${difference.inMinutes}m ago';
+    } else if (difference.inDays < 1) {
+      return '${difference.inHours}h ago';
+    } else if (difference.inDays < 7) {
+      return '${difference.inDays}d ago';
+    } else {
+      return '${timestamp.day}/${timestamp.month}/${timestamp.year}';
+    }
   }
 
   Widget _buildEmptyState(PersonSafetyStatus status) {
@@ -604,7 +748,7 @@ class _PersonRegistryScreenState extends ConsumerState<PersonRegistryScreen>
             Text(
               message,
               textAlign: TextAlign.center,
-              style: TextStyle(
+              style: const TextStyle(
                 fontSize: 15,
                 color: AppColors.textSecondary,
                 height: 1.5,
@@ -661,9 +805,9 @@ class _PersonRegistryScreenState extends ConsumerState<PersonRegistryScreen>
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
       builder: (context) => Container(
-        decoration: BoxDecoration(
+        decoration: const BoxDecoration(
           color: AppColors.surface,
-          borderRadius: const BorderRadius.only(
+          borderRadius: BorderRadius.only(
             topLeft: Radius.circular(24),
             topRight: Radius.circular(24),
           ),
@@ -687,7 +831,7 @@ class _PersonRegistryScreenState extends ConsumerState<PersonRegistryScreen>
 
                 // Avatar
                 Hero(
-                  tag: 'person_${person.name}',
+                  tag: 'person_${person.id}', // Use unique ID
                   child: Container(
                     width: 80,
                     height: 80,
@@ -704,7 +848,9 @@ class _PersonRegistryScreenState extends ConsumerState<PersonRegistryScreen>
                     ),
                     child: Center(
                       child: Text(
-                        person.name[0].toUpperCase(),
+                        person.name.isNotEmpty
+                            ? person.name[0].toUpperCase()
+                            : '?',
                         style: const TextStyle(
                           fontSize: 32,
                           fontWeight: FontWeight.bold,
@@ -775,6 +921,15 @@ class _PersonRegistryScreenState extends ConsumerState<PersonRegistryScreen>
                   person.lastKnownLocation,
                   gradient,
                 ),
+                if (person.timestamp != null) ...[
+                  const SizedBox(height: 16),
+                  _buildDetailRow(
+                    Icons.access_time_rounded,
+                    'Reported',
+                    _formatFullTimestamp(person.timestamp!),
+                    gradient,
+                  ),
+                ],
                 const SizedBox(height: 24),
               ],
             ),
@@ -782,6 +937,26 @@ class _PersonRegistryScreenState extends ConsumerState<PersonRegistryScreen>
         ),
       ),
     );
+  }
+
+  String _formatFullTimestamp(DateTime timestamp) {
+    final months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec'
+    ];
+    final hour = timestamp.hour > 12 ? timestamp.hour - 12 : timestamp.hour;
+    final period = timestamp.hour >= 12 ? 'PM' : 'AM';
+    return '${months[timestamp.month - 1]} ${timestamp.day}, ${timestamp.year} at ${hour == 0 ? 12 : hour}:${timestamp.minute.toString().padLeft(2, '0')} $period';
   }
 
   Widget _buildDetailRow(
@@ -816,7 +991,7 @@ class _PersonRegistryScreenState extends ConsumerState<PersonRegistryScreen>
               children: [
                 Text(
                   label,
-                  style: TextStyle(
+                  style: const TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
                     color: AppColors.textSecondary,

@@ -10,24 +10,26 @@ import 'package:rescuetn/features/2_dashboard/screens/volunteer_dashboard_screen
 import 'package:rescuetn/features/3_incident_reporting/screens/report_incident_screen.dart';
 import 'package:rescuetn/features/4_shelter_locator/screens/shelter_map_screen.dart';
 import 'package:rescuetn/features/5_task_management/screens/task_details_screen.dart';
+// --- CORRECTED IMPORTS ---
 import 'package:rescuetn/features/7_alerts/screens/alert_screen.dart';
 import 'package:rescuetn/features/8_person_registry/screens/add_person_status_form_screen.dart';
 import 'package:rescuetn/features/8_person_registry/screens/person_registry_screen.dart';
+import 'package:rescuetn/features/9_heatmap/screens/heatmap_screen.dart';
 import 'package:rescuetn/models/user_model.dart';
 
 /// This provider creates and configures the GoRouter for the application.
-///
-/// This version is integrated with our dummy authentication system (`userStateProvider`)
-/// and implements role-based routing to direct users to the appropriate dashboard.
+/// This version is connected to the LIVE Firebase authentication stream.
 final routerProvider = Provider<GoRouter>((ref) {
-  // We watch our simple state provider to listen for login/logout changes.
-  final userState = ref.watch(userStateProvider);
+  // We watch the authStateChangesProvider to get its current value for redirects.
+  final authState = ref.watch(authStateChangesProvider);
 
   return GoRouter(
-    // The app now starts at the login screen for new or logged-out users.
     initialLocation: '/login',
 
-    // Define all the routes for the application.
+    // This correctly listens to the STREAM from the provider, not the AsyncValue.
+    // This triggers the router to re-evaluate its state whenever the user logs in or out.
+    refreshListenable: GoRouterRefreshStream(ref.watch(authStateChangesProvider.stream)),
+
     routes: [
       GoRoute(
         path: '/login',
@@ -40,12 +42,11 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/home',
         builder: (context, state) {
-          // --- ROLE-BASED ROUTING LOGIC ---
-          // Here, we check the user's role and return the correct dashboard.
-          if (userState?.role == UserRole.volunteer) {
+          // Role-based routing using the live user data.
+          final user = authState.value;
+          if (user?.role == UserRole.volunteer) {
             return const VolunteerDashboardScreen();
           }
-          // Default to the Public Dashboard for public users or if role is null.
           return const PublicDashboardScreen();
         },
       ),
@@ -69,7 +70,6 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/alerts',
         builder: (context, state) => const AlertsScreen(),
       ),
-      // --- ROUTES FOR PERSON REGISTRY FEATURE ---
       GoRoute(
         path: '/person-registry',
         builder: (context, state) => const PersonRegistryScreen(),
@@ -78,31 +78,36 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/add-person-status',
         builder: (context, state) => const AddPersonStatusScreen(),
       ),
+      GoRoute(
+        path: '/heatmap',
+        builder: (context, state) => const HeatmapScreen(),
+      ),
     ],
 
-    // The redirect logic ensures that users are always on the correct screen
-    // based on their authentication state.
+    /// The redirect logic protects routes based on the live authentication state.
     redirect: (context, state) {
-      final user = ref.read(userStateProvider);
+      final isLoggedIn = authState.valueOrNull != null;
       final isAuthRoute =
           state.matchedLocation == '/login' || state.matchedLocation == '/register';
 
-      // Case 1: User is not logged in.
-      if (user == null) {
-        // If they are already on an authentication screen, do nothing.
-        // Otherwise, redirect them to the login screen.
+      if (!isLoggedIn) {
         return isAuthRoute ? null : '/login';
       }
 
-      // Case 2: User is logged in.
-      // If they try to access an auth screen (like login), redirect them home.
       if (isAuthRoute) {
         return '/home';
       }
 
-      // No redirect needed.
       return null;
     },
   );
 });
+
+/// A helper class that converts a Stream into a Listenable for GoRouter.
+class GoRouterRefreshStream extends ChangeNotifier {
+  GoRouterRefreshStream(Stream<dynamic> stream) {
+    notifyListeners();
+    stream.asBroadcastStream().listen((_) => notifyListeners());
+  }
+}
 

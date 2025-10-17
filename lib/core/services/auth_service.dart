@@ -35,5 +35,10 @@ abstract class AuthService {
 
   /// Signs out the current user.
   Future<void> signOut();
+
+  /// --- NEW METHOD ---
+  /// Sends a password reset link to the given email address.
+  /// Throws an exception if the email is not found or another error occurs.
+  Future<void> sendPasswordResetEmail({required String email});
 }
 

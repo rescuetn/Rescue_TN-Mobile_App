@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
@@ -6,11 +7,11 @@ import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:rescuetn/app/constants.dart';
 import 'package:rescuetn/common_widgets/custom_button.dart';
-import 'package:rescuetn/core/services/database_service.dart';
-import 'package:rescuetn/features/1_auth/providers/auth_provider.dart';
 import 'package:rescuetn/models/incident_model.dart';
 import 'package:record/record.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:rescuetn/features/3_incident_reporting/providers/incident_provider.dart';
+import 'package:rescuetn/features/1_auth/providers/auth_provider.dart'; // Import for authStateChangesProvider
 
 class ReportIncidentScreen extends ConsumerStatefulWidget {
   const ReportIncidentScreen({super.key});
@@ -29,7 +30,6 @@ class _ReportIncidentScreenState extends ConsumerState<ReportIncidentScreen>
 
   IncidentType? _selectedType;
   Severity? _selectedSeverity;
-  bool _isLoading = false;
   final List<File> _pickedImages = [];
   final List<String> _audioRecordings = [];
   Position? _currentPosition;
@@ -38,7 +38,6 @@ class _ReportIncidentScreenState extends ConsumerState<ReportIncidentScreen>
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
 
-  // Voice recording state
   bool _isRecording = false;
   String? _currentRecordingPath;
   Duration _recordingDuration = Duration.zero;
@@ -168,7 +167,6 @@ class _ReportIncidentScreenState extends ConsumerState<ReportIncidentScreen>
           });
         }
 
-        // Update duration every second
         _updateRecordingDuration();
       } else {
         _showSnackBar(
@@ -242,6 +240,31 @@ class _ReportIncidentScreenState extends ConsumerState<ReportIncidentScreen>
     final minutes = twoDigits(duration.inMinutes.remainder(60));
     final seconds = twoDigits(duration.inSeconds.remainder(60));
     return '$minutes:$seconds';
+  }
+
+  // --- UPDATED _submitReport METHOD ---
+  Future<void> _submitReport() async {
+    if (_formKey.currentState!.validate()) {
+      if (_currentPosition == null) {
+        _showSnackBar(
+          message: 'Could not get location. Please enable location services.',
+          icon: Icons.error_outline,
+          backgroundColor: AppColors.error,
+        );
+        return;
+      }
+
+      // Call the notifier to handle all the submission logic.
+      // The UI doesn't need to know the details; it just triggers the action.
+      await ref.read(reportIncidentProvider.notifier).submitIncident(
+        type: _selectedType!,
+        description: _descriptionController.text.trim(),
+        severity: _selectedSeverity!,
+        position: _currentPosition!,
+        images: _pickedImages,
+        audioPaths: _audioRecordings,
+      );
+    }
   }
 
   void _showImageSourceActionSheet() {
@@ -404,57 +427,6 @@ class _ReportIncidentScreenState extends ConsumerState<ReportIncidentScreen>
     );
   }
 
-  Future<void> _submitReport() async {
-    if (_formKey.currentState!.validate()) {
-      if (_currentPosition == null) {
-        _showSnackBar(
-          message: 'Could not get location. Please enable location services.',
-          icon: Icons.error_outline,
-          backgroundColor: AppColors.error,
-        );
-        return;
-      }
-
-      setState(() => _isLoading = true);
-
-      try {
-        final user = ref.read(userStateProvider);
-        if (user == null) throw Exception('User not logged in.');
-
-        final newIncident = Incident(
-          type: _selectedType!,
-          description: _descriptionController.text.trim(),
-          severity: _selectedSeverity!,
-          latitude: _currentPosition!.latitude,
-          longitude: _currentPosition!.longitude,
-          reportedBy: user.uid,
-          timestamp: DateTime.now(),
-        );
-
-        await ref.read(databaseServiceProvider).addIncident(newIncident);
-        // TODO: Upload images and audio files to Firebase Storage
-        // You can implement file upload here using firebase_storage
-
-        if (mounted) {
-          _showSnackBar(
-            message: 'Incident reported successfully!',
-            icon: Icons.check_circle_outline,
-            backgroundColor: Colors.green.shade600,
-          );
-          Navigator.of(context).pop();
-        }
-      } catch (e) {
-        _showSnackBar(
-          message: 'Failed to report incident: $e',
-          icon: Icons.error_outline,
-          backgroundColor: AppColors.error,
-        );
-      } finally {
-        if (mounted) setState(() => _isLoading = false);
-      }
-    }
-  }
-
   void _showSnackBar({
     required String message,
     required IconData icon,
@@ -520,6 +492,31 @@ class _ReportIncidentScreenState extends ConsumerState<ReportIncidentScreen>
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
 
+    // Watch the provider state for UI updates (isLoading, progress, etc.)
+    final reportState = ref.watch(reportIncidentProvider);
+
+    // Listen for state changes to show messages and navigate
+    ref.listen<ReportIncidentState>(reportIncidentProvider, (previous, next) {
+      if (next.isSuccess) {
+        _showSnackBar(
+          message: 'Incident reported successfully!',
+          icon: Icons.check_circle_outline,
+          backgroundColor: Colors.green.shade600,
+        );
+        // Reset provider state and navigate back
+        Future.microtask(() {
+          ref.read(reportIncidentProvider.notifier).reset();
+          if (mounted) context.pop();
+        });
+      } else if (next.error != null && previous?.error != next.error) {
+        _showSnackBar(
+          message: 'Failed to report incident: ${next.error}',
+          icon: Icons.error_outline,
+          backgroundColor: AppColors.error,
+        );
+      }
+    });
+
     return Scaffold(
       body: Container(
         decoration: BoxDecoration(
@@ -559,9 +556,7 @@ class _ReportIncidentScreenState extends ConsumerState<ReportIncidentScreen>
                           child: IconButton(
                             icon: const Icon(Icons.arrow_back_rounded,
                                 color: Colors.white),
-                            onPressed: () {
-                              context.go('/home');
-                            },
+                            onPressed: () => context.go('/home'),
                           ),
                         ),
                       ),
@@ -645,8 +640,7 @@ class _ReportIncidentScreenState extends ConsumerState<ReportIncidentScreen>
                                   ),
                                   boxShadow: [
                                     BoxShadow(
-                                      color:
-                                      Colors.red.shade100.withOpacity(0.5),
+                                      color: Colors.red.shade100.withOpacity(0.5),
                                       blurRadius: 12,
                                       offset: const Offset(0, 4),
                                     ),
@@ -669,8 +663,7 @@ class _ReportIncidentScreenState extends ConsumerState<ReportIncidentScreen>
                                     const SizedBox(width: 16),
                                     Expanded(
                                       child: Column(
-                                        crossAxisAlignment:
-                                        CrossAxisAlignment.start,
+                                        crossAxisAlignment: CrossAxisAlignment.start,
                                         children: [
                                           Text(
                                             'Life-threatening emergency?',
@@ -682,8 +675,7 @@ class _ReportIncidentScreenState extends ConsumerState<ReportIncidentScreen>
                                           const SizedBox(height: 2),
                                           Text(
                                             'Call 108 immediately',
-                                            style:
-                                            textTheme.bodyMedium?.copyWith(
+                                            style: textTheme.bodyMedium?.copyWith(
                                               color: Colors.red.shade800,
                                             ),
                                           ),
@@ -700,10 +692,7 @@ class _ReportIncidentScreenState extends ConsumerState<ReportIncidentScreen>
                                 icon: Icons.description_rounded,
                                 title: 'Incident Details',
                                 subtitle: 'Provide information about the incident',
-                                gradient: [
-                                  Colors.blue.shade400,
-                                  Colors.blue.shade600
-                                ],
+                                gradient: [Colors.blue.shade400, Colors.blue.shade600],
                               ),
                               const SizedBox(height: 20),
 
@@ -713,19 +702,16 @@ class _ReportIncidentScreenState extends ConsumerState<ReportIncidentScreen>
                                 value: _selectedType,
                                 items: IncidentType.values,
                                 icon: Icons.category_rounded,
-                                onChanged: (value) =>
-                                    setState(() => _selectedType = value),
+                                onChanged: (value) => setState(() => _selectedType = value),
                                 itemBuilder: (type) => Row(
                                   children: [
                                     Icon(_getIncidentIcon(type), size: 20),
                                     const SizedBox(width: 12),
-                                    Text(type.name[0].toUpperCase() +
-                                        type.name.substring(1)),
+                                    Text(type.name[0].toUpperCase() + type.name.substring(1)),
                                   ],
                                 ),
-                                validator: (value) => value == null
-                                    ? 'Please select incident type'
-                                    : null,
+                                validator: (value) =>
+                                value == null ? 'Please select incident type' : null,
                               ),
                               const SizedBox(height: 20),
 
@@ -736,8 +722,7 @@ class _ReportIncidentScreenState extends ConsumerState<ReportIncidentScreen>
                                   borderRadius: BorderRadius.circular(20),
                                   boxShadow: [
                                     BoxShadow(
-                                      color: AppColors.textPrimary
-                                          .withOpacity(0.06),
+                                      color: AppColors.textPrimary.withOpacity(0.06),
                                       blurRadius: 16,
                                       offset: const Offset(0, 4),
                                     ),
@@ -747,8 +732,7 @@ class _ReportIncidentScreenState extends ConsumerState<ReportIncidentScreen>
                                   controller: _descriptionController,
                                   decoration: InputDecoration(
                                     labelText: 'Description',
-                                    hintText:
-                                    'Describe the incident in detail...',
+                                    hintText: 'Describe the incident in detail...',
                                     prefixIcon: Padding(
                                       padding: const EdgeInsets.only(top: 12),
                                       child: Icon(Icons.edit_note_rounded,
@@ -763,8 +747,7 @@ class _ReportIncidentScreenState extends ConsumerState<ReportIncidentScreen>
                                     enabledBorder: OutlineInputBorder(
                                       borderRadius: BorderRadius.circular(20),
                                       borderSide: BorderSide(
-                                        color: AppColors.textSecondary
-                                            .withOpacity(0.15),
+                                        color: AppColors.textSecondary.withOpacity(0.15),
                                       ),
                                     ),
                                     focusedBorder: OutlineInputBorder(
@@ -776,9 +759,8 @@ class _ReportIncidentScreenState extends ConsumerState<ReportIncidentScreen>
                                     ),
                                   ),
                                   maxLines: 5,
-                                  validator: (value) => value!.isEmpty
-                                      ? 'Please provide a description'
-                                      : null,
+                                  validator: (value) =>
+                                  value!.isEmpty ? 'Please provide a description' : null,
                                 ),
                               ),
                               const SizedBox(height: 20),
@@ -789,8 +771,7 @@ class _ReportIncidentScreenState extends ConsumerState<ReportIncidentScreen>
                                 value: _selectedSeverity,
                                 items: Severity.values,
                                 icon: Icons.priority_high_rounded,
-                                onChanged: (value) =>
-                                    setState(() => _selectedSeverity = value),
+                                onChanged: (value) => setState(() => _selectedSeverity = value),
                                 itemBuilder: (severity) => Row(
                                   children: [
                                     Container(
@@ -801,8 +782,7 @@ class _ReportIncidentScreenState extends ConsumerState<ReportIncidentScreen>
                                         shape: BoxShape.circle,
                                         boxShadow: [
                                           BoxShadow(
-                                            color: _getSeverityColor(severity)
-                                                .withOpacity(0.4),
+                                            color: _getSeverityColor(severity).withOpacity(0.4),
                                             blurRadius: 4,
                                             spreadRadius: 1,
                                           ),
@@ -810,13 +790,11 @@ class _ReportIncidentScreenState extends ConsumerState<ReportIncidentScreen>
                                       ),
                                     ),
                                     const SizedBox(width: 12),
-                                    Text(severity.name[0].toUpperCase() +
-                                        severity.name.substring(1)),
+                                    Text(severity.name[0].toUpperCase() + severity.name.substring(1)),
                                   ],
                                 ),
-                                validator: (value) => value == null
-                                    ? 'Please select severity level'
-                                    : null,
+                                validator: (value) =>
+                                value == null ? 'Please select severity level' : null,
                               ),
                               const SizedBox(height: 32),
 
@@ -825,10 +803,7 @@ class _ReportIncidentScreenState extends ConsumerState<ReportIncidentScreen>
                                 icon: Icons.camera_alt_rounded,
                                 title: 'Photo Evidence',
                                 subtitle: 'Add photos to support your report',
-                                gradient: [
-                                  Colors.purple.shade400,
-                                  Colors.purple.shade600
-                                ],
+                                gradient: [Colors.purple.shade400, Colors.purple.shade600],
                               ),
                               const SizedBox(height: 20),
                               _buildEnhancedEvidenceSection(),
@@ -838,12 +813,8 @@ class _ReportIncidentScreenState extends ConsumerState<ReportIncidentScreen>
                               _buildEnhancedSectionHeader(
                                 icon: Icons.mic_rounded,
                                 title: 'Voice Recording',
-                                subtitle:
-                                'Record audio description of the incident',
-                                gradient: [
-                                  Colors.pink.shade400,
-                                  Colors.pink.shade600
-                                ],
+                                subtitle: 'Record audio description of the incident',
+                                gradient: [Colors.pink.shade400, Colors.pink.shade600],
                               ),
                               const SizedBox(height: 20),
                               _buildVoiceRecordingSection(),
@@ -854,20 +825,88 @@ class _ReportIncidentScreenState extends ConsumerState<ReportIncidentScreen>
                                 icon: Icons.location_on_rounded,
                                 title: 'Location',
                                 subtitle: 'Incident location tracking',
-                                gradient: [
-                                  Colors.green.shade400,
-                                  Colors.green.shade600
-                                ],
+                                gradient: [Colors.green.shade400, Colors.green.shade600],
                               ),
                               const SizedBox(height: 20),
                               _buildEnhancedLocationSection(),
                               const SizedBox(height: 32),
 
+                              // Upload Progress Indicator
+                              if (reportState.isLoading && reportState.uploadStatus.isNotEmpty)
+                                Container(
+                                  padding: const EdgeInsets.all(20),
+                                  margin: const EdgeInsets.only(bottom: 20),
+                                  decoration: BoxDecoration(
+                                    gradient: LinearGradient(
+                                      colors: [
+                                        Colors.blue.shade50,
+                                        Colors.purple.shade50,
+                                      ],
+                                    ),
+                                    borderRadius: BorderRadius.circular(20),
+                                    border: Border.all(
+                                      color: Colors.blue.shade200,
+                                      width: 1.5,
+                                    ),
+                                  ),
+                                  child: Column(
+                                    children: [
+                                      Row(
+                                        children: [
+                                          SizedBox(
+                                            width: 24,
+                                            height: 24,
+                                            child: CircularProgressIndicator(
+                                              strokeWidth: 3,
+                                              valueColor: AlwaysStoppedAnimation<Color>(
+                                                AppColors.primary,
+                                              ),
+                                            ),
+                                          ),
+                                          const SizedBox(width: 16),
+                                          Expanded(
+                                            child: Text(
+                                              reportState.uploadStatus,
+                                              style: TextStyle(
+                                                fontWeight: FontWeight.w600,
+                                                color: Colors.blue.shade900,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      if (reportState.uploadProgress > 0) ...[
+                                        const SizedBox(height: 12),
+                                        ClipRRect(
+                                          borderRadius: BorderRadius.circular(10),
+                                          child: LinearProgressIndicator(
+                                            value: reportState.uploadProgress,
+                                            minHeight: 8,
+                                            backgroundColor: Colors.blue.shade100,
+                                            valueColor: AlwaysStoppedAnimation<Color>(
+                                              AppColors.primary,
+                                            ),
+                                          ),
+                                        ),
+                                        const SizedBox(height: 8),
+                                        Text(
+                                          '${(reportState.uploadProgress * 100).toStringAsFixed(0)}%',
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            color: Colors.blue.shade700,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ],
+                                    ],
+                                  ),
+                                ),
+
                               // Submit Button
                               CustomButton(
                                 text: 'Submit Report',
                                 onPressed: _submitReport,
-                                isLoading: _isLoading,
+                                isLoading: reportState.isLoading,
                               ),
                               const SizedBox(height: 20),
                             ],
@@ -1029,8 +1068,7 @@ class _ReportIncidentScreenState extends ConsumerState<ReportIncidentScreen>
                               borderRadius: BorderRadius.circular(20),
                               boxShadow: [
                                 BoxShadow(
-                                  color:
-                                  AppColors.textPrimary.withOpacity(0.15),
+                                  color: AppColors.textPrimary.withOpacity(0.15),
                                   blurRadius: 12,
                                   offset: const Offset(0, 4),
                                 ),
@@ -1167,7 +1205,6 @@ class _ReportIncidentScreenState extends ConsumerState<ReportIncidentScreen>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Existing recordings list
           if (_audioRecordings.isNotEmpty) ...[
             ListView.separated(
               shrinkWrap: true,
@@ -1246,7 +1283,6 @@ class _ReportIncidentScreenState extends ConsumerState<ReportIncidentScreen>
             const SizedBox(height: 20),
           ],
 
-          // Recording controls
           if (_isRecording)
             Container(
               padding: const EdgeInsets.all(20),
@@ -1267,7 +1303,6 @@ class _ReportIncidentScreenState extends ConsumerState<ReportIncidentScreen>
               ),
               child: Column(
                 children: [
-                  // Animated recording indicator
                   TweenAnimationBuilder<double>(
                     tween: Tween(begin: 0.8, end: 1.2),
                     duration: const Duration(milliseconds: 800),
@@ -1303,7 +1338,6 @@ class _ReportIncidentScreenState extends ConsumerState<ReportIncidentScreen>
                       );
                     },
                     onEnd: () {
-                      // Loop the animation
                       if (_isRecording && mounted) {
                         setState(() {});
                       }
@@ -1331,7 +1365,6 @@ class _ReportIncidentScreenState extends ConsumerState<ReportIncidentScreen>
                     ),
                   ),
                   const SizedBox(height: 20),
-                  // Stop button
                   Container(
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
@@ -1386,7 +1419,6 @@ class _ReportIncidentScreenState extends ConsumerState<ReportIncidentScreen>
               ),
             )
           else
-          // Start recording button
             Container(
               decoration: BoxDecoration(
                 gradient: LinearGradient(
@@ -1430,9 +1462,7 @@ class _ReportIncidentScreenState extends ConsumerState<ReportIncidentScreen>
                         ),
                         const SizedBox(width: 12),
                         Text(
-                          _audioRecordings.isEmpty
-                              ? 'Start Recording'
-                              : 'Record Another',
+                          _audioRecordings.isEmpty ? 'Start Recording' : 'Record Another',
                           style: TextStyle(
                             fontWeight: FontWeight.w600,
                             fontSize: 16,
@@ -1494,16 +1524,12 @@ class _ReportIncidentScreenState extends ConsumerState<ReportIncidentScreen>
         ),
         borderRadius: BorderRadius.circular(24),
         border: Border.all(
-          color: isLocationAvailable
-              ? Colors.green.shade300
-              : Colors.orange.shade300,
+          color: isLocationAvailable ? Colors.green.shade300 : Colors.orange.shade300,
           width: 1.5,
         ),
         boxShadow: [
           BoxShadow(
-            color: (isLocationAvailable
-                ? Colors.green.shade200
-                : Colors.orange.shade200)
+            color: (isLocationAvailable ? Colors.green.shade200 : Colors.orange.shade200)
                 .withOpacity(0.5),
             blurRadius: 12,
             offset: const Offset(0, 4),
@@ -1523,9 +1549,7 @@ class _ReportIncidentScreenState extends ConsumerState<ReportIncidentScreen>
               shape: BoxShape.circle,
               boxShadow: [
                 BoxShadow(
-                  color: (isLocationAvailable
-                      ? Colors.green.shade300
-                      : Colors.orange.shade300)
+                  color: (isLocationAvailable ? Colors.green.shade300 : Colors.orange.shade300)
                       .withOpacity(0.5),
                   blurRadius: 8,
                   offset: const Offset(0, 2),
@@ -1553,15 +1577,11 @@ class _ReportIncidentScreenState extends ConsumerState<ReportIncidentScreen>
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  isLocationAvailable
-                      ? 'Location Captured'
-                      : 'Getting Location',
+                  isLocationAvailable ? 'Location Captured' : 'Getting Location',
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 16,
-                    color: isLocationAvailable
-                        ? Colors.green.shade900
-                        : Colors.orange.shade900,
+                    color: isLocationAvailable ? Colors.green.shade900 : Colors.orange.shade900,
                   ),
                 ),
                 const SizedBox(height: 6),
@@ -1569,9 +1589,7 @@ class _ReportIncidentScreenState extends ConsumerState<ReportIncidentScreen>
                   _locationMessage,
                   style: TextStyle(
                     fontSize: 13,
-                    color: isLocationAvailable
-                        ? Colors.green.shade700
-                        : Colors.orange.shade700,
+                    color: isLocationAvailable ? Colors.green.shade700 : Colors.orange.shade700,
                   ),
                 ),
               ],

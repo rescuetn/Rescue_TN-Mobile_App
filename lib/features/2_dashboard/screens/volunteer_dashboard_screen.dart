@@ -11,25 +11,35 @@ class VolunteerDashboardScreen extends ConsumerStatefulWidget {
   const VolunteerDashboardScreen({super.key});
 
   @override
-  ConsumerState<VolunteerDashboardScreen> createState() => _VolunteerDashboardScreenState();
+  ConsumerState<VolunteerDashboardScreen> createState() =>
+      _VolunteerDashboardScreenState();
 }
 
-class _VolunteerDashboardScreenState extends ConsumerState<VolunteerDashboardScreen>
+class _VolunteerDashboardScreenState
+    extends ConsumerState<VolunteerDashboardScreen>
     with SingleTickerProviderStateMixin {
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
+  late Animation<Offset> _slideAnimation;
 
   @override
   void initState() {
     super.initState();
     _animationController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 800),
+      duration: const Duration(milliseconds: 1000),
     );
     _fadeAnimation = CurvedAnimation(
       parent: _animationController,
       curve: Curves.easeInOut,
     );
+    _slideAnimation = Tween<Offset>(
+      begin: const Offset(0, 0.1),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(
+      parent: _animationController,
+      curve: Curves.easeOutCubic,
+    ));
     _animationController.forward();
   }
 
@@ -41,337 +51,433 @@ class _VolunteerDashboardScreenState extends ConsumerState<VolunteerDashboardScr
 
   @override
   Widget build(BuildContext context) {
-    final AppUser? user = ref.watch(userStateProvider);
-    // Watch the new filtered provider to get the list of tasks to display.
-    final tasks = ref.watch(filteredTaskListProvider);
+    // Watch the authStateChangesProvider to get live Firebase user data
+    final authState = ref.watch(authStateChangesProvider);
     final textTheme = Theme.of(context).textTheme;
 
-    // Extract user name from email or use default
-    String userName = user?.email?.split('@').first ?? 'Volunteer';
-    userName = userName.substring(0, 1).toUpperCase() + userName.substring(1);
+    return authState.when(
+      loading: () => const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      ),
+      error: (err, stack) => Scaffold(
+        body: Center(child: Text('Error: $err')),
+      ),
+      data: (user) {
+        // Extract user name from email or use default
+        String userName = user?.email?.split('@').first ?? 'Volunteer';
+        if (userName.isNotEmpty) {
+          userName = userName.substring(0, 1).toUpperCase() + userName.substring(1);
+        }
 
-    // Get task statistics
-    final allTasks = ref.watch(taskListProvider);
-    final pendingCount = allTasks.where((t) => t.status == 'pending').length;
-    final activeCount = allTasks.where((t) => t.status == 'active').length;
-    final completedCount = allTasks.where((t) => t.status == 'completed').length;
+        // Watch the filtered provider to get the list of tasks to display
+        final tasks = ref.watch(filteredTaskListProvider);
 
-    return Scaffold(
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Colors.red.shade700,
-              Colors.red.shade600,
-              AppColors.background,
-            ],
-            stops: const [0.0, 0.25, 0.25],
-          ),
-        ),
-        child: SafeArea(
-          child: FadeTransition(
-            opacity: _fadeAnimation,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Custom App Bar
-                Padding(
-                  padding: const EdgeInsets.all(AppPadding.medium),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        // Get task statistics
+        final allTasks = ref.watch(taskListProvider);
+        final pendingCount = allTasks.where((t) => t.status == 'pending').length;
+        final activeCount = allTasks.where((t) => t.status == 'active').length;
+        final completedCount = allTasks.where((t) => t.status == 'completed').length;
+
+        return Scaffold(
+          body: Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  Colors.red.shade700,
+                  Colors.red.shade600,
+                  Colors.grey[50]!,
+                ],
+                stops: const [0.0, 0.25, 0.25],
+              ),
+            ),
+            child: SafeArea(
+              child: FadeTransition(
+                opacity: _fadeAnimation,
+                child: SlideTransition(
+                  position: _slideAnimation,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Logo/App Name with badge
-                      Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(AppPadding.small),
-                            decoration: BoxDecoration(
-                              color: AppColors.onPrimary.withOpacity(0.2),
-                              borderRadius: BorderRadius.circular(AppBorderRadius.medium),
+                      // Custom App Bar
+                      Padding(
+                        padding: const EdgeInsets.all(AppPadding.large),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            // Logo/App Name with badge
+                            Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(AppPadding.small + 2),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.onPrimary.withOpacity(0.25),
+                                    borderRadius: BorderRadius.circular(AppBorderRadius.medium),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black.withOpacity(0.1),
+                                        blurRadius: 8,
+                                        offset: const Offset(0, 2),
+                                      ),
+                                    ],
+                                  ),
+                                  child: const Icon(
+                                    Icons.health_and_safety,
+                                    color: AppColors.onPrimary,
+                                    size: 26,
+                                  ),
+                                ),
+                                const SizedBox(width: AppPadding.medium),
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'RescueTN',
+                                      style: textTheme.titleLarge?.copyWith(
+                                        color: AppColors.onPrimary,
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 22,
+                                        letterSpacing: 0.5,
+                                      ),
+                                    ),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: AppPadding.small + 2,
+                                        vertical: 3,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: AppColors.accent,
+                                        borderRadius: BorderRadius.circular(AppBorderRadius.small),
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: Colors.black.withOpacity(0.15),
+                                            blurRadius: 4,
+                                            offset: const Offset(0, 2),
+                                          ),
+                                        ],
+                                      ),
+                                      child: Text(
+                                        'VOLUNTEER',
+                                        style: textTheme.labelSmall?.copyWith(
+                                          color: AppColors.onAccent,
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 10,
+                                          letterSpacing: 0.5,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
                             ),
-                            child: const Icon(
-                              Icons.health_and_safety,
-                              color: AppColors.onPrimary,
-                              size: 24,
+                            // Profile Button
+                            Container(
+                              decoration: BoxDecoration(
+                                color: AppColors.onPrimary.withOpacity(0.25),
+                                borderRadius: BorderRadius.circular(AppBorderRadius.medium),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withOpacity(0.1),
+                                    blurRadius: 8,
+                                    offset: const Offset(0, 2),
+                                  ),
+                                ],
+                              ),
+                              child: IconButton(
+                                icon: const Icon(Icons.person_outline),
+                                color: AppColors.onPrimary,
+                                tooltip: 'Profile',
+                                onPressed: () => context.go('/profile'),
+                              ),
                             ),
-                          ),
-                          const SizedBox(width: AppPadding.small),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'RescueTN',
-                                style: textTheme.titleLarge?.copyWith(
-                                  color: AppColors.onPrimary,
-                                  fontWeight: FontWeight.bold,
+                          ],
+                        ),
+                      ),
+
+                      // Welcome Card
+                      Container(
+                        margin: const EdgeInsets.symmetric(
+                          horizontal: AppPadding.large,
+                          vertical: AppPadding.small,
+                        ),
+                        padding: const EdgeInsets.all(AppPadding.large),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(20),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.red.withOpacity(0.15),
+                              blurRadius: 25,
+                              offset: const Offset(0, 8),
+                              spreadRadius: 0,
+                            ),
+                          ],
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(AppPadding.medium + 2),
+                                  decoration: BoxDecoration(
+                                    gradient: LinearGradient(
+                                      colors: [Colors.red.shade500, Colors.red.shade700],
+                                      begin: Alignment.topLeft,
+                                      end: Alignment.bottomRight,
+                                    ),
+                                    borderRadius: BorderRadius.circular(AppBorderRadius.large),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.red.withOpacity(0.4),
+                                        blurRadius: 12,
+                                        offset: const Offset(0, 4),
+                                      ),
+                                    ],
+                                  ),
+                                  child: const Icon(
+                                    Icons.volunteer_activism,
+                                    color: AppColors.onPrimary,
+                                    size: 32,
+                                  ),
+                                ),
+                                const SizedBox(width: AppPadding.medium + 4),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        'Welcome back,',
+                                        style: textTheme.bodyMedium?.copyWith(
+                                          color: AppColors.textSecondary,
+                                          fontSize: 14,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 2),
+                                      Text(
+                                        userName,
+                                        style: textTheme.headlineSmall?.copyWith(
+                                          fontWeight: FontWeight.bold,
+                                          color: AppColors.textPrimary,
+                                          fontSize: 24,
+                                          letterSpacing: 0.3,
+                                        ),
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: AppPadding.large),
+
+                            // Statistics Row
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: _buildStatCard(
+                                    label: 'Pending',
+                                    count: pendingCount,
+                                    color: Colors.orange.shade600,
+                                    icon: Icons.pending_actions,
+                                  ),
+                                ),
+                                const SizedBox(width: AppPadding.medium),
+                                Expanded(
+                                  child: _buildStatCard(
+                                    label: 'Active',
+                                    count: activeCount,
+                                    color: Colors.blue.shade600,
+                                    icon: Icons.work_outline,
+                                  ),
+                                ),
+                                const SizedBox(width: AppPadding.medium),
+                                Expanded(
+                                  child: _buildStatCard(
+                                    label: 'Done',
+                                    count: completedCount,
+                                    color: Colors.green.shade600,
+                                    icon: Icons.check_circle_outline,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      const SizedBox(height: AppPadding.large),
+
+                      // Filter Section
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: AppPadding.large),
+                        child: Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: AppColors.primary.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: const Icon(
+                                Icons.filter_list,
+                                color: AppColors.primary,
+                                size: 20,
+                              ),
+                            ),
+                            const SizedBox(width: AppPadding.medium),
+                            Text(
+                              'Filter Tasks',
+                              style: textTheme.titleMedium?.copyWith(
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.textPrimary,
+                                fontSize: 18,
+                                letterSpacing: 0.3,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: AppPadding.medium),
+
+                      // Filter Chips
+                      _buildFilterChips(context, ref),
+
+                      const SizedBox(height: AppPadding.large),
+
+                      // Task List Header
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: AppPadding.large),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    color: Colors.red.withOpacity(0.1),
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  child: const Icon(
+                                    Icons.assignment,
+                                    color: Colors.red,
+                                    size: 20,
+                                  ),
+                                ),
+                                const SizedBox(width: AppPadding.medium),
+                                Text(
+                                  'Assigned Tasks',
+                                  style: textTheme.titleLarge?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                    color: AppColors.textPrimary,
+                                    fontSize: 22,
+                                    letterSpacing: 0.3,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: AppPadding.medium,
+                                vertical: AppPadding.small,
+                              ),
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  colors: [
+                                    Colors.red.shade100,
+                                    Colors.red.shade50,
+                                  ],
+                                ),
+                                borderRadius: BorderRadius.circular(AppBorderRadius.medium),
+                                border: Border.all(
+                                  color: Colors.red.shade200,
+                                  width: 1.5,
                                 ),
                               ),
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: AppPadding.small,
-                                  vertical: 2,
+                              child: Text(
+                                '${tasks.length}',
+                                style: textTheme.labelLarge?.copyWith(
+                                  color: Colors.red.shade700,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
                                 ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      const SizedBox(height: AppPadding.medium),
+
+                      // Task List Section
+                      Expanded(
+                        child: tasks.isEmpty
+                            ? Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(AppPadding.xLarge),
                                 decoration: BoxDecoration(
-                                  color: AppColors.accent,
-                                  borderRadius: BorderRadius.circular(AppBorderRadius.small),
+                                  color: Colors.red.withOpacity(0.1),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: Icon(
+                                  Icons.task_alt,
+                                  size: 72,
+                                  color: Colors.red.withOpacity(0.5),
+                                ),
+                              ),
+                              const SizedBox(height: AppPadding.large),
+                              Text(
+                                'No tasks found',
+                                style: textTheme.titleLarge?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                  color: AppColors.textPrimary,
+                                  fontSize: 22,
+                                ),
+                              ),
+                              const SizedBox(height: AppPadding.small),
+                              Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: AppPadding.xLarge,
                                 ),
                                 child: Text(
-                                  'VOLUNTEER',
-                                  style: textTheme.labelSmall?.copyWith(
-                                    color: AppColors.onAccent,
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 10,
+                                  'No tasks match the current filter. Try selecting a different filter.',
+                                  textAlign: TextAlign.center,
+                                  style: textTheme.bodyMedium?.copyWith(
+                                    color: AppColors.textSecondary,
+                                    fontSize: 15,
                                   ),
                                 ),
                               ),
                             ],
                           ),
-                        ],
-                      ),
-                      // Profile Button
-                      Container(
-                        decoration: BoxDecoration(
-                          color: AppColors.onPrimary.withOpacity(0.2),
-                          borderRadius: BorderRadius.circular(AppBorderRadius.medium),
-                        ),
-                        child: IconButton(
-                          icon: const Icon(Icons.person_outline),
-                          color: AppColors.onPrimary,
-                          tooltip: 'Profile',
-                          onPressed: () => context.go('/profile'),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-
-                // Welcome Card
-                Container(
-                  margin: const EdgeInsets.symmetric(
-                    horizontal: AppPadding.medium,
-                    vertical: AppPadding.small,
-                  ),
-                  padding: const EdgeInsets.all(AppPadding.large),
-                  decoration: BoxDecoration(
-                    color: AppColors.surface,
-                    borderRadius: BorderRadius.circular(AppPadding.medium + AppPadding.small),
-                    boxShadow: [
-                      BoxShadow(
-                        color: AppColors.textPrimary.withOpacity(0.1),
-                        blurRadius: 20,
-                        offset: const Offset(0, 8),
-                      ),
-                    ],
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(AppPadding.medium),
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                colors: [Colors.red.shade400, Colors.red.shade600],
-                              ),
-                              borderRadius: BorderRadius.circular(AppBorderRadius.large),
-                            ),
-                            child: const Icon(
-                              Icons.volunteer_activism,
-                              color: AppColors.onPrimary,
-                              size: 28,
-                            ),
-                          ),
-                          const SizedBox(width: AppPadding.medium),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Welcome back,',
-                                  style: textTheme.bodyMedium?.copyWith(
-                                    color: AppColors.textSecondary,
-                                  ),
-                                ),
-                                Text(
-                                  userName,
-                                  style: textTheme.headlineSmall?.copyWith(
-                                    fontWeight: FontWeight.bold,
-                                    color: AppColors.textPrimary,
-                                  ),
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: AppPadding.medium + AppPadding.small),
-
-                      // Statistics Row
-                      Row(
-                        children: [
-                          Expanded(
-                            child: _buildStatCard(
-                              label: 'Pending',
-                              count: pendingCount,
-                              color: Colors.orange,
-                              icon: Icons.pending_actions,
-                            ),
-                          ),
-                          const SizedBox(width: AppPadding.small),
-                          Expanded(
-                            child: _buildStatCard(
-                              label: 'Active',
-                              count: activeCount,
-                              color: Colors.blue,
-                              icon: Icons.work_outline,
-                            ),
-                          ),
-                          const SizedBox(width: AppPadding.small),
-                          Expanded(
-                            child: _buildStatCard(
-                              label: 'Done',
-                              count: completedCount,
-                              color: Colors.green,
-                              icon: Icons.check_circle_outline,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-
-                const SizedBox(height: AppPadding.medium),
-
-                // Filter Section
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: AppPadding.medium),
-                  child: Row(
-                    children: [
-                      Icon(
-                        Icons.filter_list,
-                        color: AppColors.primary,
-                        size: 20,
-                      ),
-                      const SizedBox(width: AppPadding.small),
-                      Text(
-                        'Filter Tasks',
-                        style: textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.textPrimary,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: AppPadding.small),
-
-                // Filter Chips
-                _buildFilterChips(context, ref),
-
-                const SizedBox(height: AppPadding.medium),
-
-                // Task List Header
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: AppPadding.medium),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        'Your Assigned Tasks',
-                        style: textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.textPrimary,
-                        ),
-                      ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: AppPadding.small + 4,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: AppColors.primary.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(AppBorderRadius.small + 4),
-                        ),
-                        child: Text(
-                          '${tasks.length}',
-                          style: textTheme.labelLarge?.copyWith(
-                            color: AppColors.primary,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-
-                const SizedBox(height: AppPadding.small),
-
-                // Task List Section
-                Expanded(
-                  child: tasks.isEmpty
-                      ? Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Container(
+                        )
+                            : ListView.builder(
                           padding: const EdgeInsets.all(AppPadding.large),
-                          decoration: BoxDecoration(
-                            color: AppColors.primary.withOpacity(0.1),
-                            shape: BoxShape.circle,
-                          ),
-                          child: Icon(
-                            Icons.task_alt,
-                            size: 64,
-                            color: AppColors.primary.withOpacity(0.5),
-                          ),
+                          physics: const BouncingScrollPhysics(),
+                          itemCount: tasks.length,
+                          itemBuilder: (context, index) {
+                            return Padding(
+                              padding: const EdgeInsets.only(
+                                bottom: AppPadding.medium + 4,
+                              ),
+                              child: TaskCard(task: tasks[index]),
+                            );
+                          },
                         ),
-                        const SizedBox(height: AppPadding.large),
-                        Text(
-                          'No tasks found',
-                          style: textTheme.titleLarge?.copyWith(
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.textPrimary,
-                          ),
-                        ),
-                        const SizedBox(height: AppPadding.small),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: AppPadding.xLarge,
-                          ),
-                          child: Text(
-                            'No tasks match the current filter. Try selecting a different filter.',
-                            textAlign: TextAlign.center,
-                            style: textTheme.bodyMedium?.copyWith(
-                              color: AppColors.textSecondary,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  )
-                      : ListView.builder(
-                    padding: const EdgeInsets.all(AppPadding.medium),
-                    itemCount: tasks.length,
-                    itemBuilder: (context, index) {
-                      return Padding(
-                        padding: const EdgeInsets.only(
-                          bottom: AppPadding.medium,
-                        ),
-                        child: TaskCard(task: tasks[index]),
-                      );
-                    },
+                      ),
+                    ],
                   ),
                 ),
-              ],
+              ),
             ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 
@@ -383,36 +489,60 @@ class _VolunteerDashboardScreenState extends ConsumerState<VolunteerDashboardScr
   }) {
     return Container(
       padding: const EdgeInsets.symmetric(
-        vertical: AppPadding.small + 4,
+        vertical: AppPadding.medium,
         horizontal: AppPadding.small,
       ),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(AppBorderRadius.medium),
+        gradient: LinearGradient(
+          colors: [
+            color.withOpacity(0.1),
+            color.withOpacity(0.05),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(AppBorderRadius.medium + 2),
         border: Border.all(
           color: color.withOpacity(0.3),
+          width: 1.5,
         ),
+        boxShadow: [
+          BoxShadow(
+            color: color.withOpacity(0.1),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Column(
         children: [
-          Icon(
-            icon,
-            color: color,
-            size: 20,
+          Container(
+            padding: const EdgeInsets.all(6),
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.15),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              icon,
+              color: color,
+              size: 22,
+            ),
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 8),
           Text(
             count.toString(),
             style: TextStyle(
-              fontSize: 20,
+              fontSize: 24,
               fontWeight: FontWeight.bold,
               color: color,
+              letterSpacing: -0.5,
             ),
           ),
+          const SizedBox(height: 2),
           Text(
             label,
             style: TextStyle(
-              fontSize: 11,
+              fontSize: 12,
               color: AppColors.textSecondary,
               fontWeight: FontWeight.w600,
             ),
@@ -428,10 +558,11 @@ class _VolunteerDashboardScreenState extends ConsumerState<VolunteerDashboardScr
     final currentFilter = ref.watch(taskFilterProvider);
 
     return SizedBox(
-      height: 50,
+      height: 52,
       child: ListView(
         scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: AppPadding.medium),
+        padding: const EdgeInsets.symmetric(horizontal: AppPadding.large),
+        physics: const BouncingScrollPhysics(),
         children: TaskFilter.values.map((filter) {
           final isSelected = filter == currentFilter;
 
@@ -445,15 +576,15 @@ class _VolunteerDashboardScreenState extends ConsumerState<VolunteerDashboardScr
               break;
             case TaskFilter.pending:
               filterIcon = Icons.pending_actions;
-              filterColor = Colors.orange;
+              filterColor = Colors.orange.shade600;
               break;
             case TaskFilter.inProgress:
               filterIcon = Icons.work;
-              filterColor = Colors.blue;
+              filterColor = Colors.blue.shade600;
               break;
             case TaskFilter.completed:
               filterIcon = Icons.check_circle;
-              filterColor = Colors.green;
+              filterColor = Colors.green.shade600;
               break;
             default:
               filterIcon = Icons.filter_list;
@@ -461,22 +592,24 @@ class _VolunteerDashboardScreenState extends ConsumerState<VolunteerDashboardScr
           }
 
           return Padding(
-            padding: const EdgeInsets.only(right: AppPadding.small),
+            padding: const EdgeInsets.only(right: AppPadding.medium),
             child: FilterChip(
               label: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Icon(
                     filterIcon,
-                    size: 16,
+                    size: 18,
                     color: isSelected ? AppColors.onPrimary : filterColor,
                   ),
-                  const SizedBox(width: AppPadding.small),
+                  const SizedBox(width: AppPadding.small + 2),
                   Text(
                     filter.name[0].toUpperCase() + filter.name.substring(1),
                     style: TextStyle(
                       fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
                       color: isSelected ? AppColors.onPrimary : AppColors.textPrimary,
+                      fontSize: 14,
+                      letterSpacing: 0.3,
                     ),
                   ),
                 ],
@@ -488,17 +621,19 @@ class _VolunteerDashboardScreenState extends ConsumerState<VolunteerDashboardScr
                   ref.read(taskFilterProvider.notifier).state = filter;
                 }
               },
-              backgroundColor: AppColors.surface,
+              backgroundColor: Colors.white,
               selectedColor: filterColor,
               checkmarkColor: AppColors.onPrimary,
               side: BorderSide(
                 color: isSelected ? filterColor : AppColors.textSecondary.withOpacity(0.2),
-                width: isSelected ? 2 : 1,
+                width: isSelected ? 2 : 1.5,
               ),
               padding: const EdgeInsets.symmetric(
-                horizontal: AppPadding.medium,
-                vertical: AppPadding.small,
+                horizontal: AppPadding.medium + 2,
+                vertical: AppPadding.small + 2,
               ),
+              elevation: isSelected ? 4 : 0,
+              shadowColor: filterColor.withOpacity(0.3),
             ),
           );
         }).toList(),

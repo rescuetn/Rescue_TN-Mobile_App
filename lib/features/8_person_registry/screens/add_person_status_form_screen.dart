@@ -3,8 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:rescuetn/app/constants.dart';
 import 'package:rescuetn/common_widgets/custom_button.dart';
+import 'package:rescuetn/core/services/database_service.dart';
 import 'package:rescuetn/features/1_auth/providers/auth_provider.dart';
-import 'package:rescuetn/features/8_person_registry/providers/person_status_provider.dart';
 import 'package:rescuetn/models/person_status_model.dart';
 
 class AddPersonStatusScreen extends ConsumerStatefulWidget {
@@ -85,33 +85,40 @@ class _AddPersonStatusScreenState extends ConsumerState<AddPersonStatusScreen>
     }
   }
 
+  // UPDATED METHOD FOR LIVE FIREBASE
   Future<void> _submitReport() async {
     if (_formKey.currentState!.validate()) {
       setState(() => _isLoading = true);
 
       try {
-        final user = ref.read(userStateProvider);
+        // 1. Get the current user from the live auth provider
+        final user = ref.read(authStateChangesProvider).value;
+        if (user == null) {
+          throw Exception('You must be logged in to submit a report.');
+        }
+
+        // 2. Create the PersonStatus object with all necessary data
         final newPerson = PersonStatus(
-          id: DateTime.now().millisecondsSinceEpoch.toString(),
           name: _nameController.text.trim(),
           age: int.parse(_ageController.text),
           lastKnownLocation: _locationController.text.trim(),
           status: _selectedStatus,
-          submittedBy: user?.email ?? 'anonymous',
+          submittedBy: user.uid, // Use the user's unique ID
+          timestamp: DateTime.now(),
         );
 
-        ref.read(personStatusProvider.notifier).addPerson(newPerson);
+        // 3. Call the database service to save the report to Firestore
+        await ref.read(databaseServiceProvider).addPersonStatus(newPerson);
 
-        // Show success message
+        // Show success message and navigate back
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Row(
+              content: const Row(
                 children: [
-                  Icon(Icons.check_circle_outline,
-                      color: Colors.white),
-                  const SizedBox(width: 12),
-                  const Expanded(
+                  Icon(Icons.check_circle_outline, color: Colors.white),
+                  SizedBox(width: 12),
+                  Expanded(
                     child: Text(
                       'Person status reported successfully!',
                       style: TextStyle(color: Colors.white),
@@ -127,9 +134,9 @@ class _AddPersonStatusScreenState extends ConsumerState<AddPersonStatusScreen>
               margin: const EdgeInsets.all(16),
             ),
           );
+          // Use GoRouter's pop for correct navigation
+          context.pop();
         }
-
-        context.pop();
       } catch (e) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -190,7 +197,7 @@ class _AddPersonStatusScreenState extends ConsumerState<AddPersonStatusScreen>
                 child: Row(
                   children: [
                     Hero(
-                      tag: 'back_button',
+                      tag: 'back_button_person_status', // Unique tag
                       child: Material(
                         color: Colors.transparent,
                         child: Container(
@@ -205,7 +212,7 @@ class _AddPersonStatusScreenState extends ConsumerState<AddPersonStatusScreen>
                           child: IconButton(
                             icon: const Icon(Icons.arrow_back_rounded,
                                 color: Colors.white),
-                            onPressed: () => Navigator.of(context).pop(),
+                            onPressed: () => context.pop(), // Use context.pop()
                           ),
                         ),
                       ),
@@ -485,7 +492,7 @@ class _AddPersonStatusScreenState extends ConsumerState<AddPersonStatusScreen>
               const SizedBox(height: 2),
               Text(
                 subtitle,
-                style: TextStyle(
+                style: const TextStyle(
                   fontSize: 12,
                   color: AppColors.textSecondary,
                 ),
@@ -646,7 +653,7 @@ class _AddPersonStatusScreenState extends ConsumerState<AddPersonStatusScreen>
                   const SizedBox(height: 4),
                   Text(
                     description,
-                    style: TextStyle(
+                    style: const TextStyle(
                       fontSize: 13,
                       color: AppColors.textSecondary,
                     ),
