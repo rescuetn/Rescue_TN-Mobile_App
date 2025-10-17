@@ -5,7 +5,7 @@ import 'package:rescuetn/app/constants.dart';
 import 'package:rescuetn/features/1_auth/providers/auth_provider.dart';
 import 'package:rescuetn/features/5_task_management/providers/task_data_provider.dart';
 import 'package:rescuetn/features/5_task_management/widgets/task_card.dart';
-import 'package:rescuetn/models/user_model.dart';
+import 'package:rescuetn/models/task_model.dart';
 
 class VolunteerDashboardScreen extends ConsumerStatefulWidget {
   const VolunteerDashboardScreen({super.key});
@@ -51,59 +51,46 @@ class _VolunteerDashboardScreenState
 
   @override
   Widget build(BuildContext context) {
-    // Watch the authStateChangesProvider to get live Firebase user data
+    // Watch the live providers for auth, filtered tasks, and all tasks
     final authState = ref.watch(authStateChangesProvider);
+    final filteredTasksAsync = ref.watch(filteredTasksProvider);
+    final allTasksAsync = ref.watch(tasksStreamProvider);
     final textTheme = Theme.of(context).textTheme;
 
-    return authState.when(
-      loading: () => const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      ),
-      error: (err, stack) => Scaffold(
-        body: Center(child: Text('Error: $err')),
-      ),
-      data: (user) {
-        // Extract user name from email or use default
-        String userName = user?.email?.split('@').first ?? 'Volunteer';
-        if (userName.isNotEmpty) {
-          userName = userName.substring(0, 1).toUpperCase() + userName.substring(1);
-        }
+    return Scaffold(
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              Colors.red.shade700,
+              Colors.red.shade600,
+              Colors.grey[50]!,
+            ],
+            stops: const [0.0, 0.25, 0.25],
+          ),
+        ),
+        child: SafeArea(
+          child: FadeTransition(
+            opacity: _fadeAnimation,
+            child: SlideTransition(
+              position: _slideAnimation,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Custom App Bar
+                  Padding(
+                    padding: const EdgeInsets.all(AppPadding.large),
+                    child: authState.when(
+                      data: (user) {
+                        // Extract user name from email or use default
+                        String userName = user?.email?.split('@').first ?? 'Volunteer';
+                        if (userName.isNotEmpty) {
+                          userName = userName.substring(0, 1).toUpperCase() + userName.substring(1);
+                        }
 
-        // Watch the filtered provider to get the list of tasks to display
-        final tasks = ref.watch(filteredTaskListProvider);
-
-        // Get task statistics
-        final allTasks = ref.watch(taskListProvider);
-        final pendingCount = allTasks.where((t) => t.status == 'pending').length;
-        final activeCount = allTasks.where((t) => t.status == 'active').length;
-        final completedCount = allTasks.where((t) => t.status == 'completed').length;
-
-        return Scaffold(
-          body: Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  Colors.red.shade700,
-                  Colors.red.shade600,
-                  Colors.grey[50]!,
-                ],
-                stops: const [0.0, 0.25, 0.25],
-              ),
-            ),
-            child: SafeArea(
-              child: FadeTransition(
-                opacity: _fadeAnimation,
-                child: SlideTransition(
-                  position: _slideAnimation,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Custom App Bar
-                      Padding(
-                        padding: const EdgeInsets.all(AppPadding.large),
-                        child: Row(
+                        return Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             // Logo/App Name with badge
@@ -192,11 +179,27 @@ class _VolunteerDashboardScreenState
                               ),
                             ),
                           ],
-                        ),
-                      ),
+                        );
+                      },
+                      loading: () => const SizedBox.shrink(),
+                      error: (e, s) => const Text('Error loading user', style: TextStyle(color: Colors.white)),
+                    ),
+                  ),
 
-                      // Welcome Card
-                      Container(
+                  // Welcome Card with Statistics
+                  allTasksAsync.when(
+                    data: (allTasks) {
+                      final pendingCount = allTasks.where((t) => t.status == TaskStatus.pending).length;
+                      final activeCount = allTasks.where((t) => t.status == TaskStatus.inProgress || t.status == TaskStatus.accepted).length;
+                      final completedCount = allTasks.where((t) => t.status == TaskStatus.completed).length;
+
+                      // Get user name
+                      final userName = authState.value?.email?.split('@').first ?? 'Volunteer';
+                      final formattedUserName = userName.isNotEmpty
+                          ? userName.substring(0, 1).toUpperCase() + userName.substring(1)
+                          : 'Volunteer';
+
+                      return Container(
                         margin: const EdgeInsets.symmetric(
                           horizontal: AppPadding.large,
                           vertical: AppPadding.small,
@@ -256,7 +259,7 @@ class _VolunteerDashboardScreenState
                                       ),
                                       const SizedBox(height: 2),
                                       Text(
-                                        userName,
+                                        formattedUserName,
                                         style: textTheme.headlineSmall?.copyWith(
                                           fontWeight: FontWeight.bold,
                                           color: AppColors.textPrimary,
@@ -305,179 +308,238 @@ class _VolunteerDashboardScreenState
                             ),
                           ],
                         ),
+                      );
+                    },
+                    loading: () => Container(
+                      margin: const EdgeInsets.symmetric(horizontal: AppPadding.large, vertical: AppPadding.small),
+                      padding: const EdgeInsets.all(AppPadding.large),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(20),
                       ),
+                      child: const Center(
+                        child: CircularProgressIndicator(color: AppColors.primary),
+                      ),
+                    ),
+                    error: (e, s) => Container(
+                      margin: const EdgeInsets.symmetric(horizontal: AppPadding.large, vertical: AppPadding.small),
+                      padding: const EdgeInsets.all(AppPadding.large),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: const Center(
+                        child: Text('Error loading stats', style: TextStyle(color: AppColors.error)),
+                      ),
+                    ),
+                  ),
 
-                      const SizedBox(height: AppPadding.large),
+                  const SizedBox(height: AppPadding.large),
 
-                      // Filter Section
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: AppPadding.large),
-                        child: Row(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(8),
-                              decoration: BoxDecoration(
-                                color: AppColors.primary.withOpacity(0.1),
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              child: const Icon(
-                                Icons.filter_list,
-                                color: AppColors.primary,
-                                size: 20,
-                              ),
-                            ),
-                            const SizedBox(width: AppPadding.medium),
-                            Text(
-                              'Filter Tasks',
-                              style: textTheme.titleMedium?.copyWith(
-                                fontWeight: FontWeight.bold,
-                                color: AppColors.textPrimary,
-                                fontSize: 18,
-                                letterSpacing: 0.3,
-                              ),
-                            ),
-                          ],
+                  // Filter Section
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: AppPadding.large),
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: AppColors.primary.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: const Icon(
+                            Icons.filter_list,
+                            color: AppColors.primary,
+                            size: 20,
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: AppPadding.medium),
-
-                      // Filter Chips
-                      _buildFilterChips(context, ref),
-
-                      const SizedBox(height: AppPadding.large),
-
-                      // Task List Header
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: AppPadding.large),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Row(
-                              children: [
-                                Container(
-                                  padding: const EdgeInsets.all(8),
-                                  decoration: BoxDecoration(
-                                    color: Colors.red.withOpacity(0.1),
-                                    borderRadius: BorderRadius.circular(10),
-                                  ),
-                                  child: const Icon(
-                                    Icons.assignment,
-                                    color: Colors.red,
-                                    size: 20,
-                                  ),
-                                ),
-                                const SizedBox(width: AppPadding.medium),
-                                Text(
-                                  'Assigned Tasks',
-                                  style: textTheme.titleLarge?.copyWith(
-                                    fontWeight: FontWeight.bold,
-                                    color: AppColors.textPrimary,
-                                    fontSize: 22,
-                                    letterSpacing: 0.3,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: AppPadding.medium,
-                                vertical: AppPadding.small,
-                              ),
-                              decoration: BoxDecoration(
-                                gradient: LinearGradient(
-                                  colors: [
-                                    Colors.red.shade100,
-                                    Colors.red.shade50,
-                                  ],
-                                ),
-                                borderRadius: BorderRadius.circular(AppBorderRadius.medium),
-                                border: Border.all(
-                                  color: Colors.red.shade200,
-                                  width: 1.5,
-                                ),
-                              ),
-                              child: Text(
-                                '${tasks.length}',
-                                style: textTheme.labelLarge?.copyWith(
-                                  color: Colors.red.shade700,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 16,
-                                ),
-                              ),
-                            ),
-                          ],
+                        const SizedBox(width: AppPadding.medium),
+                        Text(
+                          'Filter Tasks',
+                          style: textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.textPrimary,
+                            fontSize: 18,
+                            letterSpacing: 0.3,
+                          ),
                         ),
-                      ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: AppPadding.medium),
 
-                      const SizedBox(height: AppPadding.medium),
+                  // Filter Chips
+                  _buildFilterChips(context, ref),
 
-                      // Task List Section
-                      Expanded(
-                        child: tasks.isEmpty
-                            ? Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
+                  const SizedBox(height: AppPadding.large),
+
+                  // Task List Header
+                  filteredTasksAsync.when(
+                    data: (tasks) => Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: AppPadding.large),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Row(
                             children: [
                               Container(
-                                padding: const EdgeInsets.all(AppPadding.xLarge),
+                                padding: const EdgeInsets.all(8),
                                 decoration: BoxDecoration(
                                   color: Colors.red.withOpacity(0.1),
-                                  shape: BoxShape.circle,
+                                  borderRadius: BorderRadius.circular(10),
                                 ),
-                                child: Icon(
-                                  Icons.task_alt,
-                                  size: 72,
-                                  color: Colors.red.withOpacity(0.5),
+                                child: const Icon(
+                                  Icons.assignment,
+                                  color: Colors.red,
+                                  size: 20,
                                 ),
                               ),
-                              const SizedBox(height: AppPadding.large),
+                              const SizedBox(width: AppPadding.medium),
                               Text(
-                                'No tasks found',
+                                'Assigned Tasks',
                                 style: textTheme.titleLarge?.copyWith(
                                   fontWeight: FontWeight.bold,
                                   color: AppColors.textPrimary,
                                   fontSize: 22,
-                                ),
-                              ),
-                              const SizedBox(height: AppPadding.small),
-                              Padding(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: AppPadding.xLarge,
-                                ),
-                                child: Text(
-                                  'No tasks match the current filter. Try selecting a different filter.',
-                                  textAlign: TextAlign.center,
-                                  style: textTheme.bodyMedium?.copyWith(
-                                    color: AppColors.textSecondary,
-                                    fontSize: 15,
-                                  ),
+                                  letterSpacing: 0.3,
                                 ),
                               ),
                             ],
                           ),
-                        )
-                            : ListView.builder(
-                          padding: const EdgeInsets.all(AppPadding.large),
-                          physics: const BouncingScrollPhysics(),
-                          itemCount: tasks.length,
-                          itemBuilder: (context, index) {
-                            return Padding(
-                              padding: const EdgeInsets.only(
-                                bottom: AppPadding.medium + 4,
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: AppPadding.medium,
+                              vertical: AppPadding.small,
+                            ),
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: [
+                                  Colors.red.shade100,
+                                  Colors.red.shade50,
+                                ],
                               ),
-                              child: TaskCard(task: tasks[index]),
-                            );
-                          },
+                              borderRadius: BorderRadius.circular(AppBorderRadius.medium),
+                              border: Border.all(
+                                color: Colors.red.shade200,
+                                width: 1.5,
+                              ),
+                            ),
+                            child: Text(
+                              '${tasks.length}',
+                              style: textTheme.labelLarge?.copyWith(
+                                color: Colors.red.shade700,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    loading: () => const SizedBox.shrink(),
+                    error: (e, s) => const SizedBox.shrink(),
+                  ),
+
+                  const SizedBox(height: AppPadding.medium),
+
+                  // Live Task List Section
+                  Expanded(
+                    child: filteredTasksAsync.when(
+                      loading: () => const Center(
+                        child: CircularProgressIndicator(color: AppColors.primary),
+                      ),
+                      error: (err, stack) => Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.error_outline,
+                              size: 64,
+                              color: AppColors.error.withOpacity(0.5),
+                            ),
+                            const SizedBox(height: AppPadding.medium),
+                            Text(
+                              'Failed to load tasks',
+                              style: textTheme.titleLarge?.copyWith(
+                                color: AppColors.textPrimary,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const SizedBox(height: AppPadding.small),
+                            Text(
+                              err.toString(),
+                              style: textTheme.bodyMedium?.copyWith(
+                                color: AppColors.textSecondary,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ],
                         ),
                       ),
-                    ],
+                      data: (tasks) => tasks.isEmpty
+                          ? Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(AppPadding.xLarge),
+                              decoration: BoxDecoration(
+                                color: Colors.red.withOpacity(0.1),
+                                shape: BoxShape.circle,
+                              ),
+                              child: Icon(
+                                Icons.task_alt,
+                                size: 72,
+                                color: Colors.red.withOpacity(0.5),
+                              ),
+                            ),
+                            const SizedBox(height: AppPadding.large),
+                            Text(
+                              'No tasks found',
+                              style: textTheme.titleLarge?.copyWith(
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.textPrimary,
+                                fontSize: 22,
+                              ),
+                            ),
+                            const SizedBox(height: AppPadding.small),
+                            Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: AppPadding.xLarge,
+                              ),
+                              child: Text(
+                                'No tasks match the current filter. Try selecting a different filter.',
+                                textAlign: TextAlign.center,
+                                style: textTheme.bodyMedium?.copyWith(
+                                  color: AppColors.textSecondary,
+                                  fontSize: 15,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      )
+                          : ListView.builder(
+                        padding: const EdgeInsets.all(AppPadding.large),
+                        physics: const BouncingScrollPhysics(),
+                        itemCount: tasks.length,
+                        itemBuilder: (context, index) {
+                          return Padding(
+                            padding: const EdgeInsets.only(
+                              bottom: AppPadding.medium + 4,
+                            ),
+                            child: TaskCard(task: tasks[index]),
+                          );
+                        },
+                      ),
+                    ),
                   ),
-                ),
+                ],
               ),
             ),
           ),
-        );
-      },
+        ),
+      ),
     );
   }
 
@@ -541,7 +603,7 @@ class _VolunteerDashboardScreenState
           const SizedBox(height: 2),
           Text(
             label,
-            style: TextStyle(
+            style: const TextStyle(
               fontSize: 12,
               color: AppColors.textSecondary,
               fontWeight: FontWeight.w600,

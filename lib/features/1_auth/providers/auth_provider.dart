@@ -7,31 +7,20 @@ import 'package:rescuetn/models/user_model.dart';
 /// Riverpod providers for handling authentication logic and state.
 /// This version is configured to use the LIVE Firebase backend.
 
-// 1. A provider for the raw FirebaseAuth instance.
-// This is required by the `FirebaseAuthService` to perform authentication operations.
+// Provider for the raw FirebaseAuth instance.
 final firebaseAuthProvider =
 Provider<auth.FirebaseAuth>((ref) => auth.FirebaseAuth.instance);
 
-// 2. Provider for the AuthService itself.
-// By providing FirebaseAuthService, the entire app will now use the real backend.
+// Provider for the AuthService itself, pointing to the live Firebase implementation.
 final authRepositoryProvider = Provider<AuthService>((ref) {
-  // The service can access other providers by using the 'ref' object.
   return FirebaseAuthService(ref);
 });
 
-/// 3. A StreamProvider that listens to the live authentication state from Firebase.
-///
-/// This is NOW THE ONLY source of truth for the user's login state. Any widget
-/// in the app can watch this provider to get the current user, as well as
-/// loading and error states, and will automatically rebuild when the state changes.
+/// A StreamProvider that listens to the live authentication state from Firebase.
+/// This is the single source of truth for the user's login state. The router
+/// watches this provider's ".stream" property to know when to refresh.
 final authStateChangesProvider = StreamProvider<AppUser?>((ref) {
   final authService = ref.watch(authRepositoryProvider);
   return authService.authStateChanges;
 });
-
-// The 'userStateProvider' has been removed. It was a useful tool for the
-// dummy/hardcoded system, but with a live stream from Firebase, it is no
-
-// longer necessary and creates a redundant source of state. The UI should
-// now watch 'authStateChangesProvider' directly.
 

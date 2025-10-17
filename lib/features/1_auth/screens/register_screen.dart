@@ -1,18 +1,22 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:rescuetn/app/constants.dart';
 import 'package:rescuetn/common_widgets/custom_button.dart';
+import 'package:rescuetn/features/1_auth/providers/auth_provider.dart';
+import 'package:rescuetn/models/user_model.dart';
 
 /// This screen is for setting up the user's profile AFTER phone OTP verification.
 /// It collects essential details like name and password to complete the account creation.
-class RegisterScreen extends StatefulWidget {
+class RegisterScreen extends ConsumerStatefulWidget {
   const RegisterScreen({super.key});
 
   @override
-  State<RegisterScreen> createState() => _RegisterScreenState();
+  ConsumerState<RegisterScreen> createState() => _RegisterScreenState();
 }
 
-class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProviderStateMixin {
+class _RegisterScreenState extends ConsumerState<RegisterScreen> with SingleTickerProviderStateMixin {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
@@ -24,6 +28,9 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
+
+  // State for the role selection
+  UserRole _selectedRole = UserRole.public;
 
   @override
   void initState() {
@@ -56,7 +63,7 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
     super.dispose();
   }
 
-  /// Validates the form and completes the profile setup.
+  /// Validates the form and completes the profile setup with Firebase.
   Future<void> _completeProfile() async {
     // Hide keyboard
     FocusScope.of(context).unfocus();
@@ -68,37 +75,85 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
 
     setState(() => _isLoading = true);
 
-    // TODO: Connect this to a provider to save the user's full profile data.
-    // For this demo, we'll simulate a network delay and then navigate.
-    await Future.delayed(const Duration(seconds: 1));
+    try {
+      // 1. Read the authentication service from the provider.
+      final authService = ref.read(authRepositoryProvider);
 
-    if (mounted) {
-      // Show success message
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Row(
-            children: [
-              const Icon(Icons.check_circle_outline, color: AppColors.onPrimary),
-              const SizedBox(width: AppPadding.small),
-              const Expanded(
-                child: Text(
-                  'Account created successfully!',
-                  style: TextStyle(color: AppColors.onPrimary),
-                ),
-              ),
-            ],
-          ),
-          backgroundColor: Colors.green.shade700,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppBorderRadius.medium),
-          ),
-          margin: const EdgeInsets.all(AppPadding.medium),
-        ),
+      // 2. Call the createUser method with email, password, and the selected role.
+      await authService.createUserWithEmailAndPassword(
+        email: _emailController.text.trim(),
+        password: _passwordController.text.trim(),
+        role: _selectedRole, // Pass the selected role
       );
 
-      // After successful registration, navigate to the home screen.
-      context.go('/home');
+      // 3. Navigation is now handled automatically!
+      // The authStateChangesProvider will detect the new user, and the router
+      // will automatically navigate to the home screen.
+
+    } on FirebaseAuthException catch (e) {
+      // Handle specific Firebase errors for better user feedback.
+      String errorMessage = 'An error occurred. Please try again.';
+      if (e.code == 'email-already-in-use') {
+        errorMessage = 'This email address is already registered.';
+      } else if (e.code == 'weak-password') {
+        errorMessage = 'The password is too weak.';
+      } else if (e.code == 'invalid-email') {
+        errorMessage = 'The email address is invalid.';
+      }
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.error_outline, color: AppColors.onPrimary),
+                const SizedBox(width: AppPadding.small),
+                Expanded(
+                  child: Text(
+                    errorMessage,
+                    style: const TextStyle(color: AppColors.onPrimary),
+                  ),
+                ),
+              ],
+            ),
+            backgroundColor: AppColors.error,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(AppBorderRadius.medium),
+            ),
+            margin: const EdgeInsets.all(AppPadding.medium),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.error_outline, color: AppColors.onPrimary),
+                const SizedBox(width: AppPadding.small),
+                const Expanded(
+                  child: Text(
+                    'An unexpected error occurred. Please try again.',
+                    style: TextStyle(color: AppColors.onPrimary),
+                  ),
+                ),
+              ],
+            ),
+            backgroundColor: AppColors.error,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(AppBorderRadius.medium),
+            ),
+            margin: const EdgeInsets.all(AppPadding.medium),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 
@@ -289,12 +344,15 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
                                     // --- Email Field ---
                                     _buildTextField(
                                       controller: _emailController,
-                                      label: 'Email Address (Optional)',
+                                      label: 'Email Address',
                                       hint: 'Enter your email',
                                       prefixIcon: Icons.email_outlined,
                                       keyboardType: TextInputType.emailAddress,
                                       validator: (value) {
-                                        if (value != null && value.isNotEmpty && !value.contains('@')) {
+                                        if (value == null || value.isEmpty) {
+                                          return 'Please enter your email';
+                                        }
+                                        if (!value.contains('@')) {
                                           return 'Please enter a valid email';
                                         }
                                         return null;
@@ -370,6 +428,84 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
                                       validator: (value) => value != _passwordController.text
                                           ? 'Passwords do not match'
                                           : null,
+                                    ),
+                                    const SizedBox(height: AppPadding.large),
+
+                                    // Role Section Divider
+                                    Row(
+                                      children: [
+                                        Container(
+                                          padding: const EdgeInsets.all(AppPadding.small),
+                                          decoration: BoxDecoration(
+                                            color: AppColors.accent.withOpacity(0.1),
+                                            borderRadius: BorderRadius.circular(AppBorderRadius.small),
+                                          ),
+                                          child: const Icon(
+                                            Icons.badge_outlined,
+                                            size: 18,
+                                            color: AppColors.accent,
+                                          ),
+                                        ),
+                                        const SizedBox(width: AppPadding.small),
+                                        Text(
+                                          'Account Type',
+                                          style: textTheme.titleSmall?.copyWith(
+                                            fontWeight: FontWeight.bold,
+                                            color: AppColors.textPrimary,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: AppPadding.large),
+
+                                    // --- Role Selection Dropdown ---
+                                    DropdownButtonFormField<UserRole>(
+                                      value: _selectedRole,
+                                      decoration: InputDecoration(
+                                        labelText: 'Register as',
+                                        hintText: 'Select your role',
+                                        labelStyle: const TextStyle(color: AppColors.textSecondary),
+                                        hintStyle: TextStyle(color: AppColors.textSecondary.withOpacity(0.6)),
+                                        prefixIcon: const Icon(Icons.badge_outlined, size: 22, color: AppColors.accent),
+                                        filled: true,
+                                        fillColor: AppColors.background.withOpacity(0.5),
+                                        border: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(AppBorderRadius.medium),
+                                          borderSide: BorderSide(color: AppColors.textSecondary.withOpacity(0.2)),
+                                        ),
+                                        enabledBorder: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(AppBorderRadius.medium),
+                                          borderSide: BorderSide(color: AppColors.textSecondary.withOpacity(0.2)),
+                                        ),
+                                        focusedBorder: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(AppBorderRadius.medium),
+                                          borderSide: const BorderSide(
+                                            color: AppColors.accent,
+                                            width: 2,
+                                          ),
+                                        ),
+                                        contentPadding: const EdgeInsets.symmetric(
+                                          horizontal: AppPadding.medium + AppPadding.small,
+                                          vertical: AppPadding.medium + 2,
+                                        ),
+                                      ),
+                                      items: UserRole.values.map((role) {
+                                        return DropdownMenuItem(
+                                          value: role,
+                                          child: Text(
+                                            role.name[0].toUpperCase() + role.name.substring(1),
+                                            style: const TextStyle(
+                                              fontSize: 15,
+                                              color: AppColors.textPrimary,
+                                            ),
+                                          ),
+                                        );
+                                      }).toList(),
+                                      onChanged: (value) {
+                                        if (value != null) {
+                                          setState(() => _selectedRole = value);
+                                        }
+                                      },
                                     ),
                                   ],
                                 ),

@@ -17,32 +17,19 @@ import 'package:rescuetn/features/8_person_registry/screens/person_registry_scre
 import 'package:rescuetn/features/9_heatmap/screens/heatmap_screen.dart';
 import 'package:rescuetn/models/user_model.dart';
 
-/// This provider creates and configures the GoRouter for the application.
-/// This version is connected to the LIVE Firebase authentication stream.
 final routerProvider = Provider<GoRouter>((ref) {
-  // We watch the authStateChangesProvider to get its current value for redirects.
   final authState = ref.watch(authStateChangesProvider);
 
   return GoRouter(
     initialLocation: '/login',
-
-    // This correctly listens to the STREAM from the provider, not the AsyncValue.
-    // This triggers the router to re-evaluate its state whenever the user logs in or out.
-    refreshListenable: GoRouterRefreshStream(ref.watch(authStateChangesProvider.stream)),
-
+    refreshListenable:
+    GoRouterRefreshStream(ref.watch(authStateChangesProvider.stream)),
     routes: [
-      GoRoute(
-        path: '/login',
-        builder: (context, state) => const LoginScreen(),
-      ),
-      GoRoute(
-        path: '/register',
-        builder: (context, state) => const RegisterScreen(),
-      ),
+      GoRoute(path: '/login', builder: (context, state) => const LoginScreen()),
+      GoRoute(path: '/register', builder: (context, state) => const RegisterScreen()),
       GoRoute(
         path: '/home',
         builder: (context, state) {
-          // Role-based routing using the live user data.
           final user = authState.value;
           if (user?.role == UserRole.volunteer) {
             return const VolunteerDashboardScreen();
@@ -50,45 +37,18 @@ final routerProvider = Provider<GoRouter>((ref) {
           return const PublicDashboardScreen();
         },
       ),
-      GoRoute(
-        path: '/report-incident',
-        builder: (context, state) => const ReportIncidentScreen(),
-      ),
-      GoRoute(
-        path: '/shelter-map',
-        builder: (context, state) => const ShelterMapScreen(),
-      ),
-      GoRoute(
-        path: '/task-details',
-        builder: (context, state) => const TaskDetailsScreen(),
-      ),
-      GoRoute(
-        path: '/profile',
-        builder: (context, state) => const ProfileScreen(),
-      ),
-      GoRoute(
-        path: '/alerts',
-        builder: (context, state) => const AlertsScreen(),
-      ),
-      GoRoute(
-        path: '/person-registry',
-        builder: (context, state) => const PersonRegistryScreen(),
-      ),
-      GoRoute(
-        path: '/add-person-status',
-        builder: (context, state) => const AddPersonStatusScreen(),
-      ),
-      GoRoute(
-        path: '/heatmap',
-        builder: (context, state) => const HeatmapScreen(),
-      ),
+      GoRoute(path: '/report-incident', builder: (context, state) => const ReportIncidentScreen()),
+      GoRoute(path: '/shelter-map', builder: (context, state) => const ShelterMapScreen()),
+      GoRoute(path: '/task-details', builder: (context, state) => const TaskDetailsScreen()),
+      GoRoute(path: '/profile', builder: (context, state) => const ProfileScreen()),
+      GoRoute(path: '/alerts', builder: (context, state) => const AlertsScreen()),
+      GoRoute(path: '/person-registry', builder: (context, state) => const PersonRegistryScreen()),
+      GoRoute(path: '/add-person-status', builder: (context, state) => const AddPersonStatusScreen()),
+      GoRoute(path: '/heatmap', builder: (context, state) => const HeatmapScreen()),
     ],
-
-    /// The redirect logic protects routes based on the live authentication state.
     redirect: (context, state) {
-      final isLoggedIn = authState.valueOrNull != null;
-      final isAuthRoute =
-          state.matchedLocation == '/login' || state.matchedLocation == '/register';
+      final isLoggedIn = authState.value != null;
+      final isAuthRoute = state.matchedLocation == '/login' || state.matchedLocation == '/register';
 
       if (!isLoggedIn) {
         return isAuthRoute ? null : '/login';
@@ -97,17 +57,14 @@ final routerProvider = Provider<GoRouter>((ref) {
       if (isAuthRoute) {
         return '/home';
       }
-
       return null;
     },
   );
 });
 
-/// A helper class that converts a Stream into a Listenable for GoRouter.
 class GoRouterRefreshStream extends ChangeNotifier {
   GoRouterRefreshStream(Stream<dynamic> stream) {
     notifyListeners();
     stream.asBroadcastStream().listen((_) => notifyListeners());
   }
 }
-

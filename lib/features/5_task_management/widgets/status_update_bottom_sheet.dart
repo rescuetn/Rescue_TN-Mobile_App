@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:rescuetn/features/5_task_management/providers/task_data_provider.dart';
+import 'package:rescuetn/core/services/database_service.dart';
 import 'package:rescuetn/models/task_model.dart';
 
 class StatusUpdateBottomSheet extends ConsumerWidget {
@@ -30,9 +30,14 @@ class StatusUpdateBottomSheet extends ConsumerWidget {
                 // Disable the option if it's the current status
                 enabled: status != currentTask.status,
                 onTap: () {
-                  // Call the notifier to update the task's status
-                  ref.read(taskListProvider.notifier).updateTaskStatus(currentTask.id, status);
-                  // Close the bottom sheet
+                  // --- THE FIX ---
+                  // Call the database service directly to update the status in Firestore.
+                  ref
+                      .read(databaseServiceProvider)
+                      .updateTaskStatus(currentTask.id, status);
+
+                  // Close the bottom sheet. The UI (VolunteerDashboard and TaskDetailsScreen)
+                  // will update automatically because it's listening to the live stream.
                   Navigator.of(context).pop();
                 },
               );
@@ -43,3 +48,4 @@ class StatusUpdateBottomSheet extends ConsumerWidget {
     );
   }
 }
+

@@ -1,71 +1,62 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_riverpod/legacy.dart';
+import 'package:rescuetn/core/services/database_service.dart';
+import 'package:rescuetn/features/1_auth/providers/auth_provider.dart';
 import 'package:rescuetn/models/preparedness_model.dart';
 
-// A StateNotifier to manage the state of the preparedness checklist
-class PreparednessPlanNotifier extends StateNotifier<List<PreparednessItem>> {
-  PreparednessPlanNotifier() : super(_initialPlan);
+/// A provider that manages the business logic for the preparedness plan.
+final preparednessControllerProvider =
+StateNotifierProvider<PreparednessController, bool>((ref) {
+  return PreparednessController(ref);
+});
 
-  void toggleItemStatus(String itemId) {
-    state = [
-      for (final item in state)
-        if (item.id == itemId)
-          item.copyWith(isCompleted: !item.isCompleted)
-        else
-          item,
-    ];
+class PreparednessController extends StateNotifier<bool> {
+  final Ref _ref;
+  PreparednessController(this._ref) : super(false);
+
+  /// Toggles the completion status of a checklist item in Firestore.
+  Future<void> toggleItemStatus(String itemId, bool currentStatus) async {
+    // Get the current user from the live auth provider.
+    final user = _ref.read(authStateChangesProvider).value;
+    if (user == null) return; // Do nothing if the user is not logged in.
+
+    // Call the database service to update the item's status in Firestore.
+    await _ref
+        .read(databaseServiceProvider)
+        .updatePreparednessItemStatus(user.uid, itemId, !currentStatus);
   }
 }
 
-final preparednessPlanProvider =
-StateNotifierProvider<PreparednessPlanNotifier, List<PreparednessItem>>(
-        (ref) {
-      return PreparednessPlanNotifier();
-    });
+/// A StreamProvider that provides a live stream of the user's preparedness plan from Firestore.
+///
+/// It also intelligently checks for and creates a default plan for the user the
+/// first time they access this feature, ensuring every user has a checklist.
+final preparednessPlanProvider = StreamProvider<List<PreparednessItem>>((ref) {
+  final user = ref.watch(authStateChangesProvider).value;
+  final dbService = ref.watch(databaseServiceProvider);
 
-// A derived provider to calculate the completion percentage
-final preparednessProgressProvider = Provider<double>((ref) {
-  final items = ref.watch(preparednessPlanProvider);
-  if (items.isEmpty) return 0;
-  final completedItems = items.where((item) => item.isCompleted).length;
-  return completedItems / items.length;
+  if (user != null) {
+    // 1. Check for and create the default plan if it's the user's first time.
+    dbService.checkAndCreateDefaultPlan(user.uid);
+    // 2. Return the live stream of their personal plan from the sub-collection.
+    return dbService.getPreparednessPlanStream(user.uid);
+  }
+
+  // If the user is logged out, return an empty stream.
+  return Stream.value([]);
 });
 
-
-// Dummy data for the preparedness plan
-const List<PreparednessItem> _initialPlan = [
-  // Essentials
-  PreparednessItem(
-    id: 'p-01',
-    title: 'Emergency Water Supply',
-    description: 'Store at least 1 gallon of water per person per day for several days.',
-    category: PreparednessCategory.essentials,
-  ),
-  PreparednessItem(
-    id: 'p-02',
-    title: 'Non-perishable Food',
-    description: 'Stock a 3-day supply of non-perishable food items.',
-    category: PreparednessCategory.essentials,
-  ),
-  PreparednessItem(
-    id: 'p-03',
-    title: 'First-Aid Kit',
-    description: 'Ensure your first-aid kit is fully stocked and accessible.',
-    category: PreparednessCategory.essentials,
-  ),
-  // Documents
-  PreparednessItem(
-    id: 'p-04',
-    title: 'Secure Important Documents',
-    description: 'Keep copies of passports, Aadhaar cards, and insurance policies in a waterproof bag.',
-    category: PreparednessCategory.documents,
-  ),
-  // Actions
-  PreparednessItem(
-    id: 'p-05',
-    title: 'Know Your Evacuation Route',
-    description: 'Identify your local evacuation routes and have a plan.',
-    category: PreparednessCategory.actions,
-  ),
-];
+/// A derived provider that calculates the completion percentage from the live data stream.
+/// It correctly handles the loading, error, and data states of the stream.
+final preparednessProgressProvider = Provider<AsyncValue<double>>((ref) {
+  final planAsync = ref.watch(preparednessPlanProvider);
+  return planAsync.when(
+    data: (items) {
+      if (items.isEmpty) return const AsyncData(0.0);
+      final completedItems = items.where((item) => item.isCompleted).length;
+      return AsyncData(completedItems / items.length);
+    },
+    loading: () => const AsyncLoading(),
+    error: (e, st) => AsyncError(e, st),
+  );
+});
 

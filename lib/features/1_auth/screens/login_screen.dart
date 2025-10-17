@@ -54,6 +54,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with SingleTickerProv
     });
   }
 
+  // --- UPDATED _login METHOD FOR LIVE FIREBASE ---
   Future<void> _login() async {
     FocusScope.of(context).unfocus();
     if (!_formKey.currentState!.validate()) {
@@ -64,7 +65,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with SingleTickerProv
 
     try {
       final authService = ref.read(authRepositoryProvider);
-      // Simply call the sign-in method. We no longer need to get the user object back.
+      // Simply call the sign-in method. We no longer need to manage state here.
       await authService.signInWithEmailAndPassword(
         email: _emailController.text.trim(),
         password: _passwordController.text.trim(),
@@ -77,27 +78,28 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with SingleTickerProv
         errorMessage = 'Invalid email or password.';
       }
 
-      final snackBar = SnackBar(
-        content: Row(
-          children: [
-            const Icon(Icons.error_outline, color: AppColors.onPrimary),
-            const SizedBox(width: AppPadding.small),
-            Expanded(
-              child: Text(
-                errorMessage,
-                style: const TextStyle(fontSize: 14, color: AppColors.onPrimary),
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Row(
+            children: [
+              const Icon(Icons.error_outline, color: AppColors.onPrimary),
+              const SizedBox(width: AppPadding.small),
+              Expanded(
+                child: Text(
+                  errorMessage,
+                  style: const TextStyle(fontSize: 14, color: AppColors.onPrimary),
+                ),
               ),
-            ),
-          ],
-        ),
-        backgroundColor: AppColors.error,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppBorderRadius.medium),
-        ),
-        margin: const EdgeInsets.all(AppPadding.medium),
-      );
-      ScaffoldMessenger.of(context).showSnackBar(snackBar);
+            ],
+          ),
+          backgroundColor: AppColors.error,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppBorderRadius.medium),
+          ),
+          margin: const EdgeInsets.all(AppPadding.medium),
+        ));
+      }
     } finally {
       if (mounted) {
         setState(() => _isLoading = false);
@@ -177,7 +179,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with SingleTickerProv
                                 child: ClipRRect(
                                   borderRadius: BorderRadius.circular(70),
                                   child: Image.asset(
-                                    'assets/images/rescuetn.jpg',
+                                    'assets/images/RescueTN.png', // Corrected logo path
                                     height: 140,
                                     width: 140,
                                     fit: BoxFit.cover,
@@ -591,3 +593,4 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with SingleTickerProv
     );
   }
 }
+
