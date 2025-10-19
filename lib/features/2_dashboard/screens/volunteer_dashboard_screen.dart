@@ -336,6 +336,90 @@ class _VolunteerDashboardScreenState
 
                   const SizedBox(height: AppPadding.large),
 
+                  // Situational Awareness Section
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: AppPadding.large),
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: AppColors.primary.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: const Icon(
+                            Icons.map,
+                            color: AppColors.primary,
+                            size: 20,
+                          ),
+                        ),
+                        const SizedBox(width: AppPadding.medium),
+                        Text(
+                          'Situational Awareness',
+                          style: textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.textPrimary,
+                            fontSize: 18,
+                            letterSpacing: 0.3,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: AppPadding.medium),
+
+                  // Horizontal Scrollable Cards
+                  SizedBox(
+                    height: 140,
+                    child: ListView(
+                      scrollDirection: Axis.horizontal,
+                      padding: const EdgeInsets.symmetric(horizontal: AppPadding.large),
+                      physics: const BouncingScrollPhysics(),
+                      children: [
+                        // Live Heatmap Card
+                        _buildAwarenessCard(
+                          title: 'Live Heatmap',
+                          subtitle: 'Disaster hotspots',
+                          icon: Icons.local_fire_department,
+                          gradient: LinearGradient(
+                            colors: [Colors.amber.shade600, Colors.orange.shade800],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                          onTap: () => context.go('/heatmap'),
+                        ),
+                        const SizedBox(width: AppPadding.medium + 4),
+                        // Find Shelters Card
+                        _buildAwarenessCard(
+                          title: 'Find Shelters',
+                          subtitle: 'Safe locations',
+                          icon: Icons.maps_home_work_rounded,
+                          gradient: LinearGradient(
+                            colors: [Colors.green.shade500, Colors.green.shade700],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                          onTap: () => context.go('/shelter-map'),
+                        ),
+                        const SizedBox(width: AppPadding.medium + 4),
+                        // View Alerts Card
+                        _buildAwarenessCard(
+                          title: 'View Alerts',
+                          subtitle: 'Stay informed',
+                          icon: Icons.notifications_active,
+                          gradient: LinearGradient(
+                            colors: [Colors.blue.shade500, Colors.blue.shade700],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                          onTap: () => context.go('/alerts'),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: AppPadding.large),
+
                   // Filter Section
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: AppPadding.large),
@@ -543,6 +627,74 @@ class _VolunteerDashboardScreenState
     );
   }
 
+  Widget _buildAwarenessCard({
+    required String title,
+    required String subtitle,
+    required IconData icon,
+    required Gradient gradient,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 180,
+        padding: const EdgeInsets.all(AppPadding.large),
+        decoration: BoxDecoration(
+          gradient: gradient,
+          borderRadius: BorderRadius.circular(AppBorderRadius.large),
+          boxShadow: [
+            BoxShadow(
+              color: gradient.colors.first.withOpacity(0.3),
+              blurRadius: 15,
+              offset: const Offset(0, 6),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(AppPadding.medium),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.25),
+                borderRadius: BorderRadius.circular(AppBorderRadius.medium),
+              ),
+              child: Icon(
+                icon,
+                color: Colors.white,
+                size: 32,
+              ),
+            ),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 17,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                    letterSpacing: 0.3,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  subtitle,
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: Colors.white.withOpacity(0.9),
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildStatCard({
     required String label,
     required int count,
@@ -614,9 +766,7 @@ class _VolunteerDashboardScreenState
     );
   }
 
-  /// A helper widget to build the row of filter chips.
   Widget _buildFilterChips(BuildContext context, WidgetRef ref) {
-    // Watch the filter provider to know which chip is currently selected.
     final currentFilter = ref.watch(taskFilterProvider);
 
     return SizedBox(
@@ -628,7 +778,6 @@ class _VolunteerDashboardScreenState
         children: TaskFilter.values.map((filter) {
           final isSelected = filter == currentFilter;
 
-          // Get appropriate icon and color for each filter
           IconData filterIcon;
           Color filterColor;
           switch (filter) {
@@ -679,7 +828,6 @@ class _VolunteerDashboardScreenState
               selected: isSelected,
               onSelected: (selected) {
                 if (selected) {
-                  // When a chip is tapped, update the state of the filter provider.
                   ref.read(taskFilterProvider.notifier).state = filter;
                 }
               },
