@@ -1,29 +1,50 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:rescuetn/core/services/database_service.dart';
 import 'package:rescuetn/models/alert_model.dart';
 
-final alertListProvider = Provider<List<Alert>>((ref) {
-  // Dummy data for demonstration. In a real app, this would come from FCM or Firestore.
-  return [
-    Alert(
-      id: 'alert-001',
-      title: 'Severe Flood Warning',
-      message: 'Heavy rainfall is expected in the next 24 hours. Residents in low-lying areas of Chennai are advised to evacuate to the nearest shelter.',
-      level: AlertLevel.severe,
-      timestamp: DateTime.now().subtract(const Duration(hours: 2)),
-    ),
-    Alert(
-      id: 'alert-002',
-      title: 'High Wind Advisory',
-      message: 'Strong winds are expected along the coastal areas. Fishermen are advised not to venture into the sea.',
-      level: AlertLevel.warning,
-      timestamp: DateTime.now().subtract(const Duration(hours: 8)),
-    ),
-    Alert(
-      id: 'alert-003',
-      title: 'Relief Camp Information',
-      message: 'A new relief camp has been set up at the Government Higher Secondary School in Adyar.',
-      level: AlertLevel.info,
-      timestamp: DateTime.now().subtract(const Duration(days: 1)),
-    ),
-  ];
+/// This file provides the logic for fetching and filtering live alert data from Firebase.
+
+// 1. An enum to represent the different filter states for the UI.
+enum AlertFilter { all, severe, warning, info }
+
+// 2. A StateProvider to hold the user's current filter selection.
+// The UI will update this provider when the user taps a filter chip.
+final alertFilterProvider = StateProvider<AlertFilter>((ref) => AlertFilter.all);
+
+// 3. A StreamProvider that provides a real-time stream of all alerts from Firestore.
+// This is the main source of live data.
+final alertsStreamProvider = StreamProvider<List<Alert>>((ref) {
+  final dbService = ref.watch(databaseServiceProvider);
+  return dbService.getAlertsStream();
 });
+
+// 4. A derived Provider that returns a filtered list of alerts.
+// It watches both the main data stream and the filter provider, and automatically
+// recalculates the list whenever either one changes. It returns an AsyncValue
+// to handle loading and error states gracefully.
+final filteredAlertsProvider = Provider<AsyncValue<List<Alert>>>((ref) {
+  final filter = ref.watch(alertFilterProvider);
+  final alertsAsync = ref.watch(alertsStreamProvider);
+
+  return alertsAsync.when(
+    data: (alerts) {
+      if (filter == AlertFilter.all) {
+        // If the filter is 'all', return the full list.
+        return AsyncData(alerts);
+      } else {
+        // Otherwise, filter the list based on the selected level.
+        final correspondingLevel = AlertLevel.values.firstWhere(
+              (level) => level.name == filter.name,
+          orElse: () => AlertLevel.info, // Fallback
+        );
+        final filteredList =
+        alerts.where((alert) => alert.level == correspondingLevel).toList();
+        return AsyncData(filteredList);
+      }
+    },
+    // Pass along the loading and error states from the main stream.
+    loading: () => const AsyncLoading(),
+    error: (e, st) => AsyncError(e, st),
+  );
+});
+

@@ -1,7 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 enum IncidentType { flood, fire, earthquake, accident, medical, other }
-
 enum Severity { low, medium, high, critical }
 
 class Incident {
@@ -15,6 +14,7 @@ class Incident {
   final DateTime timestamp;
   final List<String> imageUrls;
   final List<String> audioUrls;
+  final bool isVerified; // --- NEW FIELD ---
 
   const Incident({
     this.id,
@@ -27,10 +27,9 @@ class Incident {
     required this.timestamp,
     this.imageUrls = const [],
     this.audioUrls = const [],
+    this.isVerified = false, // Defaults to false
   });
 
-  /// Creates a copy of the current Incident but with updated fields.
-  /// This is used by the repository to add the media URLs after uploading.
   Incident copyWith({
     List<String>? imageUrls,
     List<String>? audioUrls,
@@ -46,10 +45,10 @@ class Incident {
       timestamp: timestamp,
       imageUrls: imageUrls ?? this.imageUrls,
       audioUrls: audioUrls ?? this.audioUrls,
+      isVerified: isVerified,
     );
   }
 
-  /// Converts an Incident object into a Map for Firestore.
   Map<String, dynamic> toMap() {
     return {
       'type': type.name,
@@ -60,10 +59,10 @@ class Incident {
       'timestamp': Timestamp.fromDate(timestamp),
       'imageUrls': imageUrls,
       'audioUrls': audioUrls,
+      'isVerified': isVerified, // --- ADD TO MAP ---
     };
   }
 
-  /// Creates an Incident object from a Firestore document map.
   factory Incident.fromMap(Map<String, dynamic> map, String id) {
     final location = map['location'] as GeoPoint? ?? const GeoPoint(0, 0);
     return Incident(
@@ -83,6 +82,7 @@ class Incident {
       timestamp: (map['timestamp'] as Timestamp? ?? Timestamp.now()).toDate(),
       imageUrls: List<String>.from(map['imageUrls'] ?? []),
       audioUrls: List<String>.from(map['audioUrls'] ?? []),
+      isVerified: map['isVerified'] ?? false, // --- READ FROM MAP ---
     );
   }
 }

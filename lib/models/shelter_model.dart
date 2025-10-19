@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 
 enum ShelterStatus { available, full, closed }
@@ -21,5 +22,31 @@ class Shelter {
     required this.currentOccupancy,
     required this.status,
   });
+
+  Map<String, dynamic> toMap() {
+    return {
+      'name': name,
+      'location': GeoPoint(latitude, longitude),
+      'capacity': capacity,
+      'currentOccupancy': currentOccupancy,
+      'status': status.name,
+    };
+  }
+
+  factory Shelter.fromMap(Map<String, dynamic> map, String id) {
+    final location = map['location'] as GeoPoint? ?? const GeoPoint(0, 0);
+    return Shelter(
+      id: id,
+      name: map['name'] ?? 'Unknown Shelter',
+      latitude: location.latitude,
+      longitude: location.longitude,
+      capacity: map['capacity'] ?? 0,
+      currentOccupancy: map['currentOccupancy'] ?? 0,
+      status: ShelterStatus.values.firstWhere(
+            (e) => e.name == map['status'],
+        orElse: () => ShelterStatus.closed,
+      ),
+    );
+  }
 }
 

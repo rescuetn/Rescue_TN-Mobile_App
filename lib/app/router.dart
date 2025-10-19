@@ -11,6 +11,7 @@ import 'package:rescuetn/features/3_incident_reporting/screens/report_incident_s
 import 'package:rescuetn/features/4_shelter_locator/screens/shelter_map_screen.dart';
 import 'package:rescuetn/features/5_task_management/screens/task_details_screen.dart';
 // --- CORRECTED IMPORTS ---
+import 'package:rescuetn/features/6_preparedness/screens/preparedness_plan_screen.dart';
 import 'package:rescuetn/features/7_alerts/screens/alert_screen.dart';
 import 'package:rescuetn/features/8_person_registry/screens/add_person_status_form_screen.dart';
 import 'package:rescuetn/features/8_person_registry/screens/person_registry_screen.dart';
@@ -43,6 +44,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/profile', builder: (context, state) => const ProfileScreen()),
       GoRoute(path: '/alerts', builder: (context, state) => const AlertsScreen()),
       GoRoute(path: '/person-registry', builder: (context, state) => const PersonRegistryScreen()),
+      GoRoute(path: '/preparedness-plan', builder: (context, state) => const PreparednessPlanScreen()),
       GoRoute(path: '/add-person-status', builder: (context, state) => const AddPersonStatusScreen()),
       GoRoute(path: '/heatmap', builder: (context, state) => const HeatmapScreen()),
     ],

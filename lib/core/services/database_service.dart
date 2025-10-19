@@ -1,8 +1,10 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:rescuetn/models/alert_model.dart';
 import 'package:rescuetn/models/incident_model.dart';
 import 'package:rescuetn/models/person_status_model.dart';
-import 'package:rescuetn/models/preparedness_model.dart'; // Import the new model
+import 'package:rescuetn/models/preparedness_model.dart';
+import 'package:rescuetn/models/shelter_model.dart';
 import 'package:rescuetn/models/task_model.dart';
 import 'package:rescuetn/models/user_model.dart';
 
@@ -28,10 +30,17 @@ abstract class DatabaseService {
   Future<void> addPersonStatus(PersonStatus personStatus);
   Stream<List<PersonStatus>> getPersonStatusStream();
 
-  // --- NEW: Preparedness Plan operations ---
+  // Preparedness Plan operations
   Future<void> checkAndCreateDefaultPlan(String userId);
   Stream<List<PreparednessItem>> getPreparednessPlanStream(String userId);
-  Future<void> updatePreparednessItemStatus(String userId, String itemId, bool newStatus);
+  Future<void> updatePreparednessItemStatus(
+      String userId, String itemId, bool newStatus);
+
+  // Shelter operations
+  Stream<List<Shelter>> getSheltersStream();
+
+  // Alert operations
+  Stream<List<Alert>> getAlertsStream();
 }
 
 /// Provides a concrete implementation of [DatabaseService] using Firestore.
@@ -108,11 +117,11 @@ class FirestoreDatabaseService implements DatabaseService {
         .toList());
   }
 
-
   // --- PREPAREDNESS PLAN METHODS ---
   @override
   Future<void> checkAndCreateDefaultPlan(String userId) async {
-    final planCollection = _firestore.collection('users').doc(userId).collection('preparedness_plan');
+    final planCollection =
+    _firestore.collection('users').doc(userId).collection('preparedness_plan');
     final snapshot = await planCollection.limit(1).get();
 
     if (snapshot.docs.isEmpty) {
@@ -132,12 +141,14 @@ class FirestoreDatabaseService implements DatabaseService {
         .doc(userId)
         .collection('preparedness_plan')
         .snapshots()
-        .map((snapshot) =>
-        snapshot.docs.map((doc) => PreparednessItem.fromMap(doc.data(), doc.id)).toList());
+        .map((snapshot) => snapshot.docs
+        .map((doc) => PreparednessItem.fromMap(doc.data(), doc.id))
+        .toList());
   }
 
   @override
-  Future<void> updatePreparednessItemStatus(String userId, String itemId, bool newStatus) {
+  Future<void> updatePreparednessItemStatus(
+      String userId, String itemId, bool newStatus) {
     return _firestore
         .collection('users')
         .doc(userId)
@@ -145,14 +156,53 @@ class FirestoreDatabaseService implements DatabaseService {
         .doc(itemId)
         .update({'isCompleted': newStatus});
   }
+
+  // --- SHELTER METHOD ---
+  @override
+  Stream<List<Shelter>> getSheltersStream() {
+    return _firestore.collection('shelters').snapshots().map((snapshot) =>
+        snapshot.docs.map((doc) => Shelter.fromMap(doc.data(), doc.id)).toList());
+  }
+
+  // --- ALERTS METHOD ---
+  @override
+  Stream<List<Alert>> getAlertsStream() {
+    return _firestore
+        .collection('alerts')
+        .orderBy('timestamp', descending: true)
+        .snapshots()
+        .map((snapshot) =>
+        snapshot.docs.map((doc) => Alert.fromMap(doc.data(), doc.id)).toList());
+  }
 }
 
-// A helper list containing the default preparedness items for new users.
+// Helper list containing the default preparedness items for new users.
 const List<PreparednessItem> _defaultPlan = [
-  PreparednessItem(id: 'p-01', title: 'Emergency Water Supply', description: 'Store at least 1 gallon of water per person per day.', category: PreparednessCategory.essentials),
-  PreparednessItem(id: 'p-02', title: 'Non-perishable Food', description: 'Stock a 3-day supply of non-perishable food.', category: PreparednessCategory.essentials),
-  PreparednessItem(id: 'p-03', title: 'First-Aid Kit', description: 'Ensure your first-aid kit is fully stocked.', category: PreparednessCategory.essentials),
-  PreparednessItem(id: 'p-04', title: 'Secure Important Documents', description: 'Keep copies of passports, Aadhaar cards, etc., in a waterproof bag.', category: PreparednessCategory.documents),
-  PreparednessItem(id: 'p-05', title: 'Know Your Evacuation Route', description: 'Identify your local evacuation routes and have a plan.', category: PreparednessCategory.actions),
+  PreparednessItem(
+      id: 'p-01',
+      title: 'Emergency Water Supply',
+      description: 'Store at least 1 gallon of water per person per day.',
+      category: PreparednessCategory.essentials),
+  PreparednessItem(
+      id: 'p-02',
+      title: 'Non-perishable Food',
+      description: 'Stock a 3-day supply of non-perishable food.',
+      category: PreparednessCategory.essentials),
+  PreparednessItem(
+      id: 'p-03',
+      title: 'First-Aid Kit',
+      description: 'Ensure your first-aid kit is fully stocked.',
+      category: PreparednessCategory.essentials),
+  PreparednessItem(
+      id: 'p-04',
+      title: 'Secure Important Documents',
+      description:
+      'Keep copies of passports, Aadhaar cards, etc., in a waterproof bag.',
+      category: PreparednessCategory.documents),
+  PreparednessItem(
+      id: 'p-05',
+      title: 'Know Your Evacuation Route',
+      description: 'Identify your local evacuation routes and have a plan.',
+      category: PreparednessCategory.actions),
 ];
 

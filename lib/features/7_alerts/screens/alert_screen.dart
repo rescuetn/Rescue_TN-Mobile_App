@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:rescuetn/app/constants.dart';
 import 'package:rescuetn/features/7_alerts/providers/alert_provider.dart';
 import 'package:rescuetn/features/7_alerts/widgets/alert_card_widget.dart';
+import 'package:rescuetn/models/alert_model.dart';
 
 class AlertsScreen extends ConsumerStatefulWidget {
   const AlertsScreen({super.key});
@@ -17,7 +18,6 @@ class _AlertsScreenState extends ConsumerState<AlertsScreen>
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
-  String _selectedFilter = 'All';
 
   @override
   void initState() {
@@ -48,13 +48,10 @@ class _AlertsScreenState extends ConsumerState<AlertsScreen>
 
   @override
   Widget build(BuildContext context) {
-    final alerts = ref.watch(alertListProvider);
+    // Watch the live providers which return AsyncValue
+    final filteredAlertsAsync = ref.watch(filteredAlertsProvider);
+    final allAlertsAsync = ref.watch(alertsStreamProvider);
     final textTheme = Theme.of(context).textTheme;
-
-    // Filter alerts based on selection
-    final filteredAlerts = _selectedFilter == 'All'
-        ? alerts
-        : alerts; // Add actual filtering logic based on your alert model
 
     return Scaffold(
       body: Container(
@@ -94,9 +91,7 @@ class _AlertsScreenState extends ConsumerState<AlertsScreen>
                           ),
                           child: IconButton(
                             icon: const Icon(Icons.arrow_back_rounded, color: Colors.white),
-                            onPressed: () {
-                              context.go('/home');
-                            },
+                            onPressed: () => context.go('/home'),
                           ),
                         ),
                         const SizedBox(width: 16),
@@ -137,10 +132,21 @@ class _AlertsScreenState extends ConsumerState<AlertsScreen>
                                 ),
                               ),
                               const SizedBox(height: 2),
-                              Text(
-                                '${alerts.length} active ${alerts.length == 1 ? 'alert' : 'alerts'}',
-                                style: textTheme.bodyMedium?.copyWith(
-                                  color: Colors.white.withOpacity(0.9),
+                              // Live alert count from Firebase
+                              allAlertsAsync.when(
+                                data: (alerts) => Text(
+                                  '${alerts.length} active ${alerts.length == 1 ? 'alert' : 'alerts'}',
+                                  style: textTheme.bodyMedium?.copyWith(
+                                    color: Colors.white.withOpacity(0.9),
+                                  ),
+                                ),
+                                loading: () => const Text(
+                                  'Loading...',
+                                  style: TextStyle(color: Colors.white70),
+                                ),
+                                error: (e, s) => const Text(
+                                  'Could not load alerts',
+                                  style: TextStyle(color: Colors.white70),
                                 ),
                               ),
                             ],
@@ -195,20 +201,18 @@ class _AlertsScreenState extends ConsumerState<AlertsScreen>
                   scrollDirection: Axis.horizontal,
                   padding: const EdgeInsets.symmetric(horizontal: 20),
                   children: [
-                    _buildFilterChip('All', Icons.grid_view_rounded),
+                    _buildFilterChip(AlertFilter.all),
                     const SizedBox(width: 12),
-                    _buildFilterChip('Critical', Icons.warning_rounded),
+                    _buildFilterChip(AlertFilter.severe),
                     const SizedBox(width: 12),
-                    _buildFilterChip('High', Icons.priority_high_rounded),
+                    _buildFilterChip(AlertFilter.warning),
                     const SizedBox(width: 12),
-                    _buildFilterChip('Medium', Icons.info_rounded),
-                    const SizedBox(width: 12),
-                    _buildFilterChip('Low', Icons.check_circle_rounded),
+                    _buildFilterChip(AlertFilter.info),
                   ],
                 ),
               ),
 
-              // Main Content
+              // Main Content with Live Data
               Expanded(
                 child: FadeTransition(
                   opacity: _fadeAnimation,
@@ -222,40 +226,67 @@ class _AlertsScreenState extends ConsumerState<AlertsScreen>
                           topRight: Radius.circular(32),
                         ),
                       ),
-                      child: filteredAlerts.isEmpty
-                          ? _buildEmptyState()
-                          : RefreshIndicator(
-                        onRefresh: () async {
-                          // Add refresh logic
-                          await Future.delayed(
-                              const Duration(seconds: 1));
-                        },
-                        color: Colors.red.shade600,
-                        child: ListView.separated(
-                          padding: const EdgeInsets.all(24),
-                          physics: const AlwaysScrollableScrollPhysics(),
-                          itemCount: filteredAlerts.length,
-                          itemBuilder: (context, index) {
-                            return TweenAnimationBuilder<double>(
-                              duration: Duration(
-                                  milliseconds: 400 + (index * 100)),
-                              tween: Tween(begin: 0.0, end: 1.0),
-                              curve: Curves.easeOutCubic,
-                              builder: (context, value, child) {
-                                return Transform.translate(
-                                  offset: Offset(0, 20 * (1 - value)),
-                                  child: Opacity(
-                                    opacity: value,
-                                    child: child,
-                                  ),
-                                );
-                              },
-                              child: AlertCard(
-                                  alert: filteredAlerts[index]),
-                            );
-                          },
-                          separatorBuilder: (context, index) =>
-                          const SizedBox(height: 16),
+                      // Use .when() to handle loading, error, and data states
+                      child: filteredAlertsAsync.when(
+                        loading: () => const Center(
+                          child: CircularProgressIndicator(color: AppColors.primary),
+                        ),
+                        error: (err, stack) => Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.error_outline,
+                                size: 64,
+                                color: AppColors.error.withOpacity(0.5),
+                              ),
+                              const SizedBox(height: 16),
+                              Text(
+                                'Failed to load alerts',
+                                style: textTheme.titleLarge?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                  color: AppColors.textPrimary,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                err.toString(),
+                                style: textTheme.bodyMedium?.copyWith(
+                                  color: AppColors.textSecondary,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                            ],
+                          ),
+                        ),
+                        data: (filteredAlerts) => filteredAlerts.isEmpty
+                            ? _buildEmptyState()
+                            : RefreshIndicator(
+                          onRefresh: () async => ref.refresh(alertsStreamProvider.future),
+                          color: Colors.red.shade600,
+                          child: ListView.separated(
+                            padding: const EdgeInsets.all(24),
+                            physics: const AlwaysScrollableScrollPhysics(),
+                            itemCount: filteredAlerts.length,
+                            itemBuilder: (context, index) {
+                              return TweenAnimationBuilder<double>(
+                                duration: Duration(milliseconds: 400 + (index * 100)),
+                                tween: Tween(begin: 0.0, end: 1.0),
+                                curve: Curves.easeOutCubic,
+                                builder: (context, value, child) {
+                                  return Transform.translate(
+                                    offset: Offset(0, 20 * (1 - value)),
+                                    child: Opacity(
+                                      opacity: value,
+                                      child: child,
+                                    ),
+                                  );
+                                },
+                                child: AlertCard(alert: filteredAlerts[index]),
+                              );
+                            },
+                            separatorBuilder: (context, index) => const SizedBox(height: 16),
+                          ),
                         ),
                       ),
                     ),
@@ -266,30 +297,57 @@ class _AlertsScreenState extends ConsumerState<AlertsScreen>
           ),
         ),
       ),
-      floatingActionButton: alerts.isNotEmpty
-          ? FloatingActionButton.extended(
-        onPressed: () {
-          _showAlertFilterDialog();
-        },
-        backgroundColor: Colors.red.shade600,
-        elevation: 4,
-        icon: const Icon(Icons.filter_list_rounded),
-        label: const Text(
-          'Filter',
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
-      )
-          : null,
+      floatingActionButton: allAlertsAsync.when(
+        data: (alerts) => alerts.isNotEmpty
+            ? FloatingActionButton.extended(
+          onPressed: () {
+            _showAlertFilterDialog();
+          },
+          backgroundColor: Colors.red.shade600,
+          elevation: 4,
+          icon: const Icon(Icons.filter_list_rounded),
+          label: const Text(
+            'Filter',
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
+        )
+            : null,
+        loading: () => null,
+        error: (e, s) => null,
+      ),
     );
   }
 
-  Widget _buildFilterChip(String label, IconData icon) {
-    final isSelected = _selectedFilter == label;
+  Widget _buildFilterChip(AlertFilter filter) {
+    final currentFilter = ref.watch(alertFilterProvider);
+    final isSelected = currentFilter == filter;
+
+    // Get icon and label for each filter based on AlertLevel enum
+    IconData icon;
+    String label;
+    switch (filter) {
+      case AlertFilter.all:
+        icon = Icons.grid_view_rounded;
+        label = 'All';
+        break;
+      case AlertFilter.severe:
+        icon = Icons.error_outline;
+        label = 'Severe';
+        break;
+      case AlertFilter.warning:
+        icon = Icons.warning_amber_rounded;
+        label = 'Warning';
+        break;
+      case AlertFilter.info:
+        icon = Icons.info_outline;
+        label = 'Info';
+        break;
+    }
+
     return GestureDetector(
       onTap: () {
-        setState(() {
-          _selectedFilter = label;
-        });
+        // Update the provider state on tap
+        ref.read(alertFilterProvider.notifier).state = filter;
       },
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 300),
@@ -307,9 +365,7 @@ class _AlertsScreenState extends ConsumerState<AlertsScreen>
           color: isSelected ? null : Colors.white.withOpacity(0.2),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: isSelected
-                ? Colors.white
-                : Colors.white.withOpacity(0.3),
+            color: isSelected ? Colors.white : Colors.white.withOpacity(0.3),
             width: isSelected ? 2 : 1,
           ),
           boxShadow: isSelected
@@ -385,7 +441,7 @@ class _AlertsScreenState extends ConsumerState<AlertsScreen>
               ),
             ),
             const SizedBox(height: 12),
-            Text(
+            const Text(
               'No active emergency alerts at the moment.\nStay safe and prepared.',
               textAlign: TextAlign.center,
               style: TextStyle(
@@ -436,9 +492,9 @@ class _AlertsScreenState extends ConsumerState<AlertsScreen>
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
       builder: (context) => Container(
-        decoration: BoxDecoration(
+        decoration: const BoxDecoration(
           color: AppColors.surface,
-          borderRadius: const BorderRadius.only(
+          borderRadius: BorderRadius.only(
             topLeft: Radius.circular(24),
             topRight: Radius.circular(24),
           ),
@@ -502,35 +558,28 @@ class _AlertsScreenState extends ConsumerState<AlertsScreen>
                   'All Alerts',
                   Icons.grid_view_rounded,
                   [Colors.grey.shade400, Colors.grey.shade600],
-                  'All',
+                  AlertFilter.all,
                 ),
                 const SizedBox(height: 12),
                 _buildFilterOption(
-                  'Critical',
-                  Icons.warning_rounded,
+                  'Severe',
+                  Icons.error_outline,
                   [Colors.red.shade400, Colors.red.shade600],
-                  'Critical',
+                  AlertFilter.severe,
                 ),
                 const SizedBox(height: 12),
                 _buildFilterOption(
-                  'High Priority',
-                  Icons.priority_high_rounded,
+                  'Warning',
+                  Icons.warning_amber_rounded,
                   [Colors.orange.shade400, Colors.orange.shade600],
-                  'High',
+                  AlertFilter.warning,
                 ),
                 const SizedBox(height: 12),
                 _buildFilterOption(
-                  'Medium Priority',
-                  Icons.info_rounded,
-                  [Colors.yellow.shade600, Colors.yellow.shade700],
-                  'Medium',
-                ),
-                const SizedBox(height: 12),
-                _buildFilterOption(
-                  'Low Priority',
-                  Icons.check_circle_rounded,
-                  [Colors.green.shade400, Colors.green.shade600],
-                  'Low',
+                  'Info',
+                  Icons.info_outline,
+                  [Colors.blue.shade400, Colors.blue.shade600],
+                  AlertFilter.info,
                 ),
                 const SizedBox(height: 16),
               ],
@@ -545,25 +594,24 @@ class _AlertsScreenState extends ConsumerState<AlertsScreen>
       String label,
       IconData icon,
       List<Color> gradient,
-      String filterValue,
+      AlertFilter filterValue,
       ) {
-    final isSelected = _selectedFilter == filterValue;
+    final currentFilter = ref.watch(alertFilterProvider);
+    final isSelected = currentFilter == filterValue;
+
     return Material(
       color: Colors.transparent,
       child: InkWell(
         onTap: () {
-          setState(() {
-            _selectedFilter = filterValue;
-          });
+          // Update the provider state
+          ref.read(alertFilterProvider.notifier).state = filterValue;
           Navigator.pop(context);
         },
         borderRadius: BorderRadius.circular(16),
         child: Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: isSelected
-                ? gradient[0].withOpacity(0.1)
-                : AppColors.surface,
+            color: isSelected ? gradient[0].withOpacity(0.1) : AppColors.surface,
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
               color: isSelected

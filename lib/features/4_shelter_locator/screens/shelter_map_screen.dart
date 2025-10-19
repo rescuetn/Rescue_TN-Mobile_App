@@ -23,7 +23,6 @@ class _ShelterMapScreenState extends ConsumerState<ShelterMapScreen>
     zoom: 11.5,
   );
 
-  Set<Marker> _markers = {};
   GoogleMapController? _mapController;
   ShelterStatus? _filterStatus;
   bool _showLegend = true;
@@ -44,16 +43,14 @@ class _ShelterMapScreenState extends ConsumerState<ShelterMapScreen>
       curve: Curves.easeInOut,
     );
     _animationController.forward();
-
-    // Get location and create markers
-    _initializeMap();
+    _getCurrentLocation();
   }
 
-  Future<void> _initializeMap() async {
-    await _getCurrentLocation();
-    if (mounted) {
-      _createMarkers();
-    }
+  @override
+  void dispose() {
+    _animationController.dispose();
+    _mapController?.dispose();
+    super.dispose();
   }
 
   Future<void> _getCurrentLocation() async {
@@ -177,50 +174,6 @@ class _ShelterMapScreenState extends ConsumerState<ShelterMapScreen>
     );
   }
 
-  @override
-  void dispose() {
-    _animationController.dispose();
-    _mapController?.dispose();
-    super.dispose();
-  }
-
-  // Helper function to create map markers from our shelter data
-  void _createMarkers() {
-    if (!mounted) return;
-
-    final shelters = ref.read(shelterListProvider);
-    final filteredShelters = _filterStatus == null
-        ? shelters
-        : shelters.where((s) => s.status == _filterStatus).toList();
-
-    final markers = filteredShelters.map((shelter) {
-      return Marker(
-        markerId: MarkerId(shelter.id),
-        position: LatLng(shelter.latitude, shelter.longitude),
-        infoWindow: InfoWindow(
-          title: shelter.name,
-          snippet: 'Tap for details',
-        ),
-        icon: _getMarkerIcon(shelter.status),
-        onTap: () {
-          if (!mounted) return;
-          showModalBottomSheet(
-            context: context,
-            backgroundColor: Colors.transparent,
-            isScrollControlled: true,
-            builder: (context) => ShelterDetailsBottomSheet(shelter: shelter),
-          );
-        },
-      );
-    }).toSet();
-
-    if (mounted) {
-      setState(() {
-        _markers = markers;
-      });
-    }
-  }
-
   // Helper to get a colored marker based on shelter status
   BitmapDescriptor _getMarkerIcon(ShelterStatus status) {
     switch (status) {
@@ -233,69 +186,30 @@ class _ShelterMapScreenState extends ConsumerState<ShelterMapScreen>
     }
   }
 
-  void _onMapCreated(GoogleMapController controller) {
-    if (!mounted) return;
-    _mapController = controller;
-  }
-
   void _applyFilter(ShelterStatus? status) {
-    if (!mounted) return;
-    setState(() {
-      _filterStatus = status;
-    });
-    _createMarkers();
-  }
-
-  Color _getStatusColor(ShelterStatus status) {
-    switch (status) {
-      case ShelterStatus.available:
-        return Colors.green;
-      case ShelterStatus.full:
-        return Colors.orange;
-      case ShelterStatus.closed:
-        return Colors.red;
-    }
-  }
-
-  String _getStatusText(ShelterStatus status) {
-    switch (status) {
-      case ShelterStatus.available:
-        return 'Available';
-      case ShelterStatus.full:
-        return 'Full';
-      case ShelterStatus.closed:
-        return 'Closed';
-    }
-  }
-
-  int _getShelterCount(ShelterStatus status) {
-    final shelters = ref.read(shelterListProvider);
-    return shelters.where((s) => s.status == status).length;
+    // The build method will automatically handle filtering when this state changes
+    if (mounted) setState(() => _filterStatus = status);
   }
 
   @override
   Widget build(BuildContext context) {
+    // Watch the live stream provider for real-time shelter updates
+    final sheltersAsync = ref.watch(shelterStreamProvider);
     final textTheme = Theme.of(context).textTheme;
-    final shelters = ref.watch(shelterListProvider);
-    final totalShelters = shelters.length;
 
     return Scaffold(
-      body: Stack(
-        children: [
-          // Google Map
-          GoogleMap(
-            initialCameraPosition: _initialCameraPosition,
-            markers: _markers,
-            myLocationButtonEnabled: false,
-            myLocationEnabled: true,
-            onMapCreated: _onMapCreated,
-            zoomControlsEnabled: false,
-            mapToolbarEnabled: false,
-            compassEnabled: false,
-          ),
-
-          // Loading Overlay
-          if (_isLoadingLocation)
+      body: sheltersAsync.when(
+        // Handle Loading State
+        loading: () => Stack(
+          children: [
+            GoogleMap(
+              initialCameraPosition: _initialCameraPosition,
+              markers: const {},
+              myLocationButtonEnabled: false,
+              myLocationEnabled: true,
+              onMapCreated: (controller) => _mapController = controller,
+              zoomControlsEnabled: false,
+            ),
             Container(
               color: Colors.black26,
               child: const Center(
@@ -308,7 +222,7 @@ class _ShelterMapScreenState extends ConsumerState<ShelterMapScreen>
                         CircularProgressIndicator(),
                         SizedBox(height: 16),
                         Text(
-                          'Getting your location...',
+                          'Loading shelters...',
                           style: TextStyle(fontSize: 16),
                         ),
                       ],
@@ -317,271 +231,364 @@ class _ShelterMapScreenState extends ConsumerState<ShelterMapScreen>
                 ),
               ),
             ),
+          ],
+        ),
+        // Handle Error State
+        error: (err, stack) => Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.error_outline,
+                size: 64,
+                color: AppColors.error.withOpacity(0.5),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Failed to load shelters',
+                style: textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                err.toString(),
+                style: textTheme.bodyMedium?.copyWith(
+                  color: AppColors.textSecondary,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+        ),
+        // Handle Data State
+        data: (shelters) {
+          // Filter the live data based on the current UI state
+          final filteredShelters = _filterStatus == null
+              ? shelters
+              : shelters.where((s) => s.status == _filterStatus).toList();
 
-          // Custom UI Overlays
-          SafeArea(
-            child: Column(
-              children: [
-                // Top Bar
-                FadeTransition(
-                  opacity: _fadeAnimation,
-                  child: Container(
-                    margin: const EdgeInsets.all(AppPadding.medium),
-                    decoration: BoxDecoration(
-                      color: AppColors.surface,
-                      borderRadius: BorderRadius.circular(AppPadding.large),
-                      boxShadow: [
-                        BoxShadow(
-                          color: AppColors.textPrimary.withOpacity(0.1),
-                          blurRadius: 20,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
-                    ),
-                    child: Column(
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.all(AppPadding.medium),
-                          child: Row(
-                            children: [
-                              Container(
-                                decoration: BoxDecoration(
-                                  color: AppColors.primary.withOpacity(0.1),
-                                  borderRadius: BorderRadius.circular(
-                                    AppBorderRadius.medium,
-                                  ),
-                                ),
-                                child: IconButton(
-                                  icon: const Icon(
-                                    Icons.arrow_back,
-                                    color: AppColors.primary,
-                                  ),
-                                  onPressed: () {
-                                    if (mounted) {
-                                      context.go('/home');
-                                    }
-                                  },
-                                ),
-                              ),
-                              const SizedBox(width: AppPadding.medium),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      'Nearby Shelters',
-                                      style: textTheme.titleLarge?.copyWith(
-                                        fontWeight: FontWeight.bold,
-                                        color: AppColors.textPrimary,
-                                      ),
-                                    ),
-                                    Text(
-                                      '$totalShelters shelters found',
-                                      style: textTheme.bodySmall?.copyWith(
-                                        color: AppColors.textSecondary,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              Container(
-                                decoration: BoxDecoration(
-                                  color: AppColors.accent.withOpacity(0.1),
-                                  borderRadius: BorderRadius.circular(
-                                    AppBorderRadius.medium,
-                                  ),
-                                ),
-                                child: IconButton(
-                                  icon: Icon(
-                                    _showLegend
-                                        ? Icons.visibility_off
-                                        : Icons.visibility,
-                                    color: AppColors.accent,
-                                  ),
-                                  onPressed: () {
-                                    if (mounted) {
-                                      setState(() {
-                                        _showLegend = !_showLegend;
-                                      });
-                                    }
-                                  },
-                                  tooltip: 'Toggle Legend',
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
+          // Create markers from the filtered live data
+          final markers = filteredShelters.map((shelter) {
+            return Marker(
+              markerId: MarkerId(shelter.id),
+              position: LatLng(shelter.latitude, shelter.longitude),
+              infoWindow: InfoWindow(
+                title: shelter.name,
+                snippet: 'Tap for details',
+              ),
+              icon: _getMarkerIcon(shelter.status),
+              onTap: () {
+                if (!mounted) return;
+                showModalBottomSheet(
+                  context: context,
+                  backgroundColor: Colors.transparent,
+                  isScrollControlled: true,
+                  builder: (context) => ShelterDetailsBottomSheet(shelter: shelter),
+                );
+              },
+            );
+          }).toSet();
 
-                        // Filter Chips
-                        Padding(
-                          padding: const EdgeInsets.fromLTRB(
-                            AppPadding.medium,
-                            0,
-                            AppPadding.medium,
-                            AppPadding.medium,
-                          ),
-                          child: SingleChildScrollView(
-                            scrollDirection: Axis.horizontal,
-                            child: Row(
-                              children: [
-                                _buildFilterChip(
-                                  label: 'All',
-                                  count: totalShelters,
-                                  isSelected: _filterStatus == null,
-                                  color: AppColors.primary,
-                                  onTap: () => _applyFilter(null),
-                                ),
-                                const SizedBox(width: AppPadding.small),
-                                _buildFilterChip(
-                                  label: 'Available',
-                                  count: _getShelterCount(ShelterStatus.available),
-                                  isSelected:
-                                  _filterStatus == ShelterStatus.available,
-                                  color: Colors.green,
-                                  onTap: () =>
-                                      _applyFilter(ShelterStatus.available),
-                                ),
-                                const SizedBox(width: AppPadding.small),
-                                _buildFilterChip(
-                                  label: 'Full',
-                                  count: _getShelterCount(ShelterStatus.full),
-                                  isSelected: _filterStatus == ShelterStatus.full,
-                                  color: Colors.orange,
-                                  onTap: () => _applyFilter(ShelterStatus.full),
-                                ),
-                                const SizedBox(width: AppPadding.small),
-                                _buildFilterChip(
-                                  label: 'Closed',
-                                  count: _getShelterCount(ShelterStatus.closed),
-                                  isSelected: _filterStatus == ShelterStatus.closed,
-                                  color: Colors.red,
-                                  onTap: () => _applyFilter(ShelterStatus.closed),
-                                ),
-                              ],
+          return Stack(
+            children: [
+              // Google Map with live markers
+              GoogleMap(
+                initialCameraPosition: _initialCameraPosition,
+                markers: markers,
+                myLocationButtonEnabled: false,
+                myLocationEnabled: true,
+                onMapCreated: (controller) => _mapController = controller,
+                zoomControlsEnabled: false,
+                mapToolbarEnabled: false,
+                compassEnabled: false,
+              ),
+
+              // Loading Overlay for location
+              if (_isLoadingLocation)
+                Container(
+                  color: Colors.black26,
+                  child: const Center(
+                    child: Card(
+                      child: Padding(
+                        padding: EdgeInsets.all(20),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            CircularProgressIndicator(),
+                            SizedBox(height: 16),
+                            Text(
+                              'Getting your location...',
+                              style: TextStyle(fontSize: 16),
                             ),
-                          ),
+                          ],
                         ),
-                      ],
+                      ),
                     ),
                   ),
                 ),
 
-                const Spacer(),
-
-                // Bottom Controls
-                Padding(
-                  padding: const EdgeInsets.all(AppPadding.medium),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      // My Location Button
-                      Container(
+              // Custom UI Overlays
+              SafeArea(
+                child: Column(
+                  children: [
+                    // Top Bar with live shelter count
+                    FadeTransition(
+                      opacity: _fadeAnimation,
+                      child: Container(
+                        margin: const EdgeInsets.all(AppPadding.medium),
                         decoration: BoxDecoration(
                           color: AppColors.surface,
-                          shape: BoxShape.circle,
+                          borderRadius: BorderRadius.circular(AppPadding.large),
                           boxShadow: [
                             BoxShadow(
                               color: AppColors.textPrimary.withOpacity(0.1),
-                              blurRadius: 15,
+                              blurRadius: 20,
                               offset: const Offset(0, 4),
                             ),
                           ],
                         ),
-                        child: IconButton(
-                          icon: const Icon(
-                            Icons.my_location,
-                            color: AppColors.primary,
-                          ),
-                          iconSize: 28,
-                          padding: const EdgeInsets.all(AppPadding.medium),
-                          onPressed: () async {
-                            if (_currentPosition != null && mounted) {
-                              _mapController?.animateCamera(
-                                CameraUpdate.newLatLng(
-                                  LatLng(
-                                    _currentPosition!.latitude,
-                                    _currentPosition!.longitude,
+                        child: Column(
+                          children: [
+                            Padding(
+                              padding: const EdgeInsets.all(AppPadding.medium),
+                              child: Row(
+                                children: [
+                                  Container(
+                                    decoration: BoxDecoration(
+                                      color: AppColors.primary.withOpacity(0.1),
+                                      borderRadius: BorderRadius.circular(
+                                        AppBorderRadius.medium,
+                                      ),
+                                    ),
+                                    child: IconButton(
+                                      icon: const Icon(
+                                        Icons.arrow_back,
+                                        color: AppColors.primary,
+                                      ),
+                                      onPressed: () => context.go('/home'),
+                                    ),
                                   ),
+                                  const SizedBox(width: AppPadding.medium),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          'Nearby Shelters',
+                                          style: textTheme.titleLarge?.copyWith(
+                                            fontWeight: FontWeight.bold,
+                                            color: AppColors.textPrimary,
+                                          ),
+                                        ),
+                                        Text(
+                                          '${shelters.length} total shelters found',
+                                          style: textTheme.bodySmall?.copyWith(
+                                            color: AppColors.textSecondary,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  Container(
+                                    decoration: BoxDecoration(
+                                      color: AppColors.accent.withOpacity(0.1),
+                                      borderRadius: BorderRadius.circular(
+                                        AppBorderRadius.medium,
+                                      ),
+                                    ),
+                                    child: IconButton(
+                                      icon: Icon(
+                                        _showLegend
+                                            ? Icons.visibility_off
+                                            : Icons.visibility,
+                                        color: AppColors.accent,
+                                      ),
+                                      onPressed: () {
+                                        if (mounted) {
+                                          setState(() {
+                                            _showLegend = !_showLegend;
+                                          });
+                                        }
+                                      },
+                                      tooltip: 'Toggle Legend',
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+
+                            // Filter Chips with live counts
+                            Padding(
+                              padding: const EdgeInsets.fromLTRB(
+                                AppPadding.medium,
+                                0,
+                                AppPadding.medium,
+                                AppPadding.medium,
+                              ),
+                              child: SingleChildScrollView(
+                                scrollDirection: Axis.horizontal,
+                                child: Row(
+                                  children: [
+                                    _buildFilterChip(
+                                      label: 'All',
+                                      count: shelters.length,
+                                      isSelected: _filterStatus == null,
+                                      color: AppColors.primary,
+                                      onTap: () => _applyFilter(null),
+                                    ),
+                                    const SizedBox(width: AppPadding.small),
+                                    _buildFilterChip(
+                                      label: 'Available',
+                                      count: shelters.where((s) => s.status == ShelterStatus.available).length,
+                                      isSelected: _filterStatus == ShelterStatus.available,
+                                      color: Colors.green,
+                                      onTap: () => _applyFilter(ShelterStatus.available),
+                                    ),
+                                    const SizedBox(width: AppPadding.small),
+                                    _buildFilterChip(
+                                      label: 'Full',
+                                      count: shelters.where((s) => s.status == ShelterStatus.full).length,
+                                      isSelected: _filterStatus == ShelterStatus.full,
+                                      color: Colors.orange,
+                                      onTap: () => _applyFilter(ShelterStatus.full),
+                                    ),
+                                    const SizedBox(width: AppPadding.small),
+                                    _buildFilterChip(
+                                      label: 'Closed',
+                                      count: shelters.where((s) => s.status == ShelterStatus.closed).length,
+                                      isSelected: _filterStatus == ShelterStatus.closed,
+                                      color: Colors.red,
+                                      onTap: () => _applyFilter(ShelterStatus.closed),
+                                    ),
+                                  ],
                                 ),
-                              );
-                            } else {
-                              _getCurrentLocation();
-                            }
-                          },
-                          tooltip: 'My Location',
+                              ),
+                            ),
+                          ],
                         ),
                       ),
+                    ),
 
-                      if (_showLegend) ...[
-                        const SizedBox(height: AppPadding.medium),
-                        // Legend Card
-                        FadeTransition(
-                          opacity: _fadeAnimation,
-                          child: Container(
-                            padding: const EdgeInsets.all(AppPadding.medium + AppPadding.small),
+                    const Spacer(),
+
+                    // Bottom Controls
+                    Padding(
+                      padding: const EdgeInsets.all(AppPadding.medium),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          // My Location Button
+                          Container(
                             decoration: BoxDecoration(
                               color: AppColors.surface,
-                              borderRadius: BorderRadius.circular(AppPadding.large),
+                              shape: BoxShape.circle,
                               boxShadow: [
                                 BoxShadow(
                                   color: AppColors.textPrimary.withOpacity(0.1),
-                                  blurRadius: 20,
+                                  blurRadius: 15,
                                   offset: const Offset(0, 4),
                                 ),
                               ],
                             ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Row(
-                                  children: [
-                                    const Icon(
-                                      Icons.info_outline,
-                                      size: 18,
-                                      color: AppColors.primary,
-                                    ),
-                                    const SizedBox(width: AppPadding.small),
-                                    Text(
-                                      'Legend',
-                                      style: textTheme.titleSmall?.copyWith(
-                                        fontWeight: FontWeight.bold,
-                                        color: AppColors.textPrimary,
+                            child: IconButton(
+                              icon: const Icon(
+                                Icons.my_location,
+                                color: AppColors.primary,
+                              ),
+                              iconSize: 28,
+                              padding: const EdgeInsets.all(AppPadding.medium),
+                              onPressed: () async {
+                                if (_currentPosition != null && mounted) {
+                                  _mapController?.animateCamera(
+                                    CameraUpdate.newLatLng(
+                                      LatLng(
+                                        _currentPosition!.latitude,
+                                        _currentPosition!.longitude,
                                       ),
+                                    ),
+                                  );
+                                } else {
+                                  _getCurrentLocation();
+                                }
+                              },
+                              tooltip: 'My Location',
+                            ),
+                          ),
+
+                          // Legend Card with live counts
+                          if (_showLegend) ...[
+                            const SizedBox(height: AppPadding.medium),
+                            FadeTransition(
+                              opacity: _fadeAnimation,
+                              child: Container(
+                                padding: const EdgeInsets.all(AppPadding.medium + AppPadding.small),
+                                decoration: BoxDecoration(
+                                  color: AppColors.surface,
+                                  borderRadius: BorderRadius.circular(AppPadding.large),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: AppColors.textPrimary.withOpacity(0.1),
+                                      blurRadius: 20,
+                                      offset: const Offset(0, 4),
                                     ),
                                   ],
                                 ),
-                                const SizedBox(height: AppPadding.medium),
-                                _buildLegendItem(
-                                  color: Colors.green,
-                                  label: 'Available',
-                                  count: _getShelterCount(ShelterStatus.available),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Row(
+                                      children: [
+                                        const Icon(
+                                          Icons.info_outline,
+                                          size: 18,
+                                          color: AppColors.primary,
+                                        ),
+                                        const SizedBox(width: AppPadding.small),
+                                        Text(
+                                          'Legend',
+                                          style: textTheme.titleSmall?.copyWith(
+                                            fontWeight: FontWeight.bold,
+                                            color: AppColors.textPrimary,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: AppPadding.medium),
+                                    _buildLegendItem(
+                                      color: Colors.green,
+                                      label: 'Available',
+                                      count: shelters.where((s) => s.status == ShelterStatus.available).length,
+                                    ),
+                                    const SizedBox(height: AppPadding.small),
+                                    _buildLegendItem(
+                                      color: Colors.orange,
+                                      label: 'Full',
+                                      count: shelters.where((s) => s.status == ShelterStatus.full).length,
+                                    ),
+                                    const SizedBox(height: AppPadding.small),
+                                    _buildLegendItem(
+                                      color: Colors.red,
+                                      label: 'Closed',
+                                      count: shelters.where((s) => s.status == ShelterStatus.closed).length,
+                                    ),
+                                  ],
                                 ),
-                                const SizedBox(height: AppPadding.small),
-                                _buildLegendItem(
-                                  color: Colors.orange,
-                                  label: 'Full',
-                                  count: _getShelterCount(ShelterStatus.full),
-                                ),
-                                const SizedBox(height: AppPadding.small),
-                                _buildLegendItem(
-                                  color: Colors.red,
-                                  label: 'Closed',
-                                  count: _getShelterCount(ShelterStatus.closed),
-                                ),
-                              ],
+                              ),
                             ),
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
+                          ],
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
-          ),
-        ],
+              ),
+            ],
+          );
+        },
       ),
     );
   }
