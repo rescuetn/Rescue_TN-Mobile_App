@@ -47,6 +47,7 @@ class FirebaseAuthService implements AuthService {
     required String email,
     required String password,
     required UserRole role,
+    List<String>? skills,
   }) async {
     // 1. Create the user in Firebase Auth.
     final userCredential = await _firebaseAuth.createUserWithEmailAndPassword(
@@ -57,13 +58,14 @@ class FirebaseAuthService implements AuthService {
     if (firebaseUser == null) {
       throw Exception('User creation failed, please try again.');
     }
-    // 2. Create our custom AppUser object.
+    // 2. Create our custom AppUser object with skills for volunteers.
     final appUser = AppUser(
       uid: firebaseUser.uid,
       email: email,
       role: role,
+      skills: skills, // Include skills for volunteer accounts
     );
-    // 3. Save the user's data (including their role) to Firestore.
+    // 3. Save the user's data (including their role and skills) to Firestore.
     await _databaseService.createUserRecord(appUser);
   }
 
@@ -81,7 +83,7 @@ class FirebaseAuthService implements AuthService {
     if (firebaseUser == null) {
       throw Exception('Sign in failed.');
     }
-    // 2. Fetch the complete user profile from Firestore to get their role.
+    // 2. Fetch the complete user profile from Firestore to get their role and skills.
     final appUser = await _databaseService.getUserRecord(firebaseUser.uid);
     if (appUser == null) {
       throw Exception('User data not found in database. Please contact support.');
@@ -99,4 +101,3 @@ class FirebaseAuthService implements AuthService {
     await _firebaseAuth.sendPasswordResetEmail(email: email);
   }
 }
-

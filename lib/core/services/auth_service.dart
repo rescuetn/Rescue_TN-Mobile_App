@@ -26,19 +26,19 @@ abstract class AuthService {
   });
 
   /// Creates a new user account with the given email, password, and role.
+  /// Optionally accepts [skills] for volunteer accounts.
   /// Throws an exception on failure (e.g., email already in use).
   Future<void> createUserWithEmailAndPassword({
     required String email,
     required String password,
     required UserRole role,
+    List<String>? skills,
   });
 
   /// Signs out the current user.
   Future<void> signOut();
 
-  /// --- NEW METHOD ---
   /// Sends a password reset link to the given email address.
   /// Throws an exception if the email is not found or another error occurs.
   Future<void> sendPasswordResetEmail({required String email});
 }
-

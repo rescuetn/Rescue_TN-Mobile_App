@@ -16,6 +16,7 @@ Provider<FirebaseFirestore>((ref) => FirebaseFirestore.instance);
 abstract class DatabaseService {
   // User operations
   Future<void> createUserRecord(AppUser user);
+  Future<void> updateUserRecord(AppUser user);
   Future<AppUser?> getUserRecord(String uid);
 
   // Incident operations
@@ -56,6 +57,11 @@ class FirestoreDatabaseService implements DatabaseService {
   @override
   Future<void> createUserRecord(AppUser user) async {
     await _firestore.collection('users').doc(user.uid).set(user.toMap());
+  }
+
+  @override
+  Future<void> updateUserRecord(AppUser user) async {
+    await _firestore.collection('users').doc(user.uid).update(user.toMap());
   }
 
   @override
@@ -205,4 +211,3 @@ const List<PreparednessItem> _defaultPlan = [
       description: 'Identify your local evacuation routes and have a plan.',
       category: PreparednessCategory.actions),
 ];
-

@@ -1,3 +1,4 @@
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
@@ -455,6 +456,7 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen>
   Widget build(BuildContext context) {
     // Watch the live stream of incidents from Firestore
     final incidentsAsync = ref.watch(incidentStreamProvider);
+    final textTheme = Theme.of(context).textTheme;
 
     return Scaffold(
       body: Container(
@@ -492,24 +494,7 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen>
                       child: IconButton(
                         icon: const Icon(Icons.arrow_back_rounded,
                             color: Colors.white),
-                        onPressed: () => context.pop(),
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Container(
-                      padding: const EdgeInsets.all(14),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.25),
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(
-                          color: Colors.white.withOpacity(0.3),
-                          width: 1,
-                        ),
-                      ),
-                      child: const Icon(
-                        Icons.heat_pump_rounded,
-                        color: Colors.white,
-                        size: 28,
+                        onPressed: () => context.go('/home'),
                       ),
                     ),
                     const SizedBox(width: 16),
@@ -519,10 +504,7 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen>
                         children: [
                           Text(
                             'Disaster Heatmap',
-                            style: Theme.of(context)
-                                .textTheme
-                                .titleLarge
-                                ?.copyWith(
+                            style: textTheme.titleLarge?.copyWith(
                               fontWeight: FontWeight.bold,
                               color: Colors.white,
                               fontSize: 24,
@@ -531,14 +513,23 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen>
                           const SizedBox(height: 2),
                           Text(
                             'Live incident visualization',
-                            style: Theme.of(context)
-                                .textTheme
-                                .bodyMedium
-                                ?.copyWith(
+                            style: textTheme.bodyMedium?.copyWith(
                               color: Colors.white.withOpacity(0.9),
                             ),
                           ),
                         ],
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.25),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(
+                        Icons.heat_pump_rounded,
+                        color: Colors.white,
+                        size: 28,
                       ),
                     ),
                   ],

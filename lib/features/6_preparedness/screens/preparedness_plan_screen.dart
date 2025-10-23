@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:rescuetn/app/constants.dart';
 import 'package:rescuetn/features/6_preparedness/providers/preparedness_plan_provider.dart';
 import 'package:rescuetn/models/preparedness_model.dart';
@@ -23,18 +24,18 @@ class _PreparednessPlanScreenState extends ConsumerState<PreparednessPlanScreen>
     super.initState();
     _animationController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 800),
+      duration: const Duration(milliseconds: 1200),
     );
     _fadeAnimation = CurvedAnimation(
       parent: _animationController,
-      curve: Curves.easeOutCubic,
+      curve: const Interval(0.0, 0.6, curve: Curves.easeOut),
     );
     _slideAnimation = Tween<Offset>(
-      begin: const Offset(0, 0.1),
+      begin: const Offset(0, 0.3),
       end: Offset.zero,
     ).animate(CurvedAnimation(
       parent: _animationController,
-      curve: Curves.easeOutCubic,
+      curve: const Interval(0.2, 1.0, curve: Curves.easeOutCubic),
     ));
     _animationController.forward();
   }
@@ -49,53 +50,237 @@ class _PreparednessPlanScreenState extends ConsumerState<PreparednessPlanScreen>
   Widget build(BuildContext context) {
     final planAsync = ref.watch(preparednessPlanProvider);
     final progressAsync = ref.watch(preparednessProgressProvider);
+    final textTheme = Theme.of(context).textTheme;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('My Preparedness Plan'),
-      ),
-      body: planAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (err, stack) => Center(child: Text('Error: $err')),
-        data: (plan) {
-          if (plan.isEmpty) {
-            return const Center(child: Text('No preparedness plan found.'));
-          }
-          final essentials = plan
-              .where((i) => i.category == PreparednessCategory.essentials)
-              .toList();
-          final documents = plan
-              .where((i) => i.category == PreparednessCategory.documents)
-              .toList();
-          final actions = plan
-              .where((i) => i.category == PreparednessCategory.actions)
-              .toList();
-
-          return FadeTransition(
-            opacity: _fadeAnimation,
-            child: SlideTransition(
-              position: _slideAnimation,
-              child: ListView(
-                padding: const EdgeInsets.all(16.0),
-                children: [
-                  // --- Enhanced Progress Card ---
-                  progressAsync.when(
-                    data: (progress) => _buildProgressCard(context, progress),
-                    loading: () => const SizedBox.shrink(),
-                    error: (e, st) =>
-                    const Text('Could not calculate progress.'),
-                  ),
-                  const SizedBox(height: 24),
-
-                  // --- Checklist Sections ---
-                  _buildCategorySection('Essentials', essentials, ref),
-                  _buildCategorySection('Documents', documents, ref),
-                  _buildCategorySection('Actions', actions, ref),
-                ],
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              Colors.blue.shade700,
+              Colors.blue.shade600,
+              Colors.blue.shade500,
+              AppColors.background,
+            ],
+            stops: const [0.0, 0.15, 0.3, 0.3],
+          ),
+        ),
+        child: SafeArea(
+          child: Column(
+            children: [
+              // Enhanced App Bar
+              Container(
+                padding: const EdgeInsets.all(20),
+                child: Row(
+                  children: [
+                    Hero(
+                      tag: 'back_button',
+                      child: Material(
+                        color: Colors.transparent,
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.25),
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(
+                              color: Colors.white.withOpacity(0.3),
+                              width: 1,
+                            ),
+                          ),
+                          child: IconButton(
+                            icon: const Icon(Icons.arrow_back_rounded,
+                                color: Colors.white),
+                            onPressed: () => context.go('/home'),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Preparedness Plan',
+                            style: textTheme.titleLarge?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                              fontSize: 24,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            'Track Your Emergency Readiness',
+                            style: textTheme.bodyMedium?.copyWith(
+                              color: Colors.white.withOpacity(0.9),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.25),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(
+                        Icons.checklist_rounded,
+                        color: Colors.white,
+                        size: 28,
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
-          );
-        },
+
+              // Main Content
+              Expanded(
+                child: FadeTransition(
+                  opacity: _fadeAnimation,
+                  child: SlideTransition(
+                    position: _slideAnimation,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade50,
+                        borderRadius: const BorderRadius.only(
+                          topLeft: Radius.circular(32),
+                          topRight: Radius.circular(32),
+                        ),
+                      ),
+                      child: planAsync.when(
+                        loading: () => Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              CircularProgressIndicator(
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                    AppColors.primary),
+                              ),
+                              const SizedBox(height: 16),
+                              Text(
+                                'Loading your preparedness plan...',
+                                style: TextStyle(
+                                  color: AppColors.textSecondary,
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        error: (err, stack) => Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.error_outline,
+                                  size: 64, color: Colors.red.shade300),
+                              const SizedBox(height: 16),
+                              Text(
+                                'Error loading plan',
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.grey.shade700,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                '$err',
+                                style: TextStyle(
+                                    color: Colors.grey.shade600, fontSize: 14),
+                                textAlign: TextAlign.center,
+                              ),
+                            ],
+                          ),
+                        ),
+                        data: (plan) {
+                          if (plan.isEmpty) {
+                            return Center(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(Icons.checklist,
+                                      size: 80, color: Colors.grey.shade300),
+                                  const SizedBox(height: 16),
+                                  Text(
+                                    'No preparedness plan found',
+                                    style: TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.grey.shade700,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    'Start creating your emergency plan',
+                                    style: TextStyle(
+                                        color: Colors.grey.shade600),
+                                  ),
+                                ],
+                              ),
+                            );
+                          }
+
+                          final essentials = plan
+                              .where((i) =>
+                          i.category == PreparednessCategory.essentials)
+                              .toList();
+                          final documents = plan
+                              .where((i) =>
+                          i.category == PreparednessCategory.documents)
+                              .toList();
+                          final actions = plan
+                              .where(
+                                  (i) => i.category == PreparednessCategory.actions)
+                              .toList();
+
+                          return ListView(
+                            padding: const EdgeInsets.all(20.0),
+                            children: [
+                              // Enhanced Progress Card
+                              progressAsync.when(
+                                data: (progress) =>
+                                    _buildProgressCard(context, progress),
+                                loading: () => const SizedBox.shrink(),
+                                error: (e, st) => const SizedBox.shrink(),
+                              ),
+                              const SizedBox(height: 32),
+
+                              // Checklist Sections
+                              _buildCategorySection(
+                                'Essential Supplies',
+                                essentials,
+                                ref,
+                                Icons.shopping_bag_rounded,
+                                Colors.blue,
+                              ),
+                              _buildCategorySection(
+                                'Important Documents',
+                                documents,
+                                ref,
+                                Icons.description_rounded,
+                                Colors.orange,
+                              ),
+                              _buildCategorySection(
+                                'Action Items',
+                                actions,
+                                ref,
+                                Icons.task_alt_rounded,
+                                Colors.purple,
+                              ),
+                              const SizedBox(height: 20),
+                            ],
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -106,157 +291,122 @@ class _PreparednessPlanScreenState extends ConsumerState<PreparednessPlanScreen>
     Color progressColor =
         Color.lerp(Colors.orange, Colors.green, progress) ?? Colors.green;
 
-    return Container(
-      padding: const EdgeInsets.all(AppPadding.large),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.primary.withOpacity(0.1),
-            blurRadius: 20,
-            offset: const Offset(0, 6),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Stack(
-            alignment: Alignment.center,
-            children: [
-              SizedBox(
-                width: 70,
-                height: 70,
-                child: TweenAnimationBuilder<double>(
-                  tween: Tween(begin: 0, end: progress),
-                  duration: const Duration(milliseconds: 800),
-                  builder: (context, value, child) =>
-                      CircularProgressIndicator(
-                        value: value,
-                        strokeWidth: 8,
-                        backgroundColor: progressColor.withOpacity(0.2),
-                        valueColor: AlwaysStoppedAnimation<Color>(progressColor),
-                      ),
-                ),
-              ),
-              Text(
-                '$percentage%',
-                style: textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: progressColor,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(width: AppPadding.large),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Your Readiness Score',
-                  style: textTheme.headlineSmall
-                      ?.copyWith(fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  'Complete all items to be fully prepared for an emergency.',
-                  style: textTheme.bodyMedium,
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+    String motivationText;
+    IconData motivationIcon;
 
-  Widget _buildCategorySection(
-      String title, List<PreparednessItem> items, WidgetRef ref) {
-    if (items.isEmpty) {
-      return const SizedBox.shrink();
+    if (percentage < 30) {
+      motivationText = 'Just getting started! Keep going.';
+      motivationIcon = Icons.rocket_launch_rounded;
+    } else if (percentage < 70) {
+      motivationText = 'Great progress! You\'re halfway there.';
+      motivationIcon = Icons.trending_up_rounded;
+    } else if (percentage < 100) {
+      motivationText = 'Almost ready! Just a few more items.';
+      motivationIcon = Icons.star_half_rounded;
+    } else {
+      motivationText = 'Excellent! You\'re fully prepared.';
+      motivationIcon = Icons.verified_rounded;
     }
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(title,
-            style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
-        const SizedBox(height: 8),
-        ...items.map((item) => _buildChecklistItem(item, ref)),
-        const SizedBox(height: 20),
-      ],
-    );
-  }
-
-  Widget _buildChecklistItem(PreparednessItem item, WidgetRef ref) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6.0),
-      child: GestureDetector(
-        onTap: () {
-          ref
-              .read(preparednessControllerProvider.notifier)
-              .toggleItemStatus(item.id, item.isCompleted);
-        },
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 300),
-          padding: const EdgeInsets.all(16.0),
-          decoration: BoxDecoration(
-            color: item.isCompleted
-                ? AppColors.primary.withOpacity(0.1)
-                : AppColors.surface,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: item.isCompleted
-                  ? AppColors.primary
-                  : Colors.grey.shade300,
-              width: 1.5,
-            ),
+    return Container(
+      padding: const EdgeInsets.all(24.0),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            progressColor.withOpacity(0.1),
+            progressColor.withOpacity(0.05),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(
+          color: progressColor.withOpacity(0.3),
+          width: 2,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: progressColor.withOpacity(0.2),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
           ),
-          child: Row(
+        ],
+      ),
+      child: Column(
+        children: [
+          Row(
             children: [
-              AnimatedContainer(
-                duration: const Duration(milliseconds: 300),
-                width: 24,
-                height: 24,
-                decoration: BoxDecoration(
-                  color: item.isCompleted ? AppColors.primary : Colors.transparent,
-                  shape: BoxShape.circle,
-                  border: Border.all(
-                    color: item.isCompleted
-                        ? AppColors.primary
-                        : Colors.grey.shade400,
-                    width: 2,
+              Stack(
+                alignment: Alignment.center,
+                children: [
+                  SizedBox(
+                    width: 90,
+                    height: 90,
+                    child: TweenAnimationBuilder<double>(
+                      tween: Tween(begin: 0, end: progress),
+                      duration: const Duration(milliseconds: 1200),
+                      curve: Curves.easeOutCubic,
+                      builder: (context, value, child) =>
+                          CircularProgressIndicator(
+                            value: value,
+                            strokeWidth: 10,
+                            backgroundColor: Colors.white.withOpacity(0.5),
+                            valueColor:
+                            AlwaysStoppedAnimation<Color>(progressColor),
+                            strokeCap: StrokeCap.round,
+                          ),
+                    ),
                   ),
-                ),
-                child: item.isCompleted
-                    ? const Icon(Icons.check, color: Colors.white, size: 16)
-                    : null,
+                  Column(
+                    children: [
+                      Text(
+                        '$percentage%',
+                        style: textTheme.headlineSmall?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: progressColor,
+                        ),
+                      ),
+                      Text(
+                        'Ready',
+                        style: textTheme.bodySmall?.copyWith(
+                          color: progressColor,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ),
-              const SizedBox(width: 16),
+              const SizedBox(width: 24),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      item.title,
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        decoration: item.isCompleted
-                            ? TextDecoration.lineThrough
-                            : TextDecoration.none,
-                      ),
+                    Row(
+                      children: [
+                        Icon(
+                          motivationIcon,
+                          color: progressColor,
+                          size: 24,
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'Readiness Score',
+                            style: textTheme.titleLarge?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color: Colors.black87,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 8),
                     Text(
-                      item.description,
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: AppColors.textSecondary,
-                        decoration: item.isCompleted
-                            ? TextDecoration.lineThrough
-                            : TextDecoration.none,
+                      motivationText,
+                      style: textTheme.bodyMedium?.copyWith(
+                        color: Colors.grey.shade700,
+                        height: 1.4,
                       ),
                     ),
                   ],
@@ -264,9 +414,217 @@ class _PreparednessPlanScreenState extends ConsumerState<PreparednessPlanScreen>
               ),
             ],
           ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCategorySection(
+      String title,
+      List<PreparednessItem> items,
+      WidgetRef ref,
+      IconData icon,
+      Color accentColor,
+      ) {
+    if (items.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    final completedCount = items.where((item) => item.isCompleted).length;
+    final totalCount = items.length;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          decoration: BoxDecoration(
+            color: accentColor.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: accentColor.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(icon, color: accentColor, size: 24),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black87,
+                  ),
+                ),
+              ),
+              Container(
+                padding:
+                const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: accentColor.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  '$completedCount/$totalCount',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: accentColor,
+                    fontSize: 14,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 16),
+        ...items.asMap().entries.map((entry) {
+          final index = entry.key;
+          final item = entry.value;
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 12.0),
+            child: TweenAnimationBuilder<double>(
+              tween: Tween(begin: 0, end: 1),
+              duration: Duration(milliseconds: 400 + (index * 100)),
+              curve: Curves.easeOutCubic,
+              builder: (context, value, child) {
+                return Opacity(
+                  opacity: value,
+                  child: Transform.translate(
+                    offset: Offset(0, 20 * (1 - value)),
+                    child: child,
+                  ),
+                );
+              },
+              child: _buildChecklistItem(item, ref, accentColor),
+            ),
+          );
+        }),
+        const SizedBox(height: 24),
+      ],
+    );
+  }
+
+  Widget _buildChecklistItem(
+      PreparednessItem item, WidgetRef ref, Color accentColor) {
+    return GestureDetector(
+      onTap: () {
+        ref
+            .read(preparednessControllerProvider.notifier)
+            .toggleItemStatus(item.id, item.isCompleted);
+      },
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeOutCubic,
+        padding: const EdgeInsets.all(18.0),
+        decoration: BoxDecoration(
+          color: item.isCompleted
+              ? accentColor.withOpacity(0.08)
+              : Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: item.isCompleted
+                ? accentColor.withOpacity(0.4)
+                : Colors.grey.shade200,
+            width: 2,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: item.isCompleted
+                  ? accentColor.withOpacity(0.1)
+                  : Colors.black.withOpacity(0.05),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 300),
+              curve: Curves.easeOutCubic,
+              width: 28,
+              height: 28,
+              decoration: BoxDecoration(
+                color: item.isCompleted ? accentColor : Colors.transparent,
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: item.isCompleted
+                      ? accentColor
+                      : Colors.grey.shade300,
+                  width: 2.5,
+                ),
+                boxShadow: item.isCompleted
+                    ? [
+                  BoxShadow(
+                    color: accentColor.withOpacity(0.4),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ]
+                    : [],
+              ),
+              child: item.isCompleted
+                  ? const Icon(Icons.check, color: Colors.white, size: 18)
+                  : null,
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    item.title,
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: item.isCompleted
+                          ? Colors.grey.shade600
+                          : Colors.black87,
+                      decoration: item.isCompleted
+                          ? TextDecoration.lineThrough
+                          : TextDecoration.none,
+                      decorationThickness: 2,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    item.description,
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: item.isCompleted
+                          ? Colors.grey.shade500
+                          : Colors.grey.shade600,
+                      decoration: item.isCompleted
+                          ? TextDecoration.lineThrough
+                          : TextDecoration.none,
+                      height: 1.4,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            if (item.isCompleted)
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: accentColor.withOpacity(0.15),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Icons.check_circle_rounded,
+                  color: accentColor,
+                  size: 20,
+                ),
+              ),
+          ],
         ),
       ),
     );
   }
 }
-

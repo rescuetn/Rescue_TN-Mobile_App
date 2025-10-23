@@ -35,7 +35,7 @@
         <!-- 🗺️ Google Maps API Key -->
         <meta-data
             android:name="com.google.android.geo.API_KEY"
-            android:value="AIzaSyBL4OUwxRXVzaxO8EDchEMC_NWM7RW8tYM" />
+            android:value="AIzaSyCLQ3cyXTMIDqcztRDR7v_Awrs-pLmJYoM" />
 
         <!-- Optional: Map ID for advanced styling -->
         <!--

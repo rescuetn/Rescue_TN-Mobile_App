@@ -7,8 +7,19 @@ import 'package:rescuetn/common_widgets/custom_button.dart';
 import 'package:rescuetn/features/1_auth/providers/auth_provider.dart';
 import 'package:rescuetn/models/user_model.dart';
 
-/// This screen is for setting up the user's profile AFTER phone OTP verification.
-/// It collects essential details like name and password to complete the account creation.
+/// Available skills for volunteers
+enum VolunteerSkill {
+  medicalAid('Medical Aid', Icons.medical_services),
+  rescue('Rescue', Icons.emoji_people),
+  foodSupply('Food Supply', Icons.restaurant),
+  transport('Transport', Icons.directions_car),
+  coordination('Coordination', Icons.groups);
+
+  final String label;
+  final IconData icon;
+  const VolunteerSkill(this.label, this.icon);
+}
+
 class RegisterScreen extends ConsumerStatefulWidget {
   const RegisterScreen({super.key});
 
@@ -31,6 +42,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> with SingleTick
 
   // State for the role selection
   UserRole _selectedRole = UserRole.public;
+
+  // State for volunteer skills
+  Set<VolunteerSkill> _selectedSkills = {};
 
   @override
   void initState() {
@@ -73,20 +87,54 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> with SingleTick
       return;
     }
 
+    // Validate volunteer skills if role is volunteer
+    if (_selectedRole == UserRole.volunteer && _selectedSkills.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              const Icon(Icons.error_outline, color: AppColors.onPrimary),
+              const SizedBox(width: AppPadding.small),
+              const Expanded(
+                child: Text(
+                  'Please select at least one skill',
+                  style: TextStyle(color: AppColors.onPrimary),
+                ),
+              ),
+            ],
+          ),
+          backgroundColor: AppColors.error,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppBorderRadius.medium),
+          ),
+          margin: const EdgeInsets.all(AppPadding.medium),
+        ),
+      );
+      return;
+    }
+
     setState(() => _isLoading = true);
 
     try {
       // 1. Read the authentication service from the provider.
       final authService = ref.read(authRepositoryProvider);
 
-      // 2. Call the createUser method with email, password, and the selected role.
+      // 2. Prepare skills list for volunteers
+      List<String>? skills;
+      if (_selectedRole == UserRole.volunteer) {
+        skills = _selectedSkills.map((skill) => skill.label).toList();
+      }
+
+      // 3. Call the createUser method with email, password, role, and skills.
       await authService.createUserWithEmailAndPassword(
         email: _emailController.text.trim(),
         password: _passwordController.text.trim(),
-        role: _selectedRole, // Pass the selected role
+        role: _selectedRole,
+        skills: skills, // Pass skills for volunteers
       );
 
-      // 3. Navigation is now handled automatically!
+      // 4. Navigation is now handled automatically!
       // The authStateChangesProvider will detect the new user, and the router
       // will automatically navigate to the home screen.
 
@@ -503,10 +551,117 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> with SingleTick
                                       }).toList(),
                                       onChanged: (value) {
                                         if (value != null) {
-                                          setState(() => _selectedRole = value);
+                                          setState(() {
+                                            _selectedRole = value;
+                                            // Clear skills when changing from volunteer to another role
+                                            if (value != UserRole.volunteer) {
+                                              _selectedSkills.clear();
+                                            }
+                                          });
                                         }
                                       },
                                     ),
+
+                                    // --- Volunteer Skills Section (Only shown for volunteers) ---
+                                    if (_selectedRole == UserRole.volunteer) ...[
+                                      const SizedBox(height: AppPadding.large),
+
+                                      // Skills Section Divider
+                                      Row(
+                                        children: [
+                                          Container(
+                                            padding: const EdgeInsets.all(AppPadding.small),
+                                            decoration: BoxDecoration(
+                                              color: Colors.green.withOpacity(0.1),
+                                              borderRadius: BorderRadius.circular(AppBorderRadius.small),
+                                            ),
+                                            child: const Icon(
+                                              Icons.handyman,
+                                              size: 18,
+                                              color: Colors.green,
+                                            ),
+                                          ),
+                                          const SizedBox(width: AppPadding.small),
+                                          Text(
+                                            'Your Skills',
+                                            style: textTheme.titleSmall?.copyWith(
+                                              fontWeight: FontWeight.bold,
+                                              color: AppColors.textPrimary,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      const SizedBox(height: AppPadding.small),
+                                      Text(
+                                        'Select all skills that apply to you',
+                                        style: textTheme.bodySmall?.copyWith(
+                                          color: AppColors.textSecondary,
+                                        ),
+                                      ),
+                                      const SizedBox(height: AppPadding.medium),
+
+                                      // Skills Checkboxes
+                                      ...VolunteerSkill.values.map((skill) {
+                                        final isSelected = _selectedSkills.contains(skill);
+                                        return Container(
+                                          margin: const EdgeInsets.only(bottom: AppPadding.small),
+                                          decoration: BoxDecoration(
+                                            color: isSelected
+                                                ? AppColors.primary.withOpacity(0.1)
+                                                : AppColors.background.withOpacity(0.5),
+                                            borderRadius: BorderRadius.circular(AppBorderRadius.medium),
+                                            border: Border.all(
+                                              color: isSelected
+                                                  ? AppColors.primary
+                                                  : AppColors.textSecondary.withOpacity(0.2),
+                                              width: isSelected ? 2 : 1,
+                                            ),
+                                          ),
+                                          child: CheckboxListTile(
+                                            value: isSelected,
+                                            onChanged: (value) {
+                                              setState(() {
+                                                if (value == true) {
+                                                  _selectedSkills.add(skill);
+                                                } else {
+                                                  _selectedSkills.remove(skill);
+                                                }
+                                              });
+                                            },
+                                            title: Row(
+                                              children: [
+                                                Icon(
+                                                  skill.icon,
+                                                  size: 20,
+                                                  color: isSelected
+                                                      ? AppColors.primary
+                                                      : AppColors.textSecondary,
+                                                ),
+                                                const SizedBox(width: AppPadding.small),
+                                                Text(
+                                                  skill.label,
+                                                  style: TextStyle(
+                                                    fontSize: 15,
+                                                    fontWeight: isSelected
+                                                        ? FontWeight.w600
+                                                        : FontWeight.normal,
+                                                    color: isSelected
+                                                        ? AppColors.textPrimary
+                                                        : AppColors.textSecondary,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                            activeColor: AppColors.primary,
+                                            checkColor: AppColors.onPrimary,
+                                            contentPadding: const EdgeInsets.symmetric(
+                                              horizontal: AppPadding.medium,
+                                              vertical: AppPadding.small / 2,
+                                            ),
+                                          ),
+                                        );
+                                      }).toList(),
+                                    ],
                                   ],
                                 ),
                               ),
