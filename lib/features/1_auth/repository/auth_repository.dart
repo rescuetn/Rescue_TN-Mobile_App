@@ -25,7 +25,10 @@ class FirebaseAuthService implements AuthService {
     final firebaseUser = _firebaseAuth.currentUser;
     if (firebaseUser == null) return null;
     // The role here is just a placeholder and is not accurate.
-    return AppUser(uid: firebaseUser.uid, email: firebaseUser.email ?? '', role: UserRole.public);
+    return AppUser(
+        uid: firebaseUser.uid,
+        email: firebaseUser.email ?? '',
+        role: UserRole.public);
   }
 
   @override
@@ -49,12 +52,35 @@ class FirebaseAuthService implements AuthService {
     required UserRole role,
     List<String>? skills,
   }) async {
-    // 1. Create the user in Firebase Auth.
-    final userCredential = await _firebaseAuth.createUserWithEmailAndPassword(
-      email: email,
-      password: password,
-    );
-    final firebaseUser = userCredential.user;
+    // 1. Create the user in Firebase Auth with retry logic for reCAPTCHA errors.
+    auth.UserCredential? userCredential;
+    int retries = 0;
+    const maxRetries = 5;
+
+    while (retries < maxRetries) {
+      try {
+        userCredential = await _firebaseAuth
+            .createUserWithEmailAndPassword(
+              email: email,
+              password: password,
+            )
+            .timeout(
+              const Duration(seconds: 30),
+              onTimeout: () =>
+                  throw TimeoutException('Firebase auth request timed out'),
+            );
+        break; // Success, exit retry loop
+      } catch (e) {
+        retries++;
+        if (retries >= maxRetries) {
+          rethrow; // Give up after max retries
+        }
+        // Wait before retrying (exponential backoff: 1s, 2s, 3s, 4s, 5s)
+        await Future.delayed(Duration(seconds: retries));
+      }
+    }
+
+    final firebaseUser = userCredential?.user;
     if (firebaseUser == null) {
       throw Exception('User creation failed, please try again.');
     }
@@ -74,19 +100,43 @@ class FirebaseAuthService implements AuthService {
     required String email,
     required String password,
   }) async {
-    // 1. Sign in with Firebase Auth.
-    final userCredential = await _firebaseAuth.signInWithEmailAndPassword(
-      email: email,
-      password: password,
-    );
-    final firebaseUser = userCredential.user;
+    // 1. Sign in with Firebase Auth with retry logic for reCAPTCHA errors.
+    auth.UserCredential? userCredential;
+    int retries = 0;
+    const maxRetries = 5;
+
+    while (retries < maxRetries) {
+      try {
+        userCredential = await _firebaseAuth
+            .signInWithEmailAndPassword(
+              email: email,
+              password: password,
+            )
+            .timeout(
+              const Duration(seconds: 30),
+              onTimeout: () =>
+                  throw TimeoutException('Firebase auth request timed out'),
+            );
+        break; // Success, exit retry loop
+      } catch (e) {
+        retries++;
+        if (retries >= maxRetries) {
+          rethrow; // Give up after max retries
+        }
+        // Wait before retrying (exponential backoff: 1s, 2s, 3s, 4s, 5s)
+        await Future.delayed(Duration(seconds: retries));
+      }
+    }
+
+    final firebaseUser = userCredential?.user;
     if (firebaseUser == null) {
       throw Exception('Sign in failed.');
     }
     // 2. Fetch the complete user profile from Firestore to get their role and skills.
     final appUser = await _databaseService.getUserRecord(firebaseUser.uid);
     if (appUser == null) {
-      throw Exception('User data not found in database. Please contact support.');
+      throw Exception(
+          'User data not found in database. Please contact support.');
     }
     return appUser;
   }

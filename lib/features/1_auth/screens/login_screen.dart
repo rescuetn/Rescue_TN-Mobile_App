@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:rescuetn/app/constants.dart';
 import 'package:rescuetn/common_widgets/custom_button.dart';
+import 'package:rescuetn/core/services/connectivity_service.dart';
 import 'package:rescuetn/features/1_auth/providers/auth_provider.dart';
 import 'package:rescuetn/models/user_model.dart';
 
@@ -16,7 +17,8 @@ class LoginScreen extends ConsumerStatefulWidget {
   ConsumerState<LoginScreen> createState() => _LoginScreenState();
 }
 
-class _LoginScreenState extends ConsumerState<LoginScreen> with SingleTickerProviderStateMixin {
+class _LoginScreenState extends ConsumerState<LoginScreen>
+    with SingleTickerProviderStateMixin {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
@@ -64,6 +66,39 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with SingleTickerProv
     setState(() => _isLoading = true);
 
     try {
+      // Check internet connectivity first
+      final connectivityService = ConnectivityService();
+      final hasInternet = await connectivityService.hasInternetConnection();
+
+      if (!hasInternet) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Row(
+                children: [
+                  const Icon(Icons.wifi_off, color: AppColors.onPrimary),
+                  const SizedBox(width: AppPadding.small),
+                  const Expanded(
+                    child: Text(
+                      'No internet connection. Please check your network and try again.',
+                      style: TextStyle(color: AppColors.onPrimary),
+                    ),
+                  ),
+                ],
+              ),
+              backgroundColor: AppColors.error,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(AppBorderRadius.medium),
+              ),
+              margin: const EdgeInsets.all(AppPadding.medium),
+            ),
+          );
+        }
+        setState(() => _isLoading = false);
+        return;
+      }
+
       final authService = ref.read(authRepositoryProvider);
       // Simply call the sign-in method. We no longer need to manage state here.
       await authService.signInWithEmailAndPassword(
@@ -74,7 +109,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with SingleTickerProv
     } on FirebaseAuthException catch (e) {
       // Handle specific Firebase errors for better user feedback.
       String errorMessage = 'An error occurred. Please try again.';
-      if (e.code == 'user-not-found' || e.code == 'wrong-password' || e.code == 'invalid-credential') {
+      if (e.code == 'user-not-found' ||
+          e.code == 'wrong-password' ||
+          e.code == 'invalid-credential') {
         errorMessage = 'Invalid email or password.';
       }
 
@@ -87,7 +124,38 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with SingleTickerProv
               Expanded(
                 child: Text(
                   errorMessage,
-                  style: const TextStyle(fontSize: 14, color: AppColors.onPrimary),
+                  style:
+                      const TextStyle(fontSize: 14, color: AppColors.onPrimary),
+                ),
+              ),
+            ],
+          ),
+          backgroundColor: AppColors.error,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppBorderRadius.medium),
+          ),
+          margin: const EdgeInsets.all(AppPadding.medium),
+        ));
+      }
+    } catch (e) {
+      // Handle any other errors (database, network, etc.)
+      String errorMessage = 'An error occurred. Please try again.';
+      if (e is Exception && e.toString().contains('User data not found')) {
+        errorMessage = 'User profile not found. Please contact support.';
+      }
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Row(
+            children: [
+              const Icon(Icons.error_outline, color: AppColors.onPrimary),
+              const SizedBox(width: AppPadding.small),
+              Expanded(
+                child: Text(
+                  errorMessage,
+                  style:
+                      const TextStyle(fontSize: 14, color: AppColors.onPrimary),
                 ),
               ),
             ],
@@ -179,7 +247,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with SingleTickerProv
                                 child: ClipRRect(
                                   borderRadius: BorderRadius.circular(70),
                                   child: Image.asset(
-                                    'assets/images/RescueTN.png', // Corrected logo path
+                                    'assets/images/rescuetn.jpg',
                                     height: 140,
                                     width: 140,
                                     fit: BoxFit.cover,
@@ -263,14 +331,17 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with SingleTickerProv
                           ],
                         ),
                       ),
-                      const SizedBox(height: AppPadding.xLarge + AppPadding.small),
+                      const SizedBox(
+                          height: AppPadding.xLarge + AppPadding.small),
 
                       // Role Selector Card
                       Container(
-                        padding: const EdgeInsets.all(AppPadding.medium + AppPadding.small),
+                        padding: const EdgeInsets.all(
+                            AppPadding.medium + AppPadding.small),
                         decoration: BoxDecoration(
                           color: AppColors.surface,
-                          borderRadius: BorderRadius.circular(AppPadding.medium + AppPadding.small),
+                          borderRadius: BorderRadius.circular(
+                              AppPadding.medium + AppPadding.small),
                           boxShadow: [
                             BoxShadow(
                               color: AppColors.textPrimary.withOpacity(0.05),
@@ -285,7 +356,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with SingleTickerProv
                             Row(
                               children: [
                                 Container(
-                                  padding: const EdgeInsets.all(AppPadding.small),
+                                  padding:
+                                      const EdgeInsets.all(AppPadding.small),
                                   decoration: BoxDecoration(
                                     gradient: LinearGradient(
                                       colors: [
@@ -293,7 +365,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with SingleTickerProv
                                         AppColors.accent.withOpacity(0.2),
                                       ],
                                     ),
-                                    borderRadius: BorderRadius.circular(AppBorderRadius.small),
+                                    borderRadius: BorderRadius.circular(
+                                        AppBorderRadius.small),
                                   ),
                                   child: const Icon(
                                     Icons.badge_outlined,
@@ -318,7 +391,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with SingleTickerProv
                                 color: AppColors.textSecondary,
                               ),
                             ),
-                            const SizedBox(height: AppPadding.medium + AppPadding.small),
+                            const SizedBox(
+                                height: AppPadding.medium + AppPadding.small),
                             Row(
                               children: [
                                 Expanded(
@@ -356,7 +430,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with SingleTickerProv
                             ? 'Please enter a valid email'
                             : null,
                       ),
-                      const SizedBox(height: AppPadding.medium + AppPadding.small),
+                      const SizedBox(
+                          height: AppPadding.medium + AppPadding.small),
 
                       // Password Field
                       _buildTextField(
@@ -367,7 +442,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with SingleTickerProv
                         obscureText: _obscureText,
                         suffixIcon: IconButton(
                           icon: Icon(
-                            _obscureText ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                            _obscureText
+                                ? Icons.visibility_off_outlined
+                                : Icons.visibility_outlined,
                             color: AppColors.textSecondary,
                           ),
                           onPressed: _togglePasswordVisibility,
@@ -433,7 +510,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with SingleTickerProv
 
                       // Sign Up Section
                       Container(
-                        padding: const EdgeInsets.all(AppPadding.medium + AppPadding.small),
+                        padding: const EdgeInsets.all(
+                            AppPadding.medium + AppPadding.small),
                         decoration: BoxDecoration(
                           color: AppColors.primary.withOpacity(0.05),
                           borderRadius: BorderRadius.circular(AppPadding.large),
@@ -500,7 +578,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with SingleTickerProv
               : AppColors.background.withOpacity(0.5),
           borderRadius: BorderRadius.circular(AppPadding.large),
           border: Border.all(
-            color: isSelected ? color : AppColors.textSecondary.withOpacity(0.2),
+            color:
+                isSelected ? color : AppColors.textSecondary.withOpacity(0.2),
             width: isSelected ? 2 : 1,
           ),
         ),
@@ -563,11 +642,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with SingleTickerProv
         fillColor: AppColors.surface,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppPadding.large),
-          borderSide: BorderSide(color: AppColors.textSecondary.withOpacity(0.2)),
+          borderSide:
+              BorderSide(color: AppColors.textSecondary.withOpacity(0.2)),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppPadding.large),
-          borderSide: BorderSide(color: AppColors.textSecondary.withOpacity(0.2)),
+          borderSide:
+              BorderSide(color: AppColors.textSecondary.withOpacity(0.2)),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppPadding.large),
@@ -593,4 +674,3 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with SingleTickerProv
     );
   }
 }
-

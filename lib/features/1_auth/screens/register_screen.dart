@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:rescuetn/app/constants.dart';
 import 'package:rescuetn/common_widgets/custom_button.dart';
+import 'package:rescuetn/core/services/connectivity_service.dart';
 import 'package:rescuetn/features/1_auth/providers/auth_provider.dart';
 import 'package:rescuetn/models/user_model.dart';
 
@@ -27,7 +28,8 @@ class RegisterScreen extends ConsumerStatefulWidget {
   ConsumerState<RegisterScreen> createState() => _RegisterScreenState();
 }
 
-class _RegisterScreenState extends ConsumerState<RegisterScreen> with SingleTickerProviderStateMixin {
+class _RegisterScreenState extends ConsumerState<RegisterScreen>
+    with SingleTickerProviderStateMixin {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
@@ -117,6 +119,39 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> with SingleTick
     setState(() => _isLoading = true);
 
     try {
+      // 0. Check internet connectivity first
+      final connectivityService = ConnectivityService();
+      final hasInternet = await connectivityService.hasInternetConnection();
+
+      if (!hasInternet) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Row(
+                children: [
+                  const Icon(Icons.wifi_off, color: AppColors.onPrimary),
+                  const SizedBox(width: AppPadding.small),
+                  const Expanded(
+                    child: Text(
+                      'No internet connection. Please check your network and try again.',
+                      style: TextStyle(color: AppColors.onPrimary),
+                    ),
+                  ),
+                ],
+              ),
+              backgroundColor: AppColors.error,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(AppBorderRadius.medium),
+              ),
+              margin: const EdgeInsets.all(AppPadding.medium),
+            ),
+          );
+        }
+        setState(() => _isLoading = false);
+        return;
+      }
+
       // 1. Read the authentication service from the provider.
       final authService = ref.read(authRepositoryProvider);
 
@@ -137,7 +172,6 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> with SingleTick
       // 4. Navigation is now handled automatically!
       // The authStateChangesProvider will detect the new user, and the router
       // will automatically navigate to the home screen.
-
     } on FirebaseAuthException catch (e) {
       // Handle specific Firebase errors for better user feedback.
       String errorMessage = 'An error occurred. Please try again.';
@@ -147,6 +181,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> with SingleTick
         errorMessage = 'The password is too weak.';
       } else if (e.code == 'invalid-email') {
         errorMessage = 'The email address is invalid.';
+      } else if (e.code == 'network-error' ||
+          e.message?.contains('network') == true) {
+        errorMessage =
+            'Network error. Please check your internet connection and try again.';
       }
 
       if (mounted) {
@@ -174,6 +212,16 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> with SingleTick
         );
       }
     } catch (e) {
+      String errorMessage = 'An unexpected error occurred. Please try again.';
+
+      // Check if it's a network/timeout error
+      if (e.toString().contains('network') ||
+          e.toString().contains('timeout') ||
+          e.toString().contains('connection')) {
+        errorMessage =
+            'Network connectivity issue. Please check your internet connection and try again.';
+      }
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -181,10 +229,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> with SingleTick
               children: [
                 const Icon(Icons.error_outline, color: AppColors.onPrimary),
                 const SizedBox(width: AppPadding.small),
-                const Expanded(
+                Expanded(
                   child: Text(
-                    'An unexpected error occurred. Please try again.',
-                    style: TextStyle(color: AppColors.onPrimary),
+                    errorMessage,
+                    style: const TextStyle(color: AppColors.onPrimary),
                   ),
                 ),
               ],
@@ -233,7 +281,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> with SingleTick
                     Container(
                       decoration: BoxDecoration(
                         color: AppColors.surface,
-                        borderRadius: BorderRadius.circular(AppBorderRadius.medium),
+                        borderRadius:
+                            BorderRadius.circular(AppBorderRadius.medium),
                         boxShadow: [
                           BoxShadow(
                             color: AppColors.textPrimary.withOpacity(0.05),
@@ -243,7 +292,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> with SingleTick
                         ],
                       ),
                       child: IconButton(
-                        icon: const Icon(Icons.arrow_back, color: AppColors.primary),
+                        icon: const Icon(Icons.arrow_back,
+                            color: AppColors.primary),
                         onPressed: () => context.pop(),
                       ),
                     ),
@@ -284,17 +334,22 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> with SingleTick
                                 child: Container(
                                   height: 100,
                                   width: 100,
-                                  margin: const EdgeInsets.only(bottom: AppPadding.large),
+                                  margin: const EdgeInsets.only(
+                                      bottom: AppPadding.large),
                                   decoration: BoxDecoration(
                                     gradient: const LinearGradient(
-                                      colors: [AppColors.primary, AppColors.accent],
+                                      colors: [
+                                        AppColors.primary,
+                                        AppColors.accent
+                                      ],
                                       begin: Alignment.topLeft,
                                       end: Alignment.bottomRight,
                                     ),
                                     shape: BoxShape.circle,
                                     boxShadow: [
                                       BoxShadow(
-                                        color: AppColors.primary.withOpacity(0.3),
+                                        color:
+                                            AppColors.primary.withOpacity(0.3),
                                         blurRadius: 20,
                                         offset: const Offset(0, 8),
                                       ),
@@ -310,7 +365,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> with SingleTick
 
                               // Title and Subtitle
                               ShaderMask(
-                                shaderCallback: (bounds) => const LinearGradient(
+                                shaderCallback: (bounds) =>
+                                    const LinearGradient(
                                   colors: [AppColors.primary, AppColors.accent],
                                 ).createShader(bounds),
                                 child: Text(
@@ -330,17 +386,20 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> with SingleTick
                                   color: AppColors.textSecondary,
                                 ),
                               ),
-                              const SizedBox(height: AppPadding.xLarge + AppPadding.small),
+                              const SizedBox(
+                                  height: AppPadding.xLarge + AppPadding.small),
 
                               // Form Fields Card
                               Container(
                                 padding: const EdgeInsets.all(AppPadding.large),
                                 decoration: BoxDecoration(
                                   color: AppColors.surface,
-                                  borderRadius: BorderRadius.circular(AppPadding.medium + AppPadding.small),
+                                  borderRadius: BorderRadius.circular(
+                                      AppPadding.medium + AppPadding.small),
                                   boxShadow: [
                                     BoxShadow(
-                                      color: AppColors.textPrimary.withOpacity(0.05),
+                                      color: AppColors.textPrimary
+                                          .withOpacity(0.05),
                                       blurRadius: 20,
                                       offset: const Offset(0, 4),
                                     ),
@@ -353,10 +412,13 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> with SingleTick
                                     Row(
                                       children: [
                                         Container(
-                                          padding: const EdgeInsets.all(AppPadding.small),
+                                          padding: const EdgeInsets.all(
+                                              AppPadding.small),
                                           decoration: BoxDecoration(
-                                            color: AppColors.primary.withOpacity(0.1),
-                                            borderRadius: BorderRadius.circular(AppBorderRadius.small),
+                                            color: AppColors.primary
+                                                .withOpacity(0.1),
+                                            borderRadius: BorderRadius.circular(
+                                                AppBorderRadius.small),
                                           ),
                                           child: const Icon(
                                             Icons.info_outline,
@@ -383,11 +445,13 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> with SingleTick
                                       hint: 'Enter your full name',
                                       prefixIcon: Icons.person_outline,
                                       validator: (value) =>
-                                      value == null || value.isEmpty
-                                          ? 'Please enter your full name'
-                                          : null,
+                                          value == null || value.isEmpty
+                                              ? 'Please enter your full name'
+                                              : null,
                                     ),
-                                    const SizedBox(height: AppPadding.medium + AppPadding.small),
+                                    const SizedBox(
+                                        height: AppPadding.medium +
+                                            AppPadding.small),
 
                                     // --- Email Field ---
                                     _buildTextField(
@@ -412,10 +476,13 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> with SingleTick
                                     Row(
                                       children: [
                                         Container(
-                                          padding: const EdgeInsets.all(AppPadding.small),
+                                          padding: const EdgeInsets.all(
+                                              AppPadding.small),
                                           decoration: BoxDecoration(
-                                            color: AppColors.error.withOpacity(0.1),
-                                            borderRadius: BorderRadius.circular(AppBorderRadius.small),
+                                            color: AppColors.error
+                                                .withOpacity(0.1),
+                                            borderRadius: BorderRadius.circular(
+                                                AppBorderRadius.small),
                                           ),
                                           child: const Icon(
                                             Icons.security,
@@ -449,13 +516,18 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> with SingleTick
                                               : Icons.visibility_outlined,
                                           color: AppColors.textSecondary,
                                         ),
-                                        onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                                        onPressed: () => setState(() =>
+                                            _obscurePassword =
+                                                !_obscurePassword),
                                       ),
-                                      validator: (value) => value == null || value.length < 6
+                                      validator: (value) => value == null ||
+                                              value.length < 6
                                           ? 'Password must be at least 6 characters'
                                           : null,
                                     ),
-                                    const SizedBox(height: AppPadding.medium + AppPadding.small),
+                                    const SizedBox(
+                                        height: AppPadding.medium +
+                                            AppPadding.small),
 
                                     // --- Confirm Password Field ---
                                     _buildTextField(
@@ -471,11 +543,14 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> with SingleTick
                                               : Icons.visibility_outlined,
                                           color: AppColors.textSecondary,
                                         ),
-                                        onPressed: () => setState(() => _obscureConfirmPassword = !_obscureConfirmPassword),
+                                        onPressed: () => setState(() =>
+                                            _obscureConfirmPassword =
+                                                !_obscureConfirmPassword),
                                       ),
-                                      validator: (value) => value != _passwordController.text
-                                          ? 'Passwords do not match'
-                                          : null,
+                                      validator: (value) =>
+                                          value != _passwordController.text
+                                              ? 'Passwords do not match'
+                                              : null,
                                     ),
                                     const SizedBox(height: AppPadding.large),
 
@@ -483,10 +558,13 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> with SingleTick
                                     Row(
                                       children: [
                                         Container(
-                                          padding: const EdgeInsets.all(AppPadding.small),
+                                          padding: const EdgeInsets.all(
+                                              AppPadding.small),
                                           decoration: BoxDecoration(
-                                            color: AppColors.accent.withOpacity(0.1),
-                                            borderRadius: BorderRadius.circular(AppBorderRadius.small),
+                                            color: AppColors.accent
+                                                .withOpacity(0.1),
+                                            borderRadius: BorderRadius.circular(
+                                                AppBorderRadius.small),
                                           ),
                                           child: const Icon(
                                             Icons.badge_outlined,
@@ -512,28 +590,44 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> with SingleTick
                                       decoration: InputDecoration(
                                         labelText: 'Register as',
                                         hintText: 'Select your role',
-                                        labelStyle: const TextStyle(color: AppColors.textSecondary),
-                                        hintStyle: TextStyle(color: AppColors.textSecondary.withOpacity(0.6)),
-                                        prefixIcon: const Icon(Icons.badge_outlined, size: 22, color: AppColors.accent),
+                                        labelStyle: const TextStyle(
+                                            color: AppColors.textSecondary),
+                                        hintStyle: TextStyle(
+                                            color: AppColors.textSecondary
+                                                .withOpacity(0.6)),
+                                        prefixIcon: const Icon(
+                                            Icons.badge_outlined,
+                                            size: 22,
+                                            color: AppColors.accent),
                                         filled: true,
-                                        fillColor: AppColors.background.withOpacity(0.5),
+                                        fillColor: AppColors.background
+                                            .withOpacity(0.5),
                                         border: OutlineInputBorder(
-                                          borderRadius: BorderRadius.circular(AppBorderRadius.medium),
-                                          borderSide: BorderSide(color: AppColors.textSecondary.withOpacity(0.2)),
+                                          borderRadius: BorderRadius.circular(
+                                              AppBorderRadius.medium),
+                                          borderSide: BorderSide(
+                                              color: AppColors.textSecondary
+                                                  .withOpacity(0.2)),
                                         ),
                                         enabledBorder: OutlineInputBorder(
-                                          borderRadius: BorderRadius.circular(AppBorderRadius.medium),
-                                          borderSide: BorderSide(color: AppColors.textSecondary.withOpacity(0.2)),
+                                          borderRadius: BorderRadius.circular(
+                                              AppBorderRadius.medium),
+                                          borderSide: BorderSide(
+                                              color: AppColors.textSecondary
+                                                  .withOpacity(0.2)),
                                         ),
                                         focusedBorder: OutlineInputBorder(
-                                          borderRadius: BorderRadius.circular(AppBorderRadius.medium),
+                                          borderRadius: BorderRadius.circular(
+                                              AppBorderRadius.medium),
                                           borderSide: const BorderSide(
                                             color: AppColors.accent,
                                             width: 2,
                                           ),
                                         ),
-                                        contentPadding: const EdgeInsets.symmetric(
-                                          horizontal: AppPadding.medium + AppPadding.small,
+                                        contentPadding:
+                                            const EdgeInsets.symmetric(
+                                          horizontal: AppPadding.medium +
+                                              AppPadding.small,
                                           vertical: AppPadding.medium + 2,
                                         ),
                                       ),
@@ -541,7 +635,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> with SingleTick
                                         return DropdownMenuItem(
                                           value: role,
                                           child: Text(
-                                            role.name[0].toUpperCase() + role.name.substring(1),
+                                            role.name[0].toUpperCase() +
+                                                role.name.substring(1),
                                             style: const TextStyle(
                                               fontSize: 15,
                                               color: AppColors.textPrimary,
@@ -563,17 +658,22 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> with SingleTick
                                     ),
 
                                     // --- Volunteer Skills Section (Only shown for volunteers) ---
-                                    if (_selectedRole == UserRole.volunteer) ...[
+                                    if (_selectedRole ==
+                                        UserRole.volunteer) ...[
                                       const SizedBox(height: AppPadding.large),
 
                                       // Skills Section Divider
                                       Row(
                                         children: [
                                           Container(
-                                            padding: const EdgeInsets.all(AppPadding.small),
+                                            padding: const EdgeInsets.all(
+                                                AppPadding.small),
                                             decoration: BoxDecoration(
-                                              color: Colors.green.withOpacity(0.1),
-                                              borderRadius: BorderRadius.circular(AppBorderRadius.small),
+                                              color:
+                                                  Colors.green.withOpacity(0.1),
+                                              borderRadius:
+                                                  BorderRadius.circular(
+                                                      AppBorderRadius.small),
                                             ),
                                             child: const Icon(
                                               Icons.handyman,
@@ -581,10 +681,12 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> with SingleTick
                                               color: Colors.green,
                                             ),
                                           ),
-                                          const SizedBox(width: AppPadding.small),
+                                          const SizedBox(
+                                              width: AppPadding.small),
                                           Text(
                                             'Your Skills',
-                                            style: textTheme.titleSmall?.copyWith(
+                                            style:
+                                                textTheme.titleSmall?.copyWith(
                                               fontWeight: FontWeight.bold,
                                               color: AppColors.textPrimary,
                                             ),
@@ -602,18 +704,24 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> with SingleTick
 
                                       // Skills Checkboxes
                                       ...VolunteerSkill.values.map((skill) {
-                                        final isSelected = _selectedSkills.contains(skill);
+                                        final isSelected =
+                                            _selectedSkills.contains(skill);
                                         return Container(
-                                          margin: const EdgeInsets.only(bottom: AppPadding.small),
+                                          margin: const EdgeInsets.only(
+                                              bottom: AppPadding.small),
                                           decoration: BoxDecoration(
                                             color: isSelected
-                                                ? AppColors.primary.withOpacity(0.1)
-                                                : AppColors.background.withOpacity(0.5),
-                                            borderRadius: BorderRadius.circular(AppBorderRadius.medium),
+                                                ? AppColors.primary
+                                                    .withOpacity(0.1)
+                                                : AppColors.background
+                                                    .withOpacity(0.5),
+                                            borderRadius: BorderRadius.circular(
+                                                AppBorderRadius.medium),
                                             border: Border.all(
                                               color: isSelected
                                                   ? AppColors.primary
-                                                  : AppColors.textSecondary.withOpacity(0.2),
+                                                  : AppColors.textSecondary
+                                                      .withOpacity(0.2),
                                               width: isSelected ? 2 : 1,
                                             ),
                                           ),
@@ -637,7 +745,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> with SingleTick
                                                       ? AppColors.primary
                                                       : AppColors.textSecondary,
                                                 ),
-                                                const SizedBox(width: AppPadding.small),
+                                                const SizedBox(
+                                                    width: AppPadding.small),
                                                 Text(
                                                   skill.label,
                                                   style: TextStyle(
@@ -647,14 +756,16 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> with SingleTick
                                                         : FontWeight.normal,
                                                     color: isSelected
                                                         ? AppColors.textPrimary
-                                                        : AppColors.textSecondary,
+                                                        : AppColors
+                                                            .textSecondary,
                                                   ),
                                                 ),
                                               ],
                                             ),
                                             activeColor: AppColors.primary,
                                             checkColor: AppColors.onPrimary,
-                                            contentPadding: const EdgeInsets.symmetric(
+                                            contentPadding:
+                                                const EdgeInsets.symmetric(
                                               horizontal: AppPadding.medium,
                                               vertical: AppPadding.small / 2,
                                             ),
@@ -755,11 +866,13 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> with SingleTick
         fillColor: AppColors.background.withOpacity(0.5),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppBorderRadius.medium),
-          borderSide: BorderSide(color: AppColors.textSecondary.withOpacity(0.2)),
+          borderSide:
+              BorderSide(color: AppColors.textSecondary.withOpacity(0.2)),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppBorderRadius.medium),
-          borderSide: BorderSide(color: AppColors.textSecondary.withOpacity(0.2)),
+          borderSide:
+              BorderSide(color: AppColors.textSecondary.withOpacity(0.2)),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppBorderRadius.medium),

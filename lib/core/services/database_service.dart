@@ -10,7 +10,7 @@ import 'package:rescuetn/models/user_model.dart';
 
 /// Provides a singleton instance of [FirebaseFirestore].
 final firestoreProvider =
-Provider<FirebaseFirestore>((ref) => FirebaseFirestore.instance);
+    Provider<FirebaseFirestore>((ref) => FirebaseFirestore.instance);
 
 /// An abstract class defining the contract for all database operations.
 abstract class DatabaseService {
@@ -42,6 +42,8 @@ abstract class DatabaseService {
 
   // Alert operations
   Stream<List<Alert>> getAlertsStream();
+  Future<void> addAlert(Alert alert);
+  Future<void> updateAlertStatus(String alertId, bool isRead);
 }
 
 /// Provides a concrete implementation of [DatabaseService] using Firestore.
@@ -87,8 +89,8 @@ class FirestoreDatabaseService implements DatabaseService {
         .limit(20)
         .snapshots()
         .map((snapshot) => snapshot.docs
-        .map((doc) => Incident.fromMap(doc.data(), doc.id))
-        .toList());
+            .map((doc) => Incident.fromMap(doc.data(), doc.id))
+            .toList());
   }
 
   // --- TASK METHODS ---
@@ -119,15 +121,17 @@ class FirestoreDatabaseService implements DatabaseService {
         .orderBy('timestamp', descending: true)
         .snapshots()
         .map((snapshot) => snapshot.docs
-        .map((doc) => PersonStatus.fromMap(doc.data(), doc.id))
-        .toList());
+            .map((doc) => PersonStatus.fromMap(doc.data(), doc.id))
+            .toList());
   }
 
   // --- PREPAREDNESS PLAN METHODS ---
   @override
   Future<void> checkAndCreateDefaultPlan(String userId) async {
-    final planCollection =
-    _firestore.collection('users').doc(userId).collection('preparedness_plan');
+    final planCollection = _firestore
+        .collection('users')
+        .doc(userId)
+        .collection('preparedness_plan');
     final snapshot = await planCollection.limit(1).get();
 
     if (snapshot.docs.isEmpty) {
@@ -148,8 +152,8 @@ class FirestoreDatabaseService implements DatabaseService {
         .collection('preparedness_plan')
         .snapshots()
         .map((snapshot) => snapshot.docs
-        .map((doc) => PreparednessItem.fromMap(doc.data(), doc.id))
-        .toList());
+            .map((doc) => PreparednessItem.fromMap(doc.data(), doc.id))
+            .toList());
   }
 
   @override
@@ -167,18 +171,45 @@ class FirestoreDatabaseService implements DatabaseService {
   @override
   Stream<List<Shelter>> getSheltersStream() {
     return _firestore.collection('shelters').snapshots().map((snapshot) =>
-        snapshot.docs.map((doc) => Shelter.fromMap(doc.data(), doc.id)).toList());
+        snapshot.docs
+            .map((doc) => Shelter.fromMap(doc.data(), doc.id))
+            .toList());
   }
 
-  // --- ALERTS METHOD ---
+  // --- ALERTS METHODS ---
   @override
   Stream<List<Alert>> getAlertsStream() {
     return _firestore
-        .collection('alerts')
-        .orderBy('timestamp', descending: true)
+        .collection('emergency_alerts')
+        .orderBy('createdAt', descending: true)
         .snapshots()
-        .map((snapshot) =>
-        snapshot.docs.map((doc) => Alert.fromMap(doc.data(), doc.id)).toList());
+        .map((snapshot) => snapshot.docs
+            .map((doc) => Alert.fromMap(doc.data(), doc.id))
+            .toList());
+  }
+
+  @override
+  Future<void> addAlert(Alert alert) async {
+    await _firestore.collection('emergency_alerts').add({
+      'title': alert.title,
+      'message': alert.message,
+      'level': alert.level.name,
+      'timestamp': Timestamp.fromDate(alert.timestamp),
+      'targetRoles': alert.targetRoles,
+      'imageUrl': alert.imageUrl,
+      'isRead': alert.isRead,
+      'actionUrl': alert.actionUrl,
+      'createdAt': FieldValue.serverTimestamp(),
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
+  }
+
+  @override
+  Future<void> updateAlertStatus(String alertId, bool isRead) async {
+    await _firestore
+        .collection('emergency_alerts')
+        .doc(alertId)
+        .update({'isRead': isRead});
   }
 }
 
@@ -203,7 +234,7 @@ const List<PreparednessItem> _defaultPlan = [
       id: 'p-04',
       title: 'Secure Important Documents',
       description:
-      'Keep copies of passports, Aadhaar cards, etc., in a waterproof bag.',
+          'Keep copies of passports, Aadhaar cards, etc., in a waterproof bag.',
       category: PreparednessCategory.documents),
   PreparednessItem(
       id: 'p-05',
