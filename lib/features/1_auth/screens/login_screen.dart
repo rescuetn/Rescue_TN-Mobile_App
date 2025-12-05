@@ -6,7 +6,6 @@ import 'package:rescuetn/app/constants.dart';
 import 'package:rescuetn/common_widgets/custom_button.dart';
 import 'package:rescuetn/core/services/connectivity_service.dart';
 import 'package:rescuetn/features/1_auth/providers/auth_provider.dart';
-import 'package:rescuetn/models/user_model.dart';
 
 enum LoginRole { public, volunteer }
 
@@ -102,7 +101,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
       final authService = ref.read(authRepositoryProvider);
       // Simply call the sign-in method. We no longer need to manage state here.
       await authService.signInWithEmailAndPassword(
-        email: _emailController.text.trim(),
+        emailOrPhone: _emailController.text.trim(),
         password: _passwordController.text.trim(),
       );
       // Navigation is now handled automatically by the router listening to authStateChangesProvider.
@@ -112,7 +111,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
       if (e.code == 'user-not-found' ||
           e.code == 'wrong-password' ||
           e.code == 'invalid-credential') {
-        errorMessage = 'Invalid email or password.';
+        errorMessage = 'Invalid email/phone or password.';
       }
 
       if (mounted) {
@@ -178,7 +177,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
-    final size = MediaQuery.of(context).size;
 
     return Scaffold(
       body: Container(
@@ -419,16 +417,28 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                       ),
                       const SizedBox(height: AppPadding.xLarge),
 
-                      // Email Field
+                      // Email or Phone Field
                       _buildTextField(
                         controller: _emailController,
-                        label: 'Email Address',
-                        hint: 'Enter your email',
-                        prefixIcon: Icons.email_outlined,
-                        keyboardType: TextInputType.emailAddress,
-                        validator: (v) => (v == null || !v.contains('@'))
-                            ? 'Please enter a valid email'
-                            : null,
+                        label: 'Email or Phone Number',
+                        hint: 'Enter your email or phone number',
+                        prefixIcon: Icons.alternate_email,
+                        keyboardType: TextInputType.text,
+                        validator: (v) {
+                          if (v == null || v.trim().isEmpty) {
+                            return 'Please enter your email or phone number';
+                          }
+                          final trimmed = v.trim();
+                          // Check if it's an email (contains @) or phone number (digits)
+                          final isEmail = trimmed.contains('@');
+                          final cleanedPhone = trimmed.replaceAll(RegExp(r'[\s\-\(\)]'), '');
+                          final isPhone = RegExp(r'^[0-9]+$').hasMatch(cleanedPhone) && cleanedPhone.length >= 10;
+                          
+                          if (!isEmail && !isPhone) {
+                            return 'Please enter a valid email or phone number';
+                          }
+                          return null;
+                        },
                       ),
                       const SizedBox(
                           height: AppPadding.medium + AppPadding.small),
@@ -459,7 +469,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                       Align(
                         alignment: Alignment.centerRight,
                         child: TextButton(
-                          onPressed: () {},
+                          onPressed: () => context.push('/forgot-password'),
                           style: TextButton.styleFrom(
                             foregroundColor: AppColors.primary,
                           ),

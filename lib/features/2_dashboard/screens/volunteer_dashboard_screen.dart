@@ -193,12 +193,7 @@ class _VolunteerDashboardScreenState
                     color: Colors.green,
                     onTap: () {
                       Navigator.pop(context);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Preferences feature coming soon'),
-                          duration: Duration(seconds: 2),
-                        ),
-                      );
+                      context.push('/preferences');
                     },
                   ),
                   const SizedBox(height: AppPadding.medium + 4),
@@ -211,12 +206,7 @@ class _VolunteerDashboardScreenState
                     color: Colors.orange,
                     onTap: () {
                       Navigator.pop(context);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Support feature coming soon'),
-                          duration: Duration(seconds: 2),
-                        ),
-                      );
+                      context.push('/help-center');
                     },
                   ),
                   const SizedBox(height: AppPadding.medium + 4),

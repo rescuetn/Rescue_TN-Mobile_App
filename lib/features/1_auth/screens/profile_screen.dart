@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:rescuetn/app/constants.dart';
 import 'package:rescuetn/features/1_auth/providers/auth_provider.dart';
 import 'package:rescuetn/models/user_model.dart';
@@ -207,16 +206,21 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
                                               radius: 52,
                                               backgroundColor: Colors.white,
                                               child: CircleAvatar(
-                                                radius: 48,
-                                                backgroundColor: AppColors.primary.withOpacity(0.2),
-                                                child: Text(
-                                                  userName[0].toUpperCase(),
-                                                  style: const TextStyle(
-                                                    fontSize: 42,
-                                                    fontWeight: FontWeight.bold,
-                                                    color: AppColors.primary,
-                                                  ),
-                                                ),
+                                              radius: 48,
+                                              backgroundColor: AppColors.primary.withOpacity(0.2),
+                                              backgroundImage: user?.profilePhotoUrl != null
+                                                  ? NetworkImage(user!.profilePhotoUrl!)
+                                                  : null,
+                                              child: user?.profilePhotoUrl == null
+                                                  ? Text(
+                                                      userName[0].toUpperCase(),
+                                                      style: const TextStyle(
+                                                        fontSize: 42,
+                                                        fontWeight: FontWeight.bold,
+                                                        color: AppColors.primary,
+                                                      ),
+                                                    )
+                                                  : null,
                                               ),
                                             ),
                                           ),
@@ -225,25 +229,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
                                           bottom: 0,
                                           right: 0,
                                           child: GestureDetector(
-                                            onTap: () {
-                                              ScaffoldMessenger.of(context).showSnackBar(
-                                                SnackBar(
-                                                  content: const Row(
-                                                    children: [
-                                                      Icon(Icons.camera_alt, color: Colors.white),
-                                                      SizedBox(width: 8),
-                                                      Text('Photo upload coming soon!'),
-                                                    ],
-                                                  ),
-                                                  backgroundColor: AppColors.primary,
-                                                  behavior: SnackBarBehavior.floating,
-                                                  shape: RoundedRectangleBorder(
-                                                    borderRadius: BorderRadius.circular(10),
-                                                  ),
-                                                  duration: const Duration(seconds: 2),
-                                                ),
-                                              );
-                                            },
+                                            onTap: () => context.push('/edit-profile'),
                                             child: Container(
                                               padding: const EdgeInsets.all(8),
                                               decoration: BoxDecoration(
@@ -401,7 +387,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
                               title: 'Edit Profile',
                               subtitle: 'Update your personal information',
                               color: const Color(0xFF3B82F6),
-                              onTap: () => _showComingSoonDialog(context, 'Edit Profile'),
+                              onTap: () => context.push('/edit-profile'),
                             ),
                             Padding(
                               padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -412,7 +398,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
                               title: 'Change Password',
                               subtitle: 'Update your security credentials',
                               color: const Color(0xFF8B5CF6),
-                              onTap: () => _showComingSoonDialog(context, 'Change Password'),
+                              onTap: () => context.push('/change-password'),
                             ),
                           ],
                         ),
@@ -471,7 +457,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
                               title: 'Help Center',
                               subtitle: 'Get help and support',
                               color: const Color(0xFF06B6D4),
-                              onTap: () => _showComingSoonDialog(context, 'Help Center'),
+                              onTap: () => context.push('/help-center'),
                             ),
                             Padding(
                               padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -493,7 +479,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
                               title: 'Privacy Policy',
                               subtitle: 'Learn how we protect your data',
                               color: const Color(0xFF14B8A6),
-                              onTap: () => _showComingSoonDialog(context, 'Privacy Policy'),
+                              onTap: () => context.push('/privacy-policy'),
                             ),
                           ],
                         ),
@@ -793,46 +779,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
     );
   }
 
-  void _showComingSoonDialog(BuildContext context, String feature) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: AppColors.primary.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: const Icon(Icons.rocket_launch, color: AppColors.primary),
-            ),
-            const SizedBox(width: 12),
-            const Text('Coming Soon', style: TextStyle(fontSize: 20)),
-          ],
-        ),
-        content: Text(
-          '$feature feature will be available soon!',
-          style: const TextStyle(fontSize: 15),
-        ),
-        actions: [
-          ElevatedButton(
-            onPressed: () => Navigator.pop(context),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primary,
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
-            child: const Text('Got it!'),
-          ),
-        ],
-      ),
-    );
-  }
 
   void _showLogoutDialog(BuildContext context) {
     showDialog(

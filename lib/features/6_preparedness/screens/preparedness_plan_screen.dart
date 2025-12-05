@@ -214,8 +214,8 @@ class _PreparednessPlanScreenState extends ConsumerState<PreparednessPlanScreen>
                                   const SizedBox(height: 8),
                                   Text(
                                     'Start creating your emergency plan',
-                                    style: TextStyle(
-                                        color: Colors.grey.shade600),
+                                    style:
+                                        TextStyle(color: Colors.grey.shade600),
                                   ),
                                 ],
                               ),
@@ -224,15 +224,15 @@ class _PreparednessPlanScreenState extends ConsumerState<PreparednessPlanScreen>
 
                           final essentials = plan
                               .where((i) =>
-                          i.category == PreparednessCategory.essentials)
+                                  i.category == PreparednessCategory.essentials)
                               .toList();
                           final documents = plan
                               .where((i) =>
-                          i.category == PreparednessCategory.documents)
+                                  i.category == PreparednessCategory.documents)
                               .toList();
                           final actions = plan
-                              .where(
-                                  (i) => i.category == PreparednessCategory.actions)
+                              .where((i) =>
+                                  i.category == PreparednessCategory.actions)
                               .toList();
 
                           return ListView(
@@ -348,13 +348,13 @@ class _PreparednessPlanScreenState extends ConsumerState<PreparednessPlanScreen>
                       curve: Curves.easeOutCubic,
                       builder: (context, value, child) =>
                           CircularProgressIndicator(
-                            value: value,
-                            strokeWidth: 10,
-                            backgroundColor: Colors.white.withOpacity(0.5),
-                            valueColor:
+                        value: value,
+                        strokeWidth: 10,
+                        backgroundColor: Colors.white.withOpacity(0.5),
+                        valueColor:
                             AlwaysStoppedAnimation<Color>(progressColor),
-                            strokeCap: StrokeCap.round,
-                          ),
+                        strokeCap: StrokeCap.round,
+                      ),
                     ),
                   ),
                   Column(
@@ -420,12 +420,12 @@ class _PreparednessPlanScreenState extends ConsumerState<PreparednessPlanScreen>
   }
 
   Widget _buildCategorySection(
-      String title,
-      List<PreparednessItem> items,
-      WidgetRef ref,
-      IconData icon,
-      Color accentColor,
-      ) {
+    String title,
+    List<PreparednessItem> items,
+    WidgetRef ref,
+    IconData icon,
+    Color accentColor,
+  ) {
     if (items.isEmpty) {
       return const SizedBox.shrink();
     }
@@ -465,7 +465,7 @@ class _PreparednessPlanScreenState extends ConsumerState<PreparednessPlanScreen>
               ),
               Container(
                 padding:
-                const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
                   color: accentColor.withOpacity(0.2),
                   borderRadius: BorderRadius.circular(20),
@@ -523,9 +523,8 @@ class _PreparednessPlanScreenState extends ConsumerState<PreparednessPlanScreen>
         curve: Curves.easeOutCubic,
         padding: const EdgeInsets.all(18.0),
         decoration: BoxDecoration(
-          color: item.isCompleted
-              ? accentColor.withOpacity(0.08)
-              : Colors.white,
+          color:
+              item.isCompleted ? accentColor.withOpacity(0.08) : Colors.white,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
             color: item.isCompleted
@@ -554,19 +553,17 @@ class _PreparednessPlanScreenState extends ConsumerState<PreparednessPlanScreen>
                 color: item.isCompleted ? accentColor : Colors.transparent,
                 shape: BoxShape.circle,
                 border: Border.all(
-                  color: item.isCompleted
-                      ? accentColor
-                      : Colors.grey.shade300,
+                  color: item.isCompleted ? accentColor : Colors.grey.shade300,
                   width: 2.5,
                 ),
                 boxShadow: item.isCompleted
                     ? [
-                  BoxShadow(
-                    color: accentColor.withOpacity(0.4),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  ),
-                ]
+                        BoxShadow(
+                          color: accentColor.withOpacity(0.4),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
+                        ),
+                      ]
                     : [],
               ),
               child: item.isCompleted

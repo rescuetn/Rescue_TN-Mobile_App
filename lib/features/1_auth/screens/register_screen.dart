@@ -33,6 +33,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
+  final _phoneController = TextEditingController();
+  final _addressController = TextEditingController();
+  final _ageController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
   bool _isLoading = false;
@@ -73,6 +76,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
   void dispose() {
     _nameController.dispose();
     _emailController.dispose();
+    _phoneController.dispose();
+    _addressController.dispose();
+    _ageController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
     _animationController.dispose();
@@ -161,10 +167,49 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
         skills = _selectedSkills.map((skill) => skill.label).toList();
       }
 
-      // 3. Call the createUser method with email, password, role, and skills.
+      // 3. Parse age if provided
+      int? age;
+      if (_ageController.text.trim().isNotEmpty) {
+        age = int.tryParse(_ageController.text.trim());
+        if (age == null || age < 1 || age > 150) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Row(
+                  children: [
+                    const Icon(Icons.error_outline, color: AppColors.onPrimary),
+                    const SizedBox(width: AppPadding.small),
+                    const Expanded(
+                      child: Text(
+                        'Please enter a valid age (1-150)',
+                        style: TextStyle(color: AppColors.onPrimary),
+                      ),
+                    ),
+                  ],
+                ),
+                backgroundColor: AppColors.error,
+                behavior: SnackBarBehavior.floating,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(AppBorderRadius.medium),
+                ),
+                margin: const EdgeInsets.all(AppPadding.medium),
+              ),
+            );
+          }
+          setState(() => _isLoading = false);
+          return;
+        }
+      }
+
+      // 4. Call the createUser method with email, password, phone, address, age, role, and skills.
       await authService.createUserWithEmailAndPassword(
         email: _emailController.text.trim(),
         password: _passwordController.text.trim(),
+        phoneNumber: _phoneController.text.trim(),
+        address: _addressController.text.trim().isNotEmpty
+            ? _addressController.text.trim()
+            : null,
+        age: age,
         role: _selectedRole,
         skills: skills, // Pass skills for volunteers
       );
@@ -466,6 +511,70 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
                                         }
                                         if (!value.contains('@')) {
                                           return 'Please enter a valid email';
+                                        }
+                                        return null;
+                                      },
+                                    ),
+                                    const SizedBox(
+                                        height: AppPadding.medium +
+                                            AppPadding.small),
+
+                                    // --- Phone Number Field (Required) ---
+                                    _buildTextField(
+                                      controller: _phoneController,
+                                      label: 'Phone Number',
+                                      hint: 'Enter your phone number',
+                                      prefixIcon: Icons.phone_outlined,
+                                      keyboardType: TextInputType.phone,
+                                      validator: (value) {
+                                        if (value == null || value.isEmpty) {
+                                          return 'Phone number is required';
+                                        }
+                                        // Remove spaces, dashes, and parentheses for validation
+                                        final cleaned = value.replaceAll(
+                                            RegExp(r'[\s\-\(\)]'), '');
+                                        // Check if it's a valid phone number (10 digits minimum, can have country code)
+                                        if (cleaned.length < 10 ||
+                                            !RegExp(r'^[0-9]+$')
+                                                .hasMatch(cleaned)) {
+                                          return 'Please enter a valid phone number';
+                                        }
+                                        return null;
+                                      },
+                                    ),
+                                    const SizedBox(
+                                        height: AppPadding.medium +
+                                            AppPadding.small),
+
+                                    // --- Address Field (Optional) ---
+                                    _buildTextField(
+                                      controller: _addressController,
+                                      label: 'Address (Optional)',
+                                      hint: 'Enter your address',
+                                      prefixIcon: Icons.location_on_outlined,
+                                      keyboardType: TextInputType.streetAddress,
+                                      maxLines: 2,
+                                    ),
+                                    const SizedBox(
+                                        height: AppPadding.medium +
+                                            AppPadding.small),
+
+                                    // --- Age Field (Optional) ---
+                                    _buildTextField(
+                                      controller: _ageController,
+                                      label: 'Age (Optional)',
+                                      hint: 'Enter your age',
+                                      prefixIcon: Icons.calendar_today_outlined,
+                                      keyboardType: TextInputType.number,
+                                      validator: (value) {
+                                        if (value != null && value.isNotEmpty) {
+                                          final age = int.tryParse(value);
+                                          if (age == null) {
+                                            return 'Please enter a valid number';
+                                          }
+                                          if (age < 1 || age > 150) {
+                                            return 'Age must be between 1 and 150';
+                                          }
                                         }
                                         return null;
                                       },
@@ -846,11 +955,13 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
     bool obscureText = false,
     Widget? suffixIcon,
     String? Function(String?)? validator,
+    int? maxLines,
   }) {
     return TextFormField(
       controller: controller,
       keyboardType: keyboardType,
       obscureText: obscureText,
+      maxLines: maxLines ?? 1,
       style: const TextStyle(
         fontSize: 15,
         color: AppColors.textPrimary,

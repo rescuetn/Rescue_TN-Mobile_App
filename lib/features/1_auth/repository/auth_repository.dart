@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart' as auth;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:rescuetn/core/services/auth_service.dart';
@@ -16,6 +17,7 @@ class FirebaseAuthService implements AuthService {
   // Private getters to easily access Firebase services via their providers.
   auth.FirebaseAuth get _firebaseAuth => _ref.read(firebaseAuthProvider);
   DatabaseService get _databaseService => _ref.read(databaseServiceProvider);
+  FirebaseFirestore get _firestore => _ref.read(firestoreProvider);
 
   @override
   AppUser? get currentUser {
@@ -24,10 +26,13 @@ class FirebaseAuthService implements AuthService {
     // Always use the `authStateChanges` stream for the complete, reliable user profile.
     final firebaseUser = _firebaseAuth.currentUser;
     if (firebaseUser == null) return null;
-    // The role here is just a placeholder and is not accurate.
+    // The role and phone number here are just placeholders and are not accurate.
+    // This should only be used for basic checks, not for complete user data.
     return AppUser(
         uid: firebaseUser.uid,
         email: firebaseUser.email ?? '',
+        phoneNumber:
+            '', // Placeholder - actual value should come from Firestore
         role: UserRole.public);
   }
 
@@ -49,6 +54,9 @@ class FirebaseAuthService implements AuthService {
   Future<void> createUserWithEmailAndPassword({
     required String email,
     required String password,
+    required String phoneNumber,
+    String? address,
+    int? age,
     required UserRole role,
     List<String>? skills,
   }) async {
@@ -88,6 +96,9 @@ class FirebaseAuthService implements AuthService {
     final appUser = AppUser(
       uid: firebaseUser.uid,
       email: email,
+      phoneNumber: phoneNumber,
+      address: address,
+      age: age,
       role: role,
       skills: skills, // Include skills for volunteer accounts
     );
@@ -97,10 +108,75 @@ class FirebaseAuthService implements AuthService {
 
   @override
   Future<AppUser> signInWithEmailAndPassword({
-    required String email,
+    required String emailOrPhone,
     required String password,
   }) async {
-    // 1. Sign in with Firebase Auth with retry logic for reCAPTCHA errors.
+    String email;
+
+    // 1. Determine if input is email or phone number
+    final isEmail = emailOrPhone.contains('@');
+
+    if (isEmail) {
+      // If it's an email, use it directly
+      email = emailOrPhone.trim();
+    } else {
+      // If it's a phone number, find the user's email from Firestore
+      final cleanedPhone =
+          emailOrPhone.replaceAll(RegExp(r'[\s\-\(\)]'), '').trim();
+
+      // Query Firestore to find user by phone number
+      final usersSnapshot = await _firestore
+          .collection('users')
+          .where('phoneNumber', isEqualTo: cleanedPhone)
+          .limit(1)
+          .get();
+
+      // Try different phone number formats to find the user
+      final variations = [
+        cleanedPhone,
+        '+91$cleanedPhone', // Add India country code
+        cleanedPhone.startsWith('91')
+            ? cleanedPhone.substring(2)
+            : '91$cleanedPhone',
+      ];
+
+      // First try the exact match
+      String? foundEmail;
+      if (usersSnapshot.docs.isNotEmpty) {
+        final userData = usersSnapshot.docs.first.data();
+        foundEmail = userData['email'] as String?;
+      }
+
+      // If not found, try variations
+      if (foundEmail == null || foundEmail.isEmpty) {
+        for (final variation in variations) {
+          if (variation == cleanedPhone) continue; // Already tried
+
+          final altSnapshot = await _firestore
+              .collection('users')
+              .where('phoneNumber', isEqualTo: variation)
+              .limit(1)
+              .get();
+
+          if (altSnapshot.docs.isNotEmpty) {
+            final userData = altSnapshot.docs.first.data();
+            foundEmail = userData['email'] as String?;
+            if (foundEmail != null && foundEmail.isNotEmpty) {
+              break;
+            }
+          }
+        }
+      }
+
+      if (foundEmail == null || foundEmail.isEmpty) {
+        throw Exception(
+            'No account found with this phone number. Please check and try again.');
+      }
+
+      email = foundEmail;
+    }
+
+    // 2. Sign in with Firebase Auth using the email
     auth.UserCredential? userCredential;
     int retries = 0;
     const maxRetries = 5;
@@ -132,7 +208,7 @@ class FirebaseAuthService implements AuthService {
     if (firebaseUser == null) {
       throw Exception('Sign in failed.');
     }
-    // 2. Fetch the complete user profile from Firestore to get their role and skills.
+    // 3. Fetch the complete user profile from Firestore to get their role and skills.
     final appUser = await _databaseService.getUserRecord(firebaseUser.uid);
     if (appUser == null) {
       throw Exception(
@@ -149,5 +225,41 @@ class FirebaseAuthService implements AuthService {
   @override
   Future<void> sendPasswordResetEmail({required String email}) async {
     await _firebaseAuth.sendPasswordResetEmail(email: email);
+  }
+
+  @override
+  Future<void> changePassword({
+    required String currentPassword,
+    required String newPassword,
+  }) async {
+    final user = _firebaseAuth.currentUser;
+    if (user == null) {
+      throw Exception('No user is currently signed in.');
+    }
+
+    if (user.email == null) {
+      throw Exception('User email is not available.');
+    }
+
+    // Re-authenticate user with current password
+    final credential = auth.EmailAuthProvider.credential(
+      email: user.email!,
+      password: currentPassword,
+    );
+
+    try {
+      await user.reauthenticateWithCredential(credential);
+      // Update password
+      await user.updatePassword(newPassword);
+    } on auth.FirebaseAuthException catch (e) {
+      if (e.code == 'wrong-password') {
+        throw Exception('Current password is incorrect.');
+      } else if (e.code == 'weak-password') {
+        throw Exception(
+            'New password is too weak. Please choose a stronger password.');
+      } else {
+        throw Exception('Failed to change password: ${e.message}');
+      }
+    }
   }
 }

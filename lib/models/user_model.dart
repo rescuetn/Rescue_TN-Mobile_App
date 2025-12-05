@@ -4,6 +4,10 @@ import 'package:flutter/material.dart';
 class AppUser {
   final String uid;
   final String email;
+  final String phoneNumber;
+  final String? address;
+  final int? age;
+  final String? profilePhotoUrl;
   final UserRole role;
   final List<String>? skills;
   final VolunteerStatus? status;
@@ -11,6 +15,10 @@ class AppUser {
   AppUser({
     required this.uid,
     required this.email,
+    required this.phoneNumber,
+    this.address,
+    this.age,
+    this.profilePhotoUrl,
     required this.role,
     this.skills,
     this.status,
@@ -21,6 +29,10 @@ class AppUser {
     return {
       'uid': uid,
       'email': email,
+      'phoneNumber': phoneNumber,
+      'address': address,
+      'age': age,
+      'profilePhotoUrl': profilePhotoUrl,
       'role': role.name,
       'skills': skills,
       'status': status?.name ?? VolunteerStatus.available.name,
@@ -32,6 +44,10 @@ class AppUser {
     return AppUser(
       uid: map['uid'] ?? '',
       email: map['email'] ?? '',
+      phoneNumber: map['phoneNumber'] ?? '',
+      address: map['address'],
+      age: map['age'] != null ? (map['age'] is int ? map['age'] : int.tryParse(map['age'].toString())) : null,
+      profilePhotoUrl: map['profilePhotoUrl'],
       // Convert the string from Firestore back to a UserRole enum.
       role: UserRole.values.firstWhere(
             (e) => e.name == map['role'],
@@ -53,6 +69,10 @@ class AppUser {
   AppUser copyWith({
     String? uid,
     String? email,
+    String? phoneNumber,
+    String? address,
+    int? age,
+    String? profilePhotoUrl,
     UserRole? role,
     List<String>? skills,
     VolunteerStatus? status,
@@ -60,6 +80,10 @@ class AppUser {
     return AppUser(
       uid: uid ?? this.uid,
       email: email ?? this.email,
+      phoneNumber: phoneNumber ?? this.phoneNumber,
+      address: address ?? this.address,
+      age: age ?? this.age,
+      profilePhotoUrl: profilePhotoUrl ?? this.profilePhotoUrl,
       role: role ?? this.role,
       skills: skills ?? this.skills,
       status: status ?? this.status,

@@ -5,6 +5,12 @@ import 'package:rescuetn/features/1_auth/providers/auth_provider.dart';
 import 'package:rescuetn/features/1_auth/screens/login_screen.dart';
 import 'package:rescuetn/features/1_auth/screens/profile_screen.dart';
 import 'package:rescuetn/features/1_auth/screens/register_screen.dart';
+import 'package:rescuetn/features/1_auth/screens/edit_profile_screen.dart';
+import 'package:rescuetn/features/1_auth/screens/change_password_screen.dart';
+import 'package:rescuetn/features/1_auth/screens/forgot_password_screen.dart';
+import 'package:rescuetn/features/1_auth/screens/help_center_screen.dart';
+import 'package:rescuetn/features/1_auth/screens/privacy_policy_screen.dart';
+import 'package:rescuetn/features/1_auth/screens/preferences_screen.dart';
 import 'package:rescuetn/features/2_dashboard/screens/public_dashboard_screen.dart';
 import 'package:rescuetn/features/2_dashboard/screens/volunteer_dashboard_screen.dart';
 import 'package:rescuetn/features/3_incident_reporting/screens/report_incident_screen.dart';
@@ -28,6 +34,7 @@ final routerProvider = Provider<GoRouter>((ref) {
     routes: [
       GoRoute(path: '/login', builder: (context, state) => const LoginScreen()),
       GoRoute(path: '/register', builder: (context, state) => const RegisterScreen()),
+      GoRoute(path: '/forgot-password', builder: (context, state) => const ForgotPasswordScreen()),
       GoRoute(
         path: '/home',
         builder: (context, state) {
@@ -42,6 +49,11 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/shelter-map', builder: (context, state) => const ShelterMapScreen()),
       GoRoute(path: '/task-details', builder: (context, state) => const TaskDetailsScreen()),
       GoRoute(path: '/profile', builder: (context, state) => const ProfileScreen()),
+      GoRoute(path: '/edit-profile', builder: (context, state) => const EditProfileScreen()),
+      GoRoute(path: '/change-password', builder: (context, state) => const ChangePasswordScreen()),
+      GoRoute(path: '/help-center', builder: (context, state) => const HelpCenterScreen()),
+      GoRoute(path: '/privacy-policy', builder: (context, state) => const PrivacyPolicyScreen()),
+      GoRoute(path: '/preferences', builder: (context, state) => const PreferencesScreen()),
       GoRoute(path: '/alerts', builder: (context, state) => const AlertsScreen()),
       GoRoute(path: '/person-registry', builder: (context, state) => const PersonRegistryScreen()),
       GoRoute(path: '/preparedness-plan', builder: (context, state) => const PreparednessPlanScreen()),
@@ -50,7 +62,9 @@ final routerProvider = Provider<GoRouter>((ref) {
     ],
     redirect: (context, state) {
       final isLoggedIn = authState.value != null;
-      final isAuthRoute = state.matchedLocation == '/login' || state.matchedLocation == '/register';
+      final isAuthRoute = state.matchedLocation == '/login' || 
+          state.matchedLocation == '/register' || 
+          state.matchedLocation == '/forgot-password';
 
       if (!isLoggedIn) {
         return isAuthRoute ? null : '/login';

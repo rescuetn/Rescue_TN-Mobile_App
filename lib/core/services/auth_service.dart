@@ -17,11 +17,12 @@ abstract class AuthService {
   /// May be `null` if no user is signed in.
   AppUser? get currentUser;
 
-  /// Signs in a user with their email and password.
+  /// Signs in a user with their email/phone and password.
+  /// Accepts either email address or phone number as identifier.
   /// Returns the signed-in [AppUser] on success.
   /// Throws an exception on failure (e.g., wrong password).
   Future<AppUser> signInWithEmailAndPassword({
-    required String email,
+    required String emailOrPhone,
     required String password,
   });
 
@@ -31,6 +32,9 @@ abstract class AuthService {
   Future<void> createUserWithEmailAndPassword({
     required String email,
     required String password,
+    required String phoneNumber,
+    String? address,
+    int? age,
     required UserRole role,
     List<String>? skills,
   });
@@ -41,4 +45,12 @@ abstract class AuthService {
   /// Sends a password reset link to the given email address.
   /// Throws an exception if the email is not found or another error occurs.
   Future<void> sendPasswordResetEmail({required String email});
+
+  /// Changes the current user's password.
+  /// Requires the current password and new password.
+  /// Throws an exception on failure.
+  Future<void> changePassword({
+    required String currentPassword,
+    required String newPassword,
+  });
 }

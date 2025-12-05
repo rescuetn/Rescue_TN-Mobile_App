@@ -38,15 +38,19 @@ service cloud.firestore {
     }
 
     // Allow authenticated users to add person status
-    match /person_status/{personStatusId} {
+    match /person_statuses/{personStatusId} {
       allow read: if request.auth != null;
       allow create: if request.auth != null;
+      allow update: if request.auth != null;
     }
 
     // Allow users to read and update their preparedness plan
-    match /users/{userId}/preparedness/{itemId} {
+    match /users/{userId}/preparedness_plan/{itemId} {
       allow read: if request.auth.uid == userId;
       allow write: if request.auth.uid == userId;
+      allow create: if request.auth.uid == userId;
+      allow update: if request.auth.uid == userId;
+      allow delete: if request.auth.uid == userId;
     }
 
     // Allow authenticated users to read shelters
