@@ -18,6 +18,7 @@ abstract class DatabaseService {
   Future<void> createUserRecord(AppUser user);
   Future<void> updateUserRecord(AppUser user);
   Future<AppUser?> getUserRecord(String uid);
+  Stream<AppUser?> getUserStream(String uid);
 
   // Incident operations
   Future<void> addIncident(Incident incident);
@@ -75,6 +76,20 @@ class FirestoreDatabaseService implements DatabaseService {
     return null;
   }
 
+  @override
+  Stream<AppUser?> getUserStream(String uid) {
+    return _firestore
+        .collection('users')
+        .doc(uid)
+        .snapshots()
+        .map((doc) {
+          if (doc.exists && doc.data() != null) {
+            return AppUser.fromMap(doc.data()!);
+          }
+          return null;
+        });
+  }
+
   // --- INCIDENT METHODS ---
   @override
   Future<void> addIncident(Incident incident) async {
@@ -96,8 +111,24 @@ class FirestoreDatabaseService implements DatabaseService {
   // --- TASK METHODS ---
   @override
   Stream<List<Task>> getTasksStream() {
-    return _firestore.collection('tasks').snapshots().map((snapshot) =>
-        snapshot.docs.map((doc) => Task.fromMap(doc.data(), doc.id)).toList());
+    return _firestore
+        .collection('tasks')
+        .snapshots()
+        .map((snapshot) => snapshot.docs
+            .map((doc) {
+              try {
+                return Task.fromMap(doc.data(), doc.id);
+              } catch (e) {
+                print('Error parsing task ${doc.id}: $e');
+                return null;
+              }
+            })
+            .whereType<Task>()
+            .toList())
+        .handleError((error) {
+          print('Error in getTasksStream: $error');
+          return <Task>[];
+        });
   }
 
   @override
@@ -128,19 +159,24 @@ class FirestoreDatabaseService implements DatabaseService {
   // --- PREPAREDNESS PLAN METHODS ---
   @override
   Future<void> checkAndCreateDefaultPlan(String userId) async {
-    final planCollection = _firestore
-        .collection('users')
-        .doc(userId)
-        .collection('preparedness_plan');
-    final snapshot = await planCollection.limit(1).get();
+    try {
+      final planCollection = _firestore
+          .collection('users')
+          .doc(userId)
+          .collection('preparedness_plan');
+      final snapshot = await planCollection.limit(1).get();
 
-    if (snapshot.docs.isEmpty) {
-      final batch = _firestore.batch();
-      for (final item in _defaultPlan) {
-        final docRef = planCollection.doc(item.id);
-        batch.set(docRef, item.toMap());
+      if (snapshot.docs.isEmpty) {
+        final batch = _firestore.batch();
+        for (final item in _defaultPlan) {
+          final docRef = planCollection.doc(item.id);
+          batch.set(docRef, item.toMap());
+        }
+        await batch.commit();
       }
-      await batch.commit();
+    } catch (e) {
+      print('Error in checkAndCreateDefaultPlan: $e');
+      rethrow;
     }
   }
 
@@ -151,9 +187,20 @@ class FirestoreDatabaseService implements DatabaseService {
         .doc(userId)
         .collection('preparedness_plan')
         .snapshots()
-        .map((snapshot) => snapshot.docs
-            .map((doc) => PreparednessItem.fromMap(doc.data(), doc.id))
-            .toList());
+        .map((snapshot) {
+          try {
+            return snapshot.docs
+                .map((doc) => PreparednessItem.fromMap(doc.data(), doc.id))
+                .toList();
+          } catch (e) {
+            print('Error parsing preparedness items: $e');
+            return <PreparednessItem>[];
+          }
+        })
+        .handleError((error) {
+          print('Error in getPreparednessPlanStream: $error');
+          return <PreparednessItem>[];
+        });
   }
 
   @override
@@ -184,8 +231,26 @@ class FirestoreDatabaseService implements DatabaseService {
         .orderBy('createdAt', descending: true)
         .snapshots()
         .map((snapshot) => snapshot.docs
-            .map((doc) => Alert.fromMap(doc.data(), doc.id))
-            .toList());
+            .map((doc) {
+              try {
+                return Alert.fromMap(doc.data(), doc.id);
+              } catch (e) {
+                // Return a placeholder alert if parsing fails
+                return Alert(
+                  id: doc.id,
+                  title: 'Error loading alert',
+                  message: 'Could not parse alert data',
+                  level: AlertLevel.info,
+                  timestamp: DateTime.now(),
+                );
+              }
+            })
+            .toList())
+        .handleError((error) {
+          // If ordering fails, try without ordering
+          print('Error in getAlertsStream: $error');
+          return <Alert>[];
+        });
   }
 
   @override

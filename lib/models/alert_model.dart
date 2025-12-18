@@ -1,5 +1,4 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter/material.dart';
 import 'package:rescuetn/models/user_model.dart';
 
 enum AlertLevel { info, warning, severe }
@@ -76,10 +75,18 @@ class Alert {
 
   // A factory constructor to create an Alert from a Firestore document.
   factory Alert.fromMap(Map<String, dynamic> map, String id) {
-    // Handle both 'timestamp' and 'createdAt' fields
-    final timestamp =
-        (map['createdAt'] ?? map['timestamp'] as Timestamp? ?? Timestamp.now())
-            .toDate();
+    // Handle both 'timestamp' and 'createdAt' fields with proper null handling
+    DateTime timestamp;
+    final createdAtValue = map['createdAt'];
+    final timestampValue = map['timestamp'];
+    
+    if (createdAtValue is Timestamp) {
+      timestamp = createdAtValue.toDate();
+    } else if (timestampValue is Timestamp) {
+      timestamp = timestampValue.toDate();
+    } else {
+      timestamp = DateTime.now();
+    }
 
     return Alert(
       id: id,

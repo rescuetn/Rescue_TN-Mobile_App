@@ -4,7 +4,6 @@ import 'package:go_router/go_router.dart';
 import 'package:rescuetn/app/constants.dart';
 import 'package:rescuetn/features/7_alerts/providers/alert_provider.dart';
 import 'package:rescuetn/features/7_alerts/widgets/alert_card_widget.dart';
-import 'package:rescuetn/models/alert_model.dart';
 
 class AlertsScreen extends ConsumerStatefulWidget {
   const AlertsScreen({super.key});

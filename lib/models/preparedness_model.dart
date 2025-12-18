@@ -1,4 +1,3 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 
 enum PreparednessCategory { essentials, documents, actions, other } // Added 'other' for fallback

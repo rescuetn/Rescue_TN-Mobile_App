@@ -438,7 +438,8 @@ class _VolunteerDashboardScreenState
                     padding: const EdgeInsets.all(AppPadding.large),
                     child: authState.when(
                       data: (user) {
-                        String userName = user?.email?.split('@').first ?? 'Volunteer';
+                        final email = user?.email ?? '';
+                        String userName = email.isNotEmpty ? email.split('@').first : 'Volunteer';
                         if (userName.isNotEmpty) {
                           userName = userName.substring(0, 1).toUpperCase() + userName.substring(1);
                         }
@@ -711,8 +712,8 @@ class _VolunteerDashboardScreenState
                               final pendingCount = allTasks.where((t) => t.status == TaskStatus.pending).length;
                               final activeCount = allTasks.where((t) => t.status == TaskStatus.inProgress || t.status == TaskStatus.accepted).length;
                               final completedCount = allTasks.where((t) => t.status == TaskStatus.completed).length;
-
-                              final userName = authState.value?.email?.split('@').first ?? 'Volunteer';
+                              final email = authState.value?.email ?? '';
+                              final userName = email.isNotEmpty ? email.split('@').first : 'Volunteer';
                               final formattedUserName = userName.isNotEmpty
                                   ? userName.substring(0, 1).toUpperCase() + userName.substring(1)
                                   : 'Volunteer';

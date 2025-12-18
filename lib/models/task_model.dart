@@ -1,4 +1,3 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:rescuetn/models/incident_model.dart';
 
 enum TaskStatus { pending, accepted, inProgress, completed }

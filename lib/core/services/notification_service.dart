@@ -21,7 +21,8 @@ class NotificationService {
   Future<void> initialize() async {
     try {
       // Request user permission for notifications
-      NotificationSettings settings =
+      // ignore: unused_local_variable
+      final NotificationSettings settings =
           await _firebaseMessaging.requestPermission(
         alert: true,
         announcement: false,

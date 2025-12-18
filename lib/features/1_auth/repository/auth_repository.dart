@@ -41,12 +41,13 @@ class FirebaseAuthService implements AuthService {
     // This is the reliable, asynchronous way to get the auth state.
     // It maps the Firebase user stream to our custom AppUser stream by fetching
     // the user's role and other data from Firestore.
-    return _firebaseAuth.authStateChanges().asyncMap((firebaseUser) async {
+    // We use asyncExpand to listen to the Firestore stream, providing REAL-TIME updates.
+    return _firebaseAuth.authStateChanges().asyncExpand((firebaseUser) {
       if (firebaseUser == null) {
-        return null;
+        return Stream.value(null);
       }
-      // Return the full user profile from our database.
-      return await _databaseService.getUserRecord(firebaseUser.uid);
+      // Listen to the Firestore document stream for this user.
+      return _databaseService.getUserStream(firebaseUser.uid);
     });
   }
 
@@ -56,6 +57,7 @@ class FirebaseAuthService implements AuthService {
     required String password,
     required String phoneNumber,
     String? address,
+    String? district,
     int? age,
     required UserRole role,
     List<String>? skills,
@@ -98,6 +100,7 @@ class FirebaseAuthService implements AuthService {
       email: email,
       phoneNumber: phoneNumber,
       address: address,
+      district: district,
       age: age,
       role: role,
       skills: skills, // Include skills for volunteer accounts

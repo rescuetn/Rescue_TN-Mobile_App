@@ -63,6 +63,7 @@ class ReportIncidentNotifier extends StateNotifier<ReportIncidentState> {
     required String description,
     required Severity severity,
     required Position position,
+    String? district,
     required List<File> images,
     required List<String> audioPaths,
   }) async {
@@ -80,6 +81,7 @@ class ReportIncidentNotifier extends StateNotifier<ReportIncidentState> {
         severity: severity,
         latitude: position.latitude,
         longitude: position.longitude,
+        district: district,
         reportedBy: user.uid,
         timestamp: DateTime.now(),
       );

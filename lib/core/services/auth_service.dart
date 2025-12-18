@@ -27,13 +27,14 @@ abstract class AuthService {
   });
 
   /// Creates a new user account with the given email, password, and role.
-  /// Optionally accepts [skills] for volunteer accounts.
+  /// Optionally accepts [skills] for volunteer accounts and [district] for location.
   /// Throws an exception on failure (e.g., email already in use).
   Future<void> createUserWithEmailAndPassword({
     required String email,
     required String password,
     required String phoneNumber,
     String? address,
+    String? district,
     int? age,
     required UserRole role,
     List<String>? skills,

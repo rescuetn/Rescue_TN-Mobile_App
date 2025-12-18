@@ -36,9 +36,20 @@ final preparednessPlanProvider = StreamProvider<List<PreparednessItem>>((ref) {
 
   if (user != null) {
     // 1. Check for and create the default plan if it's the user's first time.
-    dbService.checkAndCreateDefaultPlan(user.uid);
+    // Use async to avoid blocking and handle errors gracefully
+    Future(() async {
+      try {
+        await dbService.checkAndCreateDefaultPlan(user.uid);
+      } catch (e) {
+        print('Error checking/creating default plan: $e');
+      }
+    });
+    
     // 2. Return the live stream of their personal plan from the sub-collection.
-    return dbService.getPreparednessPlanStream(user.uid);
+    return dbService.getPreparednessPlanStream(user.uid).handleError((error) {
+      print('Error in preparedness plan stream: $error');
+      return <PreparednessItem>[];
+    });
   }
 
   // If the user is logged out, return an empty stream.

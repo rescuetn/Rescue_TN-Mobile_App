@@ -6,12 +6,12 @@ import 'package:geolocator/geolocator.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:rescuetn/app/constants.dart';
+import 'package:rescuetn/app/districts.dart';
 import 'package:rescuetn/common_widgets/custom_button.dart';
 import 'package:rescuetn/models/incident_model.dart';
 import 'package:record/record.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:rescuetn/features/3_incident_reporting/providers/incident_provider.dart';
-import 'package:rescuetn/features/1_auth/providers/auth_provider.dart'; // Import for authStateChangesProvider
 
 class ReportIncidentScreen extends ConsumerStatefulWidget {
   const ReportIncidentScreen({super.key});
@@ -30,6 +30,7 @@ class _ReportIncidentScreenState extends ConsumerState<ReportIncidentScreen>
 
   IncidentType? _selectedType;
   Severity? _selectedSeverity;
+  String? _selectedDistrict;
   final List<File> _pickedImages = [];
   final List<String> _audioRecordings = [];
   Position? _currentPosition;
@@ -261,6 +262,7 @@ class _ReportIncidentScreenState extends ConsumerState<ReportIncidentScreen>
         description: _descriptionController.text.trim(),
         severity: _selectedSeverity!,
         position: _currentPosition!,
+        district: _selectedDistrict,
         images: _pickedImages,
         audioPaths: _audioRecordings,
       );
@@ -829,6 +831,17 @@ class _ReportIncidentScreenState extends ConsumerState<ReportIncidentScreen>
                               ),
                               const SizedBox(height: 20),
                               _buildEnhancedLocationSection(),
+                              const SizedBox(height: 24),
+
+                              // District Dropdown Section
+                              _buildEnhancedSectionHeader(
+                                icon: Icons.map_outlined,
+                                title: 'District',
+                                subtitle: 'Select the district where incident occurred',
+                                gradient: [Colors.teal.shade400, Colors.teal.shade600],
+                              ),
+                              const SizedBox(height: 20),
+                              _buildDistrictDropdown(),
                               const SizedBox(height: 32),
 
                               // Upload Progress Indicator
@@ -1499,6 +1512,128 @@ class _ReportIncidentScreenState extends ConsumerState<ReportIncidentScreen>
               ),
             ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildDistrictDropdown() {
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Colors.teal.shade50,
+            Colors.teal.shade100.withOpacity(0.5),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: Colors.teal.shade200,
+          width: 1.5,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.teal.shade200.withOpacity(0.3),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: DropdownButtonFormField<String>(
+        value: _selectedDistrict,
+        decoration: InputDecoration(
+          labelText: 'Select District',
+          hintText: 'Choose the district',
+          labelStyle: TextStyle(
+            color: Colors.teal.shade700,
+            fontWeight: FontWeight.w600,
+          ),
+          hintStyle: TextStyle(
+            color: Colors.teal.shade400,
+          ),
+          prefixIcon: Container(
+            margin: const EdgeInsets.all(12),
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Colors.teal.shade400, Colors.teal.shade600],
+              ),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: const Icon(
+              Icons.location_city_rounded,
+              color: Colors.white,
+              size: 20,
+            ),
+          ),
+          filled: true,
+          fillColor: Colors.transparent,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(20),
+            borderSide: BorderSide.none,
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(20),
+            borderSide: BorderSide.none,
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(20),
+            borderSide: BorderSide(
+              color: Colors.teal.shade400,
+              width: 2,
+            ),
+          ),
+          errorBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(20),
+            borderSide: const BorderSide(
+              color: AppColors.error,
+              width: 1.5,
+            ),
+          ),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 20,
+            vertical: 18,
+          ),
+        ),
+        isExpanded: true,
+        menuMaxHeight: 300,
+        dropdownColor: Colors.teal.shade50,
+        icon: Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: Colors.teal.shade100,
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Icon(
+            Icons.keyboard_arrow_down_rounded,
+            color: Colors.teal.shade700,
+          ),
+        ),
+        items: tamilNaduDistricts.map((district) {
+          return DropdownMenuItem(
+            value: district,
+            child: Text(
+              district,
+              style: TextStyle(
+                fontSize: 15,
+                color: Colors.teal.shade900,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          );
+        }).toList(),
+        onChanged: (value) {
+          setState(() {
+            _selectedDistrict = value;
+          });
+        },
+        validator: (value) {
+          if (value == null || value.isEmpty) {
+            return 'Please select a district';
+          }
+          return null;
+        },
       ),
     );
   }

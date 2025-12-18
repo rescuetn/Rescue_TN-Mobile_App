@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:rescuetn/app/router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:rescuetn/app/constants.dart';
@@ -646,14 +645,13 @@ class _PersonRegistryScreenState extends ConsumerState<PersonRegistryScreen>
                             ),
                           ),
                           const Spacer(),
-                          if (person.timestamp != null)
-                            Text(
-                              _formatTimestamp(person.timestamp!),
-                              style: TextStyle(
-                                fontSize: 11,
-                                color: AppColors.textSecondary.withOpacity(0.7),
-                              ),
+                          Text(
+                            _formatTimestamp(person.timestamp),
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: AppColors.textSecondary.withOpacity(0.7),
                             ),
+                          ),
                         ],
                       ),
                     ],
@@ -921,15 +919,13 @@ class _PersonRegistryScreenState extends ConsumerState<PersonRegistryScreen>
                   person.lastKnownLocation,
                   gradient,
                 ),
-                if (person.timestamp != null) ...[
-                  const SizedBox(height: 16),
-                  _buildDetailRow(
-                    Icons.access_time_rounded,
-                    'Reported',
-                    _formatFullTimestamp(person.timestamp!),
-                    gradient,
-                  ),
-                ],
+                const SizedBox(height: 16),
+                _buildDetailRow(
+                  Icons.access_time_rounded,
+                  'Reported',
+                  _formatFullTimestamp(person.timestamp),
+                  gradient,
+                ),
                 const SizedBox(height: 24),
               ],
             ),

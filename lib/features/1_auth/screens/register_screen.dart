@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:rescuetn/app/constants.dart';
+import 'package:rescuetn/app/districts.dart';
 import 'package:rescuetn/common_widgets/custom_button.dart';
 import 'package:rescuetn/core/services/connectivity_service.dart';
 import 'package:rescuetn/features/1_auth/providers/auth_provider.dart';
@@ -47,6 +48,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
 
   // State for the role selection
   UserRole _selectedRole = UserRole.public;
+
+  // State for district selection
+  String? _selectedDistrict;
 
   // State for volunteer skills
   Set<VolunteerSkill> _selectedSkills = {};
@@ -201,7 +205,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
         }
       }
 
-      // 4. Call the createUser method with email, password, phone, address, age, role, and skills.
+      // 4. Call the createUser method with email, password, phone, address, district, age, role, and skills.
       await authService.createUserWithEmailAndPassword(
         email: _emailController.text.trim(),
         password: _passwordController.text.trim(),
@@ -209,6 +213,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
         address: _addressController.text.trim().isNotEmpty
             ? _addressController.text.trim()
             : null,
+        district: _selectedDistrict,
         age: age,
         role: _selectedRole,
         skills: skills, // Pass skills for volunteers
@@ -554,6 +559,83 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
                                       prefixIcon: Icons.location_on_outlined,
                                       keyboardType: TextInputType.streetAddress,
                                       maxLines: 2,
+                                    ),
+                                    const SizedBox(
+                                        height: AppPadding.medium +
+                                            AppPadding.small),
+
+                                    // --- District Dropdown (Required) ---
+                                    DropdownButtonFormField<String>(
+                                      value: _selectedDistrict,
+                                      decoration: InputDecoration(
+                                        labelText: 'District',
+                                        hintText: 'Select your district',
+                                        labelStyle: const TextStyle(
+                                            color: AppColors.textSecondary),
+                                        hintStyle: TextStyle(
+                                            color: AppColors.textSecondary
+                                                .withOpacity(0.6)),
+                                        prefixIcon: const Icon(
+                                            Icons.map_outlined,
+                                            size: 22,
+                                            color: AppColors.primary),
+                                        filled: true,
+                                        fillColor: AppColors.background
+                                            .withOpacity(0.5),
+                                        border: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(
+                                              AppBorderRadius.medium),
+                                          borderSide: BorderSide(
+                                              color: AppColors.textSecondary
+                                                  .withOpacity(0.2)),
+                                        ),
+                                        enabledBorder: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(
+                                              AppBorderRadius.medium),
+                                          borderSide: BorderSide(
+                                              color: AppColors.textSecondary
+                                                  .withOpacity(0.2)),
+                                        ),
+                                        focusedBorder: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(
+                                              AppBorderRadius.medium),
+                                          borderSide: const BorderSide(
+                                            color: AppColors.primary,
+                                            width: 2,
+                                          ),
+                                        ),
+                                        contentPadding:
+                                            const EdgeInsets.symmetric(
+                                          horizontal: AppPadding.medium +
+                                              AppPadding.small,
+                                          vertical: AppPadding.medium + 2,
+                                        ),
+                                      ),
+                                      isExpanded: true,
+                                      menuMaxHeight: 300,
+                                      items: tamilNaduDistricts.map((district) {
+                                        return DropdownMenuItem(
+                                          value: district,
+                                          child: Text(
+                                            district,
+                                            style: const TextStyle(
+                                              fontSize: 15,
+                                              color: AppColors.textPrimary,
+                                            ),
+                                          ),
+                                        );
+                                      }).toList(),
+                                      onChanged: (value) {
+                                        setState(() {
+                                          _selectedDistrict = value;
+                                        });
+                                      },
+                                      validator: (value) {
+                                        if (value == null || value.isEmpty) {
+                                          return 'Please select your district';
+                                        }
+                                        return null;
+                                      },
                                     ),
                                     const SizedBox(
                                         height: AppPadding.medium +

@@ -3,8 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:rescuetn/app/constants.dart';
 import 'package:rescuetn/features/1_auth/providers/auth_provider.dart';
-import 'package:rescuetn/features/2_dashboard/widgets/quick_action_card.dart';
-import 'package:rescuetn/models/user_model.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 /// The main dashboard for users logged in with the 'Public' role.
@@ -96,7 +94,8 @@ class _PublicDashboardScreenState extends ConsumerState<PublicDashboardScreen>
       ),
       data: (user) {
         // Extract user name from email or use default
-        String userName = user?.email?.split('@').first ?? 'User';
+        final email = user?.email ?? '';
+        String userName = email.isNotEmpty ? email.split('@').first : 'User';
         if (userName.isNotEmpty) {
           userName = userName.substring(0, 1).toUpperCase() + userName.substring(1);
         }

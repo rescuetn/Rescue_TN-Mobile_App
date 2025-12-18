@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:rescuetn/app/constants.dart';
 import 'package:rescuetn/features/5_task_management/providers/task_data_provider.dart';
-import 'package:rescuetn/models/incident_model.dart';
 import 'package:rescuetn/models/task_model.dart';
 
 class TaskCard extends ConsumerWidget {

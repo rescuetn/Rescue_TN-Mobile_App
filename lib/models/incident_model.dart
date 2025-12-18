@@ -10,11 +10,12 @@ class Incident {
   final Severity severity;
   final double latitude;
   final double longitude;
+  final String? district;
   final String reportedBy;
   final DateTime timestamp;
   final List<String> imageUrls;
   final List<String> audioUrls;
-  final bool isVerified; // --- NEW FIELD ---
+  final bool isVerified;
 
   const Incident({
     this.id,
@@ -23,14 +24,16 @@ class Incident {
     required this.severity,
     required this.latitude,
     required this.longitude,
+    this.district,
     required this.reportedBy,
     required this.timestamp,
     this.imageUrls = const [],
     this.audioUrls = const [],
-    this.isVerified = false, // Defaults to false
+    this.isVerified = false,
   });
 
   Incident copyWith({
+    String? district,
     List<String>? imageUrls,
     List<String>? audioUrls,
   }) {
@@ -41,6 +44,7 @@ class Incident {
       severity: severity,
       latitude: latitude,
       longitude: longitude,
+      district: district ?? this.district,
       reportedBy: reportedBy,
       timestamp: timestamp,
       imageUrls: imageUrls ?? this.imageUrls,
@@ -55,11 +59,12 @@ class Incident {
       'description': description,
       'severity': severity.name,
       'location': GeoPoint(latitude, longitude),
+      'district': district,
       'reportedBy': reportedBy,
       'timestamp': Timestamp.fromDate(timestamp),
       'imageUrls': imageUrls,
       'audioUrls': audioUrls,
-      'isVerified': isVerified, // --- ADD TO MAP ---
+      'isVerified': isVerified,
     };
   }
 
@@ -78,11 +83,12 @@ class Incident {
       ),
       latitude: location.latitude,
       longitude: location.longitude,
+      district: map['district'],
       reportedBy: map['reportedBy'] ?? '',
       timestamp: (map['timestamp'] as Timestamp? ?? Timestamp.now()).toDate(),
       imageUrls: List<String>.from(map['imageUrls'] ?? []),
       audioUrls: List<String>.from(map['audioUrls'] ?? []),
-      isVerified: map['isVerified'] ?? false, // --- READ FROM MAP ---
+      isVerified: map['isVerified'] ?? false,
     );
   }
 }

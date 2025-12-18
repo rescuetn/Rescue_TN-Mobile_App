@@ -1,11 +1,13 @@
+import 'package:flutter/material.dart';
+
 /// A data model representing a user in the application.
 /// It includes methods for serializing to and from Firestore.
-import 'package:flutter/material.dart';
 class AppUser {
   final String uid;
   final String email;
   final String phoneNumber;
   final String? address;
+  final String? district;
   final int? age;
   final String? profilePhotoUrl;
   final UserRole role;
@@ -17,6 +19,7 @@ class AppUser {
     required this.email,
     required this.phoneNumber,
     this.address,
+    this.district,
     this.age,
     this.profilePhotoUrl,
     required this.role,
@@ -31,6 +34,7 @@ class AppUser {
       'email': email,
       'phoneNumber': phoneNumber,
       'address': address,
+      'district': district,
       'age': age,
       'profilePhotoUrl': profilePhotoUrl,
       'role': role.name,
@@ -46,6 +50,7 @@ class AppUser {
       email: map['email'] ?? '',
       phoneNumber: map['phoneNumber'] ?? '',
       address: map['address'],
+      district: map['district'],
       age: map['age'] != null ? (map['age'] is int ? map['age'] : int.tryParse(map['age'].toString())) : null,
       profilePhotoUrl: map['profilePhotoUrl'],
       // Convert the string from Firestore back to a UserRole enum.
@@ -71,6 +76,7 @@ class AppUser {
     String? email,
     String? phoneNumber,
     String? address,
+    String? district,
     int? age,
     String? profilePhotoUrl,
     UserRole? role,
@@ -82,6 +88,7 @@ class AppUser {
       email: email ?? this.email,
       phoneNumber: phoneNumber ?? this.phoneNumber,
       address: address ?? this.address,
+      district: district ?? this.district,
       age: age ?? this.age,
       profilePhotoUrl: profilePhotoUrl ?? this.profilePhotoUrl,
       role: role ?? this.role,
