@@ -81,10 +81,10 @@ class _PreparednessPlanScreenState extends ConsumerState<PreparednessPlanScreen>
                         color: Colors.transparent,
                         child: Container(
                           decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.25),
+                            color: Colors.white.withValues(alpha: 0.25),
                             borderRadius: BorderRadius.circular(14),
                             border: Border.all(
-                              color: Colors.white.withOpacity(0.3),
+                              color: Colors.white.withValues(alpha: 0.3),
                               width: 1,
                             ),
                           ),
@@ -113,7 +113,7 @@ class _PreparednessPlanScreenState extends ConsumerState<PreparednessPlanScreen>
                           Text(
                             'Track Your Emergency Readiness',
                             style: textTheme.bodyMedium?.copyWith(
-                              color: Colors.white.withOpacity(0.9),
+                              color: Colors.white.withValues(alpha: 0.9),
                             ),
                           ),
                         ],
@@ -122,7 +122,7 @@ class _PreparednessPlanScreenState extends ConsumerState<PreparednessPlanScreen>
                     Container(
                       padding: const EdgeInsets.all(10),
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.25),
+                        color: Colors.white.withValues(alpha: 0.25),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: const Icon(
@@ -150,7 +150,7 @@ class _PreparednessPlanScreenState extends ConsumerState<PreparednessPlanScreen>
                         ),
                       ),
                       child: planAsync.when(
-                        loading: () => Center(
+                        loading: () => const Center(
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
@@ -158,7 +158,7 @@ class _PreparednessPlanScreenState extends ConsumerState<PreparednessPlanScreen>
                                 valueColor: AlwaysStoppedAnimation<Color>(
                                     AppColors.primary),
                               ),
-                              const SizedBox(height: 16),
+                              SizedBox(height: 16),
                               Text(
                                 'Loading your preparedness plan...',
                                 style: TextStyle(
@@ -313,20 +313,20 @@ class _PreparednessPlanScreenState extends ConsumerState<PreparednessPlanScreen>
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            progressColor.withOpacity(0.1),
-            progressColor.withOpacity(0.05),
+            progressColor.withValues(alpha: 0.1),
+            progressColor.withValues(alpha: 0.05),
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(24),
         border: Border.all(
-          color: progressColor.withOpacity(0.3),
+          color: progressColor.withValues(alpha: 0.3),
           width: 2,
         ),
         boxShadow: [
           BoxShadow(
-            color: progressColor.withOpacity(0.2),
+            color: progressColor.withValues(alpha: 0.2),
             blurRadius: 20,
             offset: const Offset(0, 8),
           ),
@@ -350,7 +350,7 @@ class _PreparednessPlanScreenState extends ConsumerState<PreparednessPlanScreen>
                           CircularProgressIndicator(
                         value: value,
                         strokeWidth: 10,
-                        backgroundColor: Colors.white.withOpacity(0.5),
+                        backgroundColor: Colors.white.withValues(alpha: 0.5),
                         valueColor:
                             AlwaysStoppedAnimation<Color>(progressColor),
                         strokeCap: StrokeCap.round,
@@ -439,7 +439,7 @@ class _PreparednessPlanScreenState extends ConsumerState<PreparednessPlanScreen>
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           decoration: BoxDecoration(
-            color: accentColor.withOpacity(0.1),
+            color: accentColor.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(16),
           ),
           child: Row(
@@ -447,7 +447,7 @@ class _PreparednessPlanScreenState extends ConsumerState<PreparednessPlanScreen>
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: accentColor.withOpacity(0.2),
+                  color: accentColor.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(icon, color: accentColor, size: 24),
@@ -467,7 +467,7 @@ class _PreparednessPlanScreenState extends ConsumerState<PreparednessPlanScreen>
                 padding:
                     const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
-                  color: accentColor.withOpacity(0.2),
+                  color: accentColor.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
@@ -524,19 +524,19 @@ class _PreparednessPlanScreenState extends ConsumerState<PreparednessPlanScreen>
         padding: const EdgeInsets.all(18.0),
         decoration: BoxDecoration(
           color:
-              item.isCompleted ? accentColor.withOpacity(0.08) : Colors.white,
+              item.isCompleted ? accentColor.withValues(alpha: 0.08) : Colors.white,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
             color: item.isCompleted
-                ? accentColor.withOpacity(0.4)
+                ? accentColor.withValues(alpha: 0.4)
                 : Colors.grey.shade200,
             width: 2,
           ),
           boxShadow: [
             BoxShadow(
               color: item.isCompleted
-                  ? accentColor.withOpacity(0.1)
-                  : Colors.black.withOpacity(0.05),
+                  ? accentColor.withValues(alpha: 0.1)
+                  : Colors.black.withValues(alpha: 0.05),
               blurRadius: 12,
               offset: const Offset(0, 4),
             ),
@@ -559,7 +559,7 @@ class _PreparednessPlanScreenState extends ConsumerState<PreparednessPlanScreen>
                 boxShadow: item.isCompleted
                     ? [
                         BoxShadow(
-                          color: accentColor.withOpacity(0.4),
+                          color: accentColor.withValues(alpha: 0.4),
                           blurRadius: 8,
                           offset: const Offset(0, 2),
                         ),
@@ -610,7 +610,7 @@ class _PreparednessPlanScreenState extends ConsumerState<PreparednessPlanScreen>
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: accentColor.withOpacity(0.15),
+                  color: accentColor.withValues(alpha: 0.15),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(

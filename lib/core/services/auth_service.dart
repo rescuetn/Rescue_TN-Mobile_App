@@ -32,6 +32,7 @@ abstract class AuthService {
   Future<void> createUserWithEmailAndPassword({
     required String email,
     required String password,
+    String? fullName,
     required String phoneNumber,
     String? address,
     String? district,

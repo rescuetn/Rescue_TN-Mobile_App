@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:rescuetn/core/services/database_service.dart';
+import 'package:rescuetn/features/1_auth/providers/auth_provider.dart';
 import 'package:rescuetn/models/alert_model.dart';
 
 /// This file provides the logic for fetching and filtering live alert data from Firebase.
@@ -9,11 +10,18 @@ enum AlertFilter { all, severe, warning, info }
 
 // 2. A StateProvider to hold the user's current filter selection.
 // The UI will update this provider when the user taps a filter chip.
-final alertFilterProvider = StateProvider<AlertFilter>((ref) => AlertFilter.all);
+final alertFilterProvider = StateProvider.autoDispose<AlertFilter>((ref) => AlertFilter.all);
 
 // 3. A StreamProvider that provides a real-time stream of all alerts from Firestore.
 // This is the main source of live data.
-final alertsStreamProvider = StreamProvider<List<Alert>>((ref) {
+// 3. A StreamProvider that provides a real-time stream of all alerts from Firestore.
+// This is the main source of live data.
+final alertsStreamProvider = StreamProvider.autoDispose<List<Alert>>((ref) {
+  final authState = ref.watch(authStateChangesProvider);
+  if (authState.valueOrNull == null) {
+      return Stream.value([]);
+  }
+  
   final dbService = ref.watch(databaseServiceProvider);
   return dbService.getAlertsStream();
 });
@@ -22,7 +30,7 @@ final alertsStreamProvider = StreamProvider<List<Alert>>((ref) {
 // It watches both the main data stream and the filter provider, and automatically
 // recalculates the list whenever either one changes. It returns an AsyncValue
 // to handle loading and error states gracefully.
-final filteredAlertsProvider = Provider<AsyncValue<List<Alert>>>((ref) {
+final filteredAlertsProvider = Provider.autoDispose<AsyncValue<List<Alert>>>((ref) {
   final filter = ref.watch(alertFilterProvider);
   final alertsAsync = ref.watch(alertsStreamProvider);
 

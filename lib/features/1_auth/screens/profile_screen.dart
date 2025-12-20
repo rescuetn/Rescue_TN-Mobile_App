@@ -50,38 +50,17 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
   }
 
   Future<void> _handleLogout() async {
+    // Close the dialog first
+    if (mounted) Navigator.pop(context);
+    
     try {
       final authService = ref.read(authRepositoryProvider);
       await authService.signOut();
-      // Navigation is handled automatically by the router
-      if (mounted) {
-        Navigator.pop(context); // Close the dialog
-      }
     } catch (e) {
+      // Ignore errors during logout
+    } finally {
       if (mounted) {
-        Navigator.pop(context); // Close the dialog
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Row(
-              children: [
-                Icon(Icons.error_outline, color: Colors.white),
-                SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    'Failed to logout. Please try again.',
-                    style: TextStyle(fontSize: 15),
-                  ),
-                ),
-              ],
-            ),
-            backgroundColor: AppColors.error,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-            margin: const EdgeInsets.all(16),
-          ),
-        );
+        context.go('/login');
       }
     }
   }
@@ -118,7 +97,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
                   padding: const EdgeInsets.all(8.0),
                   child: Container(
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.2),
+                      color: Colors.white.withValues(alpha: 0.2),
                       shape: BoxShape.circle,
                     ),
                     child: IconButton(
@@ -144,8 +123,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
                                 end: Alignment.bottomRight,
                                 colors: [
                                   AppColors.primary,
-                                  AppColors.primary.withOpacity(0.8),
-                                  AppColors.primary.withOpacity(0.6),
+                                  AppColors.primary.withValues(alpha: 0.8),
+                                  AppColors.primary.withValues(alpha: 0.6),
                                 ],
                               ),
                             ),
@@ -159,7 +138,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
                               height: 200,
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
-                                color: Colors.white.withOpacity(0.1),
+                                color: Colors.white.withValues(alpha: 0.1),
                               ),
                             ),
                           ),
@@ -171,7 +150,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
                               height: 150,
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
-                                color: Colors.white.withOpacity(0.05),
+                                color: Colors.white.withValues(alpha: 0.05),
                               ),
                             ),
                           ),
@@ -193,7 +172,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
                                             shape: BoxShape.circle,
                                             boxShadow: [
                                               BoxShadow(
-                                                color: Colors.black.withOpacity(0.2),
+                                                color: Colors.black.withValues(alpha: 0.2),
                                                 blurRadius: 20,
                                                 spreadRadius: 5,
                                               ),
@@ -207,7 +186,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
                                               backgroundColor: Colors.white,
                                               child: CircleAvatar(
                                               radius: 48,
-                                              backgroundColor: AppColors.primary.withOpacity(0.2),
+                                              backgroundColor: AppColors.primary.withValues(alpha: 0.2),
                                               backgroundImage: user?.profilePhotoUrl != null
                                                   ? NetworkImage(user!.profilePhotoUrl!)
                                                   : null,
@@ -236,13 +215,13 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
                                                 gradient: LinearGradient(
                                                   colors: [
                                                     AppColors.primary,
-                                                    AppColors.primary.withOpacity(0.8),
+                                                    AppColors.primary.withValues(alpha: 0.8),
                                                   ],
                                                 ),
                                                 shape: BoxShape.circle,
                                                 boxShadow: [
                                                   BoxShadow(
-                                                    color: Colors.black.withOpacity(0.3),
+                                                    color: Colors.black.withValues(alpha: 0.3),
                                                     blurRadius: 8,
                                                     offset: const Offset(0, 2),
                                                   ),
@@ -284,7 +263,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
                                       Text(
                                         user?.email ?? 'user@example.com',
                                         style: textTheme.bodyMedium?.copyWith(
-                                          color: Colors.white.withOpacity(0.9),
+                                          color: Colors.white.withValues(alpha: 0.9),
                                           fontSize: 14,
                                         ),
                                       ),
@@ -300,13 +279,13 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
                                     decoration: BoxDecoration(
                                       gradient: LinearGradient(
                                         colors: [
-                                          Colors.white.withOpacity(0.3),
-                                          Colors.white.withOpacity(0.2),
+                                          Colors.white.withValues(alpha: 0.3),
+                                          Colors.white.withValues(alpha: 0.2),
                                         ],
                                       ),
                                       borderRadius: BorderRadius.circular(20),
                                       border: Border.all(
-                                        color: Colors.white.withOpacity(0.3),
+                                        color: Colors.white.withValues(alpha: 0.3),
                                         width: 1,
                                       ),
                                     ),
@@ -351,31 +330,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // --- Enhanced Stats Cards ---
-                        Row(
-                          children: [
-                            _buildEnhancedStatCard(
-                              icon: Icons.emergency_outlined,
-                              label: 'Emergencies',
-                              value: '12',
-                              color: const Color(0xFFEF4444),
-                              gradient: const LinearGradient(
-                                colors: [Color(0xFFEF4444), Color(0xFFDC2626)],
-                              ),
-                            ),
-                            const SizedBox(width: AppPadding.medium),
-                            _buildEnhancedStatCard(
-                              icon: Icons.check_circle_outline,
-                              label: 'Resolved',
-                              value: '8',
-                              color: const Color(0xFF10B981),
-                              gradient: const LinearGradient(
-                                colors: [Color(0xFF10B981), Color(0xFF059669)],
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: AppPadding.large),
+
 
                         // --- Account Section ---
                         _buildSectionHeader('Account', Icons.person),
@@ -492,12 +447,12 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
                             gradient: LinearGradient(
                               colors: [
                                 AppColors.error,
-                                AppColors.error.withOpacity(0.8),
+                                AppColors.error.withValues(alpha: 0.8),
                               ],
                             ),
                             boxShadow: [
                               BoxShadow(
-                                color: AppColors.error.withOpacity(0.4),
+                                color: AppColors.error.withValues(alpha: 0.4),
                                 blurRadius: 20,
                                 offset: const Offset(0, 8),
                               ),
@@ -540,76 +495,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
     );
   }
 
-  Widget _buildEnhancedStatCard({
-    required IconData icon,
-    required String label,
-    required String value,
-    required Color color,
-    required Gradient gradient,
-  }) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              color.withOpacity(0.1),
-              color.withOpacity(0.05),
-            ],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: color.withOpacity(0.2), width: 1.5),
-          boxShadow: [
-            BoxShadow(
-              color: color.withOpacity(0.1),
-              blurRadius: 15,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Column(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                gradient: gradient,
-                shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(
-                    color: color.withOpacity(0.3),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: Icon(icon, color: Colors.white, size: 28),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              value,
-              style: TextStyle(
-                fontSize: 28,
-                fontWeight: FontWeight.bold,
-                color: color,
-                letterSpacing: -0.5,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 13,
-                color: color.withOpacity(0.8),
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+
 
   Widget _buildSectionHeader(String title, IconData icon) {
     return Row(
@@ -617,7 +503,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
         Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: AppColors.primary.withOpacity(0.1),
+            color: AppColors.primary.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(10),
           ),
           child: Icon(icon, color: AppColors.primary, size: 20),
@@ -643,7 +529,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.06),
+            color: Colors.black.withValues(alpha: 0.06),
             blurRadius: 20,
             offset: const Offset(0, 4),
             spreadRadius: 0,
@@ -668,8 +554,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
         decoration: BoxDecoration(
           gradient: LinearGradient(
             colors: [
-              color.withOpacity(0.15),
-              color.withOpacity(0.08),
+              color.withValues(alpha: 0.15),
+              color.withValues(alpha: 0.08),
             ],
           ),
           borderRadius: BorderRadius.circular(12),
@@ -690,7 +576,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
           subtitle,
           style: TextStyle(
             fontSize: 13,
-            color: AppColors.textSecondary.withOpacity(0.8),
+            color: AppColors.textSecondary.withValues(alpha: 0.8),
           ),
         ),
       ),
@@ -725,8 +611,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
         decoration: BoxDecoration(
           gradient: LinearGradient(
             colors: [
-              color.withOpacity(0.15),
-              color.withOpacity(0.08),
+              color.withValues(alpha: 0.15),
+              color.withValues(alpha: 0.08),
             ],
           ),
           borderRadius: BorderRadius.circular(12),
@@ -747,15 +633,15 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
           subtitle,
           style: TextStyle(
             fontSize: 13,
-            color: AppColors.textSecondary.withOpacity(0.8),
+            color: AppColors.textSecondary.withValues(alpha: 0.8),
           ),
         ),
       ),
       trailing: Switch(
         value: value,
         onChanged: onChanged,
-        activeColor: color,
-        activeTrackColor: color.withOpacity(0.3),
+        activeThumbColor: color,
+        activeTrackColor: color.withValues(alpha: 0.3),
       ),
     );
   }
@@ -790,7 +676,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: AppColors.error.withOpacity(0.1),
+                color: AppColors.error.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: const Icon(Icons.logout, color: AppColors.error),
@@ -833,7 +719,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
       applicationIcon: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: AppColors.primary.withOpacity(0.1),
+          color: AppColors.primary.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(16),
         ),
         child: const Icon(Icons.emergency, size: 48, color: AppColors.primary),

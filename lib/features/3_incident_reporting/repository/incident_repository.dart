@@ -3,6 +3,7 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:rescuetn/core/services/database_service.dart';
 import 'package:rescuetn/models/incident_model.dart';
+import 'package:rescuetn/features/1_auth/providers/auth_provider.dart';
 
 // Provider for Firebase Storage instance
 final firebaseStorageProvider =
@@ -28,6 +29,11 @@ final incidentRepositoryProvider = Provider<IncidentRepository>((ref) {
 
 /// Stream provider for real-time incidents
 final incidentStreamProvider = StreamProvider<List<Incident>>((ref) {
+  final authState = ref.watch(authStateChangesProvider);
+  if (authState.valueOrNull == null) {
+    return Stream.value([]);
+  }
+
   final repository = ref.watch(incidentRepositoryProvider);
   return repository.getIncidentsStream();
 });

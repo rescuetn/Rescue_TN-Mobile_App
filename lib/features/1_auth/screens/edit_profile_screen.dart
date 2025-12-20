@@ -18,6 +18,7 @@ class EditProfileScreen extends ConsumerStatefulWidget {
 
 class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   final _formKey = GlobalKey<FormState>();
+  final _nameController = TextEditingController();
   final _phoneController = TextEditingController();
   final _addressController = TextEditingController();
   final _ageController = TextEditingController();
@@ -34,6 +35,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   void _loadUserData() {
     final user = ref.read(authStateChangesProvider).value;
     if (user != null) {
+      _nameController.text = user.fullName ?? '';
       _phoneController.text = user.phoneNumber;
       _addressController.text = user.address ?? '';
       _ageController.text = user.age?.toString() ?? '';
@@ -43,6 +45,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
 
   @override
   void dispose() {
+    _nameController.dispose();
     _phoneController.dispose();
     _addressController.dispose();
     _ageController.dispose();
@@ -105,6 +108,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
 
       // Update user record
       final updatedUser = user.copyWith(
+        fullName: _nameController.text.trim(),
         phoneNumber: _phoneController.text.trim(),
         address: _addressController.text.trim().isNotEmpty 
             ? _addressController.text.trim() 
@@ -185,7 +189,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                         children: [
                           CircleAvatar(
                             radius: 60,
-                            backgroundColor: AppColors.primary.withOpacity(0.1),
+                            backgroundColor: AppColors.primary.withValues(alpha: 0.1),
                             backgroundImage: _selectedImage != null
                                 ? FileImage(_selectedImage!)
                                 : (_imageUrl != null
@@ -226,6 +230,25 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                       ),
                     ),
                     const SizedBox(height: AppPadding.xLarge),
+
+                    // Full Name
+                    TextFormField(
+                      controller: _nameController,
+                      decoration: InputDecoration(
+                        labelText: 'Full Name',
+                        prefixIcon: const Icon(Icons.person),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      validator: (value) {
+                        if (value == null || value.trim().isEmpty) {
+                          return 'Please enter your full name';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: AppPadding.large),
 
                     // Phone Number
                     TextFormField(

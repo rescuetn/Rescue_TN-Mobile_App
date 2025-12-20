@@ -30,8 +30,8 @@ service cloud.firestore {
       // PREPAREDNESS PLAN (Subcollection)
       // Inherits the path from parent match
       match /preparedness_plan/{itemId} {
-        // Owner has full control
-        allow read, write: if isOwner(userId);
+        // Explicitly allow owner access
+        allow read, write: if request.auth.uid == userId;
       }
     }
     

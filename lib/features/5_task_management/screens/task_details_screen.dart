@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:rescuetn/app/constants.dart';
 import 'package:rescuetn/features/5_task_management/providers/task_data_provider.dart';
+import 'package:rescuetn/core/services/database_service.dart';
+import 'package:rescuetn/models/task_model.dart';
 import 'package:go_router/go_router.dart';
 
 class TaskDetailsScreen extends ConsumerStatefulWidget {
@@ -52,24 +54,14 @@ class _TaskDetailsScreenState extends ConsumerState<TaskDetailsScreen>
     super.dispose();
   }
 
-  Color _getStatusColor(String status) {
-    switch (status.toLowerCase()) {
-      case 'pending':
-        return Colors.orange.shade600;
-      case 'active':
-        return Colors.blue.shade600;
-      case 'completed':
-        return Colors.green.shade600;
-      default:
-        return AppColors.textSecondary;
-    }
-  }
+
 
   List<Color> _getStatusGradient(String status) {
     switch (status.toLowerCase()) {
       case 'pending':
         return [Colors.orange.shade400, Colors.orange.shade600];
       case 'active':
+      case 'inprogress':
         return [Colors.blue.shade400, Colors.blue.shade600];
       case 'completed':
         return [Colors.green.shade400, Colors.green.shade600];
@@ -96,6 +88,7 @@ class _TaskDetailsScreenState extends ConsumerState<TaskDetailsScreen>
       case 'pending':
         return Icons.pending_actions_rounded;
       case 'active':
+      case 'inprogress':
         return Icons.work_rounded;
       case 'completed':
         return Icons.check_circle_rounded;
@@ -113,9 +106,9 @@ class _TaskDetailsScreenState extends ConsumerState<TaskDetailsScreen>
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
       builder: (context) => Container(
-        decoration: BoxDecoration(
+        decoration: const BoxDecoration(
           color: AppColors.surface,
-          borderRadius: const BorderRadius.only(
+          borderRadius: BorderRadius.only(
             topLeft: Radius.circular(24),
             topRight: Radius.circular(24),
           ),
@@ -133,7 +126,7 @@ class _TaskDetailsScreenState extends ConsumerState<TaskDetailsScreen>
                     width: 48,
                     height: 5,
                     decoration: BoxDecoration(
-                      color: AppColors.textSecondary.withOpacity(0.3),
+                      color: AppColors.textSecondary.withValues(alpha: 0.3),
                       borderRadius: BorderRadius.circular(3),
                     ),
                   ),
@@ -146,8 +139,8 @@ class _TaskDetailsScreenState extends ConsumerState<TaskDetailsScreen>
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
                           colors: [
-                            AppColors.primary.withOpacity(0.2),
-                            AppColors.accent.withOpacity(0.2),
+                            AppColors.primary.withValues(alpha: 0.2),
+                            AppColors.accent.withValues(alpha: 0.2),
                           ],
                         ),
                         borderRadius: BorderRadius.circular(12),
@@ -169,19 +162,19 @@ class _TaskDetailsScreenState extends ConsumerState<TaskDetailsScreen>
                 ),
                 const SizedBox(height: 24),
                 _buildEnhancedStatusOption(
-                  'Pending',
+                  TaskStatus.pending,
                   [Colors.orange.shade400, Colors.orange.shade600],
                   Icons.pending_actions_rounded,
                 ),
                 const SizedBox(height: 12),
                 _buildEnhancedStatusOption(
-                  'Active',
+                  TaskStatus.inProgress,
                   [Colors.blue.shade400, Colors.blue.shade600],
                   Icons.work_rounded,
                 ),
                 const SizedBox(height: 12),
                 _buildEnhancedStatusOption(
-                  'Completed',
+                  TaskStatus.completed,
                   [Colors.green.shade400, Colors.green.shade600],
                   Icons.check_circle_rounded,
                 ),
@@ -195,35 +188,55 @@ class _TaskDetailsScreenState extends ConsumerState<TaskDetailsScreen>
   }
 
   Widget _buildEnhancedStatusOption(
-      String status,
+      TaskStatus status,
       List<Color> gradient,
       IconData icon,
       ) {
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        onTap: () {
+        onTap: () async {
           Navigator.pop(context);
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Row(
-                children: [
-                  const Icon(Icons.check_circle_outline, color: Colors.white),
-                  const SizedBox(width: 12),
-                  Text(
-                    'Status updated to $status',
-                    style: const TextStyle(color: Colors.white),
+          final currentTask = ref.read(selectedTaskProvider);
+          if (currentTask != null) {
+            try {
+              await ref
+                  .read(databaseServiceProvider)
+                  .updateTaskStatus(currentTask.id, status);
+                  
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Row(
+                      children: [
+                        const Icon(Icons.check_circle_outline, color: Colors.white),
+                        const SizedBox(width: 12),
+                        Text(
+                          'Status updated to ${status.name}',
+                          style: const TextStyle(color: Colors.white),
+                        ),
+                      ],
+                    ),
+                    backgroundColor: gradient[1],
+                    behavior: SnackBarBehavior.floating,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    margin: const EdgeInsets.all(16),
                   ),
-                ],
-              ),
-              backgroundColor: gradient[1],
-              behavior: SnackBarBehavior.floating,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              margin: const EdgeInsets.all(16),
-            ),
-          );
+                );
+              }
+            } catch (e) {
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Error updating status: $e'),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+              }
+            }
+          }
         },
         borderRadius: BorderRadius.circular(16),
         child: Container(
@@ -232,7 +245,7 @@ class _TaskDetailsScreenState extends ConsumerState<TaskDetailsScreen>
             color: AppColors.surface,
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: gradient[0].withOpacity(0.3),
+              color: gradient[0].withValues(alpha: 0.3),
               width: 1.5,
             ),
           ),
@@ -245,7 +258,7 @@ class _TaskDetailsScreenState extends ConsumerState<TaskDetailsScreen>
                   borderRadius: BorderRadius.circular(12),
                   boxShadow: [
                     BoxShadow(
-                      color: gradient[0].withOpacity(0.3),
+                      color: gradient[0].withValues(alpha: 0.3),
                       blurRadius: 8,
                       offset: const Offset(0, 4),
                     ),
@@ -256,7 +269,7 @@ class _TaskDetailsScreenState extends ConsumerState<TaskDetailsScreen>
               const SizedBox(width: 16),
               Expanded(
                 child: Text(
-                  status,
+                  status == TaskStatus.inProgress ? 'ACTIVE' : status.name.toUpperCase(),
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
@@ -267,7 +280,7 @@ class _TaskDetailsScreenState extends ConsumerState<TaskDetailsScreen>
               Icon(
                 Icons.arrow_forward_ios_rounded,
                 size: 16,
-                color: gradient[0].withOpacity(0.5),
+                color: gradient[0].withValues(alpha: 0.5),
               ),
             ],
           ),
@@ -306,10 +319,10 @@ class _TaskDetailsScreenState extends ConsumerState<TaskDetailsScreen>
                     children: [
                       Container(
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.25),
+                          color: Colors.white.withValues(alpha: 0.25),
                           borderRadius: BorderRadius.circular(14),
                           border: Border.all(
-                            color: Colors.white.withOpacity(0.3),
+                            color: Colors.white.withValues(alpha: 0.3),
                             width: 1,
                           ),
                         ),
@@ -354,7 +367,7 @@ class _TaskDetailsScreenState extends ConsumerState<TaskDetailsScreen>
             colors: [
               statusGradient[0],
               statusGradient[1],
-              statusGradient[1].withOpacity(0.8),
+              statusGradient[1].withValues(alpha: 0.8),
               AppColors.background,
             ],
             stops: const [0.0, 0.15, 0.3, 0.3],
@@ -374,10 +387,10 @@ class _TaskDetailsScreenState extends ConsumerState<TaskDetailsScreen>
                         color: Colors.transparent,
                         child: Container(
                           decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.25),
+                            color: Colors.white.withValues(alpha: 0.25),
                             borderRadius: BorderRadius.circular(14),
                             border: Border.all(
-                              color: Colors.white.withOpacity(0.3),
+                              color: Colors.white.withValues(alpha: 0.3),
                               width: 1,
                             ),
                           ),
@@ -408,7 +421,7 @@ class _TaskDetailsScreenState extends ConsumerState<TaskDetailsScreen>
                           Text(
                             'View and manage task',
                             style: textTheme.bodyMedium?.copyWith(
-                              color: Colors.white.withOpacity(0.9),
+                              color: Colors.white.withValues(alpha: 0.9),
                             ),
                           ),
                         ],
@@ -417,7 +430,7 @@ class _TaskDetailsScreenState extends ConsumerState<TaskDetailsScreen>
                     Container(
                       padding: const EdgeInsets.all(10),
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.25),
+                        color: Colors.white.withValues(alpha: 0.25),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Icon(
@@ -457,18 +470,18 @@ class _TaskDetailsScreenState extends ConsumerState<TaskDetailsScreen>
                                   begin: Alignment.topLeft,
                                   end: Alignment.bottomRight,
                                   colors: [
-                                    statusGradient[0].withOpacity(0.15),
-                                    statusGradient[1].withOpacity(0.08),
+                                    statusGradient[0].withValues(alpha: 0.15),
+                                    statusGradient[1].withValues(alpha: 0.08),
                                   ],
                                 ),
                                 borderRadius: BorderRadius.circular(24),
                                 border: Border.all(
-                                  color: statusGradient[0].withOpacity(0.3),
+                                  color: statusGradient[0].withValues(alpha: 0.3),
                                   width: 1.5,
                                 ),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: statusGradient[0].withOpacity(0.2),
+                                    color: statusGradient[0].withValues(alpha: 0.2),
                                     blurRadius: 16,
                                     offset: const Offset(0, 8),
                                   ),
@@ -488,7 +501,7 @@ class _TaskDetailsScreenState extends ConsumerState<TaskDetailsScreen>
                                           boxShadow: [
                                             BoxShadow(
                                               color: statusGradient[0]
-                                                  .withOpacity(0.4),
+                                                  .withValues(alpha: 0.4),
                                               blurRadius: 12,
                                               offset: const Offset(0, 4),
                                             ),
@@ -530,7 +543,7 @@ class _TaskDetailsScreenState extends ConsumerState<TaskDetailsScreen>
                                                 boxShadow: [
                                                   BoxShadow(
                                                     color: statusGradient[0]
-                                                        .withOpacity(0.3),
+                                                        .withValues(alpha: 0.3),
                                                     blurRadius: 4,
                                                     offset: const Offset(0, 2),
                                                   ),
@@ -595,7 +608,7 @@ class _TaskDetailsScreenState extends ConsumerState<TaskDetailsScreen>
                               boxShadow: [
                                 BoxShadow(
                                   color:
-                                  AppColors.textPrimary.withOpacity(0.06),
+                                  AppColors.textPrimary.withValues(alpha: 0.06),
                                   blurRadius: 16,
                                   offset: const Offset(0, 4),
                                 ),
@@ -619,7 +632,7 @@ class _TaskDetailsScreenState extends ConsumerState<TaskDetailsScreen>
                                         boxShadow: [
                                           BoxShadow(
                                             color: Colors.purple.shade300
-                                                .withOpacity(0.3),
+                                                .withValues(alpha: 0.3),
                                             blurRadius: 8,
                                             offset: const Offset(0, 4),
                                           ),
@@ -651,7 +664,7 @@ class _TaskDetailsScreenState extends ConsumerState<TaskDetailsScreen>
                                 const SizedBox(height: 12),
                                 Divider(
                                   color:
-                                  AppColors.textSecondary.withOpacity(0.1),
+                                  AppColors.textSecondary.withValues(alpha: 0.1),
                                   height: 1,
                                 ),
                                 const SizedBox(height: 12),
@@ -679,7 +692,7 @@ class _TaskDetailsScreenState extends ConsumerState<TaskDetailsScreen>
                   color: AppColors.surface,
                   boxShadow: [
                     BoxShadow(
-                      color: AppColors.textPrimary.withOpacity(0.1),
+                      color: AppColors.textPrimary.withValues(alpha: 0.1),
                       blurRadius: 24,
                       offset: const Offset(0, -8),
                     ),
@@ -692,7 +705,7 @@ class _TaskDetailsScreenState extends ConsumerState<TaskDetailsScreen>
                       borderRadius: BorderRadius.circular(16),
                       boxShadow: [
                         BoxShadow(
-                          color: statusGradient[0].withOpacity(0.4),
+                          color: statusGradient[0].withValues(alpha: 0.4),
                           blurRadius: 12,
                           offset: const Offset(0, 4),
                         ),
@@ -703,17 +716,17 @@ class _TaskDetailsScreenState extends ConsumerState<TaskDetailsScreen>
                       child: InkWell(
                         onTap: _showStatusUpdateDialog,
                         borderRadius: BorderRadius.circular(16),
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 16),
+                        child: const Padding(
+                          padding: EdgeInsets.symmetric(vertical: 16),
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              const Icon(
+                              Icon(
                                 Icons.update_rounded,
                                 color: Colors.white,
                               ),
-                              const SizedBox(width: 12),
-                              const Text(
+                              SizedBox(width: 12),
+                              Text(
                                 'Update Status',
                                 style: TextStyle(
                                   color: Colors.white,
@@ -750,7 +763,7 @@ class _TaskDetailsScreenState extends ConsumerState<TaskDetailsScreen>
             borderRadius: BorderRadius.circular(12),
             boxShadow: [
               BoxShadow(
-                color: gradient[0].withOpacity(0.3),
+                color: gradient[0].withValues(alpha: 0.3),
                 blurRadius: 8,
                 offset: const Offset(0, 4),
               ),
@@ -786,7 +799,7 @@ class _TaskDetailsScreenState extends ConsumerState<TaskDetailsScreen>
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: AppColors.textPrimary.withOpacity(0.06),
+            color: AppColors.textPrimary.withValues(alpha: 0.06),
             blurRadius: 16,
             offset: const Offset(0, 4),
           ),
@@ -802,7 +815,7 @@ class _TaskDetailsScreenState extends ConsumerState<TaskDetailsScreen>
               borderRadius: BorderRadius.circular(14),
               boxShadow: [
                 BoxShadow(
-                  color: gradient[0].withOpacity(0.3),
+                  color: gradient[0].withValues(alpha: 0.3),
                   blurRadius: 8,
                   offset: const Offset(0, 4),
                 ),
@@ -817,7 +830,7 @@ class _TaskDetailsScreenState extends ConsumerState<TaskDetailsScreen>
               children: [
                 Text(
                   title,
-                  style: TextStyle(
+                  style: const TextStyle(
                     fontWeight: FontWeight.w600,
                     fontSize: 13,
                     color: AppColors.textSecondary,
@@ -846,7 +859,7 @@ class _TaskDetailsScreenState extends ConsumerState<TaskDetailsScreen>
                           shape: BoxShape.circle,
                           boxShadow: [
                             BoxShadow(
-                              color: badgeColor.withOpacity(0.4),
+                              color: badgeColor.withValues(alpha: 0.4),
                               blurRadius: 4,
                               spreadRadius: 1,
                             ),
@@ -874,7 +887,7 @@ class _TaskDetailsScreenState extends ConsumerState<TaskDetailsScreen>
         Container(
           padding: const EdgeInsets.all(6),
           decoration: BoxDecoration(
-            color: iconColor.withOpacity(0.15),
+            color: iconColor.withValues(alpha: 0.15),
             borderRadius: BorderRadius.circular(8),
           ),
           child: Icon(icon, size: 16, color: iconColor),

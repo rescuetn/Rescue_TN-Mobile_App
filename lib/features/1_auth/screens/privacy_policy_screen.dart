@@ -18,7 +18,7 @@ class PrivacyPolicyScreen extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const SizedBox(height: AppPadding.medium),
-            Icon(
+            const Icon(
               Icons.privacy_tip,
               size: 60,
               color: AppColors.primary,
@@ -34,7 +34,7 @@ class PrivacyPolicyScreen extends StatelessWidget {
             const SizedBox(height: AppPadding.medium),
             Text(
               'Last Updated: ${DateTime.now().toString().split(' ')[0]}',
-              style: TextStyle(
+              style: const TextStyle(
                 color: AppColors.textSecondary,
                 fontSize: 14,
               ),
@@ -104,7 +104,7 @@ class PrivacyPolicyScreen extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: AppColors.primary.withOpacity(0.1),
+                color: AppColors.primary.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: const Text(
@@ -136,7 +136,7 @@ class PrivacyPolicyScreen extends StatelessWidget {
           const SizedBox(height: AppPadding.small),
           Text(
             content,
-            style: TextStyle(
+            style: const TextStyle(
               fontSize: 14,
               height: 1.6,
               color: AppColors.textSecondary,

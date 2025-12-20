@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 class AppUser {
   final String uid;
   final String email;
+  final String? fullName;
   final String phoneNumber;
   final String? address;
   final String? district;
@@ -17,6 +18,7 @@ class AppUser {
   AppUser({
     required this.uid,
     required this.email,
+    this.fullName,
     required this.phoneNumber,
     this.address,
     this.district,
@@ -32,6 +34,7 @@ class AppUser {
     return {
       'uid': uid,
       'email': email,
+      'fullName': fullName,
       'phoneNumber': phoneNumber,
       'address': address,
       'district': district,
@@ -48,6 +51,7 @@ class AppUser {
     return AppUser(
       uid: map['uid'] ?? '',
       email: map['email'] ?? '',
+      fullName: map['fullName'],
       phoneNumber: map['phoneNumber'] ?? '',
       address: map['address'],
       district: map['district'],
@@ -74,6 +78,7 @@ class AppUser {
   AppUser copyWith({
     String? uid,
     String? email,
+    String? fullName,
     String? phoneNumber,
     String? address,
     String? district,
@@ -86,6 +91,7 @@ class AppUser {
     return AppUser(
       uid: uid ?? this.uid,
       email: email ?? this.email,
+      fullName: fullName ?? this.fullName,
       phoneNumber: phoneNumber ?? this.phoneNumber,
       address: address ?? this.address,
       district: district ?? this.district,

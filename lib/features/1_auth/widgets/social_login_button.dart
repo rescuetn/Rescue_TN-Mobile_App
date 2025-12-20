@@ -38,7 +38,7 @@ class SocialLoginButton extends StatelessWidget {
           side: BorderSide(color: Colors.grey.shade300),
         ),
         elevation: 1, // Add a slight shadow for depth
-        shadowColor: Colors.black.withOpacity(0.1),
+        shadowColor: Colors.black.withValues(alpha: 0.1),
         textStyle: const TextStyle(
           fontSize: 16,
           fontWeight: FontWeight.w600,

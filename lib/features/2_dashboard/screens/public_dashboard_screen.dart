@@ -79,6 +79,81 @@ class _PublicDashboardScreenState extends ConsumerState<PublicDashboardScreen>
     }
   }
 
+  /// Show logout confirmation dialog
+  void _showLogoutConfirmation() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppBorderRadius.large),
+        ),
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: AppColors.error.withValues(alpha: 0.1),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.logout,
+                color: AppColors.error,
+                size: 24,
+              ),
+            ),
+            const SizedBox(width: AppPadding.medium),
+            const Text(
+              'Logout?',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 20,
+              ),
+            ),
+          ],
+        ),
+        content: Text(
+          'Are you sure you want to logout? You will need to sign in again to access your account.',
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+            color: AppColors.textSecondary,
+            height: 1.5,
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text(
+              'Cancel',
+              style: TextStyle(
+                color: AppColors.textSecondary,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.error,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(AppBorderRadius.medium),
+              ),
+            ),
+            onPressed: () async {
+              Navigator.pop(context);
+              final authService = ref.read(authRepositoryProvider);
+              await authService.signOut();
+            },
+            child: const Text(
+              'Logout',
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     // Watch the authStateChangesProvider to get live Firebase user data
@@ -89,9 +164,12 @@ class _PublicDashboardScreenState extends ConsumerState<PublicDashboardScreen>
       loading: () => const Scaffold(
         body: Center(child: CircularProgressIndicator()),
       ),
-      error: (err, stack) => Scaffold(
-        body: Center(child: Text('Error: $err')),
-      ),
+      error: (err, stack) {
+        // Suppress permission errors during logout/auth transitions
+        return const Scaffold(
+          body: Center(child: CircularProgressIndicator()),
+        );
+      },
       data: (user) {
         // Extract user name from email or use default
         final email = user?.email ?? '';
@@ -108,7 +186,7 @@ class _PublicDashboardScreenState extends ConsumerState<PublicDashboardScreen>
                 end: Alignment.bottomCenter,
                 colors: [
                   AppColors.primary,
-                  AppColors.primary.withOpacity(0.8),
+                  AppColors.primary.withValues(alpha: 0.8),
                   Colors.grey[50]!,
                 ],
                 stops: const [0.0, 0.25, 0.25],
@@ -135,11 +213,11 @@ class _PublicDashboardScreenState extends ConsumerState<PublicDashboardScreen>
                                   Container(
                                     padding: const EdgeInsets.all(AppPadding.small + 2),
                                     decoration: BoxDecoration(
-                                      color: AppColors.onPrimary.withOpacity(0.25),
+                                      color: AppColors.onPrimary.withValues(alpha: 0.25),
                                       borderRadius: BorderRadius.circular(AppBorderRadius.medium),
                                       boxShadow: [
                                         BoxShadow(
-                                          color: Colors.black.withOpacity(0.1),
+                                          color: Colors.black.withValues(alpha: 0.1),
                                           blurRadius: 8,
                                           offset: const Offset(0, 2),
                                         ),
@@ -166,11 +244,11 @@ class _PublicDashboardScreenState extends ConsumerState<PublicDashboardScreen>
                               // Profile Button
                               Container(
                                 decoration: BoxDecoration(
-                                  color: AppColors.onPrimary.withOpacity(0.25),
+                                  color: AppColors.onPrimary.withValues(alpha: 0.25),
                                   borderRadius: BorderRadius.circular(AppBorderRadius.medium),
                                   boxShadow: [
                                     BoxShadow(
-                                      color: Colors.black.withOpacity(0.1),
+                                      color: Colors.black.withValues(alpha: 0.1),
                                       blurRadius: 8,
                                       offset: const Offset(0, 2),
                                     ),
@@ -201,7 +279,7 @@ class _PublicDashboardScreenState extends ConsumerState<PublicDashboardScreen>
                             borderRadius: BorderRadius.circular(20),
                             boxShadow: [
                               BoxShadow(
-                                color: AppColors.primary.withOpacity(0.15),
+                                color: AppColors.primary.withValues(alpha: 0.15),
                                 blurRadius: 25,
                                 offset: const Offset(0, 8),
                                 spreadRadius: 0,
@@ -224,7 +302,7 @@ class _PublicDashboardScreenState extends ConsumerState<PublicDashboardScreen>
                                       borderRadius: BorderRadius.circular(AppBorderRadius.large),
                                       boxShadow: [
                                         BoxShadow(
-                                          color: AppColors.primary.withOpacity(0.4),
+                                          color: AppColors.primary.withValues(alpha: 0.4),
                                           blurRadius: 12,
                                           offset: const Offset(0, 4),
                                         ),
@@ -270,13 +348,13 @@ class _PublicDashboardScreenState extends ConsumerState<PublicDashboardScreen>
                                 decoration: BoxDecoration(
                                   gradient: LinearGradient(
                                     colors: [
-                                      AppColors.primary.withOpacity(0.08),
-                                      AppColors.primary.withOpacity(0.05),
+                                      AppColors.primary.withValues(alpha: 0.08),
+                                      AppColors.primary.withValues(alpha: 0.05),
                                     ],
                                   ),
                                   borderRadius: BorderRadius.circular(AppBorderRadius.medium),
                                   border: Border.all(
-                                    color: AppColors.primary.withOpacity(0.15),
+                                    color: AppColors.primary.withValues(alpha: 0.15),
                                     width: 1.5,
                                   ),
                                 ),
@@ -285,7 +363,7 @@ class _PublicDashboardScreenState extends ConsumerState<PublicDashboardScreen>
                                     Container(
                                       padding: const EdgeInsets.all(6),
                                       decoration: BoxDecoration(
-                                        color: AppColors.primary.withOpacity(0.1),
+                                        color: AppColors.primary.withValues(alpha: 0.1),
                                         borderRadius: BorderRadius.circular(8),
                                       ),
                                       child: const Icon(
@@ -335,7 +413,7 @@ class _PublicDashboardScreenState extends ConsumerState<PublicDashboardScreen>
                               borderRadius: BorderRadius.circular(AppBorderRadius.large),
                               boxShadow: [
                                 BoxShadow(
-                                  color: Colors.red.withOpacity(0.4),
+                                  color: Colors.red.withValues(alpha: 0.4),
                                   blurRadius: 20,
                                   offset: const Offset(0, 8),
                                 ),
@@ -346,11 +424,11 @@ class _PublicDashboardScreenState extends ConsumerState<PublicDashboardScreen>
                                 Container(
                                   padding: const EdgeInsets.all(AppPadding.medium),
                                   decoration: BoxDecoration(
-                                    color: AppColors.onPrimary.withOpacity(0.25),
+                                    color: AppColors.onPrimary.withValues(alpha: 0.25),
                                     borderRadius: BorderRadius.circular(AppBorderRadius.medium),
                                     boxShadow: [
                                       BoxShadow(
-                                        color: Colors.black.withOpacity(0.2),
+                                        color: Colors.black.withValues(alpha: 0.2),
                                         blurRadius: 8,
                                         offset: const Offset(0, 2),
                                       ),
@@ -380,7 +458,7 @@ class _PublicDashboardScreenState extends ConsumerState<PublicDashboardScreen>
                                       Text(
                                         'Tap to call 108',
                                         style: textTheme.bodyMedium?.copyWith(
-                                          color: AppColors.onPrimary.withOpacity(0.95),
+                                          color: AppColors.onPrimary.withValues(alpha: 0.95),
                                           fontSize: 13,
                                         ),
                                       ),
@@ -390,7 +468,7 @@ class _PublicDashboardScreenState extends ConsumerState<PublicDashboardScreen>
                                 Container(
                                   padding: const EdgeInsets.all(8),
                                   decoration: BoxDecoration(
-                                    color: AppColors.onPrimary.withOpacity(0.2),
+                                    color: AppColors.onPrimary.withValues(alpha: 0.2),
                                     shape: BoxShape.circle,
                                   ),
                                   child: const Icon(
@@ -419,7 +497,7 @@ class _PublicDashboardScreenState extends ConsumerState<PublicDashboardScreen>
                               Container(
                                 padding: const EdgeInsets.all(8),
                                 decoration: BoxDecoration(
-                                  color: AppColors.primary.withOpacity(0.1),
+                                  color: AppColors.primary.withValues(alpha: 0.1),
                                   borderRadius: BorderRadius.circular(10),
                                 ),
                                 child: const Icon(
@@ -539,7 +617,7 @@ class _PublicDashboardScreenState extends ConsumerState<PublicDashboardScreen>
                             gradient: LinearGradient(
                               colors: [
                                 Colors.blue.shade50,
-                                Colors.blue.shade100.withOpacity(0.3),
+                                Colors.blue.shade100.withValues(alpha: 0.3),
                               ],
                               begin: Alignment.topLeft,
                               end: Alignment.bottomRight,
@@ -626,7 +704,7 @@ class _PublicDashboardScreenState extends ConsumerState<PublicDashboardScreen>
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-              color: AppColors.textPrimary.withOpacity(0.08),
+              color: AppColors.textPrimary.withValues(alpha: 0.08),
               blurRadius: 20,
               offset: const Offset(0, 6),
               spreadRadius: 0,
@@ -647,7 +725,7 @@ class _PublicDashboardScreenState extends ConsumerState<PublicDashboardScreen>
                   shape: BoxShape.circle,
                   boxShadow: [
                     BoxShadow(
-                      color: gradient.colors.first.withOpacity(0.2),
+                      color: gradient.colors.first.withValues(alpha: 0.2),
                       blurRadius: 20,
                       offset: const Offset(0, 10),
                     ),
@@ -670,7 +748,7 @@ class _PublicDashboardScreenState extends ConsumerState<PublicDashboardScreen>
                       borderRadius: BorderRadius.circular(AppBorderRadius.medium + 2),
                       boxShadow: [
                         BoxShadow(
-                          color: gradient.colors.first.withOpacity(0.4),
+                          color: gradient.colors.first.withValues(alpha: 0.4),
                           blurRadius: 12,
                           offset: const Offset(0, 4),
                         ),
@@ -700,7 +778,7 @@ class _PublicDashboardScreenState extends ConsumerState<PublicDashboardScreen>
                         subtitle,
                         style: TextStyle(
                           fontSize: 13,
-                          color: AppColors.textSecondary.withOpacity(0.8),
+                          color: AppColors.textSecondary.withValues(alpha: 0.8),
                           fontWeight: FontWeight.w500,
                         ),
                       ),

@@ -12,6 +12,7 @@ class Shelter {
   final int capacity;
   final int currentOccupancy;
   final ShelterStatus status;
+  final bool isGovernmentDesignated;
 
   const Shelter({
     required this.id,
@@ -21,6 +22,7 @@ class Shelter {
     required this.capacity,
     required this.currentOccupancy,
     required this.status,
+    this.isGovernmentDesignated = false,
   });
 
   Map<String, dynamic> toMap() {
@@ -30,6 +32,7 @@ class Shelter {
       'capacity': capacity,
       'currentOccupancy': currentOccupancy,
       'status': status.name,
+      'isGovernmentDesignated': isGovernmentDesignated,
     };
   }
 
@@ -46,6 +49,7 @@ class Shelter {
             (e) => e.name == map['status'],
         orElse: () => ShelterStatus.closed,
       ),
+      isGovernmentDesignated: map['isGovernmentDesignated'] ?? false,
     );
   }
 }

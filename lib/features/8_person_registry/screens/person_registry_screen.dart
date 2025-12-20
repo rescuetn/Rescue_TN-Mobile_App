@@ -98,10 +98,10 @@ class _PersonRegistryScreenState extends ConsumerState<PersonRegistryScreen>
                             // Back Button
                             Container(
                               decoration: BoxDecoration(
-                                color: Colors.white.withOpacity(0.25),
+                                color: Colors.white.withValues(alpha: 0.25),
                                 borderRadius: BorderRadius.circular(14),
                                 border: Border.all(
-                                  color: Colors.white.withOpacity(0.3),
+                                  color: Colors.white.withValues(alpha: 0.3),
                                   width: 1,
                                 ),
                               ),
@@ -117,15 +117,15 @@ class _PersonRegistryScreenState extends ConsumerState<PersonRegistryScreen>
                             Container(
                               padding: const EdgeInsets.all(14),
                               decoration: BoxDecoration(
-                                color: Colors.white.withOpacity(0.25),
+                                color: Colors.white.withValues(alpha: 0.25),
                                 borderRadius: BorderRadius.circular(16),
                                 border: Border.all(
-                                  color: Colors.white.withOpacity(0.3),
+                                  color: Colors.white.withValues(alpha: 0.3),
                                   width: 1,
                                 ),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: Colors.black.withOpacity(0.1),
+                                    color: Colors.black.withValues(alpha: 0.1),
                                     blurRadius: 8,
                                     offset: const Offset(0, 4),
                                   ),
@@ -154,7 +154,7 @@ class _PersonRegistryScreenState extends ConsumerState<PersonRegistryScreen>
                                   Text(
                                     '${allPeople.length} total ${allPeople.length == 1 ? 'person' : 'people'}',
                                     style: textTheme.bodyMedium?.copyWith(
-                                      color: Colors.white.withOpacity(0.9),
+                                      color: Colors.white.withValues(alpha: 0.9),
                                     ),
                                   ),
                                 ],
@@ -163,7 +163,7 @@ class _PersonRegistryScreenState extends ConsumerState<PersonRegistryScreen>
                             Container(
                               padding: const EdgeInsets.all(10),
                               decoration: BoxDecoration(
-                                color: Colors.white.withOpacity(0.25),
+                                color: Colors.white.withValues(alpha: 0.25),
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: const Icon(
@@ -209,10 +209,10 @@ class _PersonRegistryScreenState extends ConsumerState<PersonRegistryScreen>
                   Container(
                     margin: const EdgeInsets.symmetric(horizontal: 20),
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.25),
+                      color: Colors.white.withValues(alpha: 0.25),
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(
-                        color: Colors.white.withOpacity(0.3),
+                        color: Colors.white.withValues(alpha: 0.3),
                         width: 1,
                       ),
                     ),
@@ -225,7 +225,7 @@ class _PersonRegistryScreenState extends ConsumerState<PersonRegistryScreen>
                         borderRadius: BorderRadius.circular(14),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.1),
+                            color: Colors.black.withValues(alpha: 0.1),
                             blurRadius: 8,
                             offset: const Offset(0, 2),
                           ),
@@ -336,7 +336,7 @@ class _PersonRegistryScreenState extends ConsumerState<PersonRegistryScreen>
                   Container(
                     padding: const EdgeInsets.all(20),
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.25),
+                      color: Colors.white.withValues(alpha: 0.25),
                       shape: BoxShape.circle,
                     ),
                     child: const Icon(
@@ -360,7 +360,7 @@ class _PersonRegistryScreenState extends ConsumerState<PersonRegistryScreen>
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: 14,
-                      color: Colors.white.withOpacity(0.9),
+                      color: Colors.white.withValues(alpha: 0.9),
                     ),
                   ),
                   const SizedBox(height: 24),
@@ -410,10 +410,10 @@ class _PersonRegistryScreenState extends ConsumerState<PersonRegistryScreen>
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.25),
+        color: Colors.white.withValues(alpha: 0.25),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: Colors.white.withOpacity(0.3),
+          color: Colors.white.withValues(alpha: 0.3),
           width: 1,
         ),
       ),
@@ -426,7 +426,7 @@ class _PersonRegistryScreenState extends ConsumerState<PersonRegistryScreen>
               borderRadius: BorderRadius.circular(12),
               boxShadow: [
                 BoxShadow(
-                  color: gradient[0].withOpacity(0.3),
+                  color: gradient[0].withValues(alpha: 0.3),
                   blurRadius: 8,
                   offset: const Offset(0, 4),
                 ),
@@ -452,7 +452,7 @@ class _PersonRegistryScreenState extends ConsumerState<PersonRegistryScreen>
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
-                    color: Colors.white.withOpacity(0.9),
+                    color: Colors.white.withValues(alpha: 0.9),
                   ),
                 ),
               ],
@@ -517,7 +517,7 @@ class _PersonRegistryScreenState extends ConsumerState<PersonRegistryScreen>
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: AppColors.textPrimary.withOpacity(0.06),
+            color: AppColors.textPrimary.withValues(alpha: 0.06),
             blurRadius: 16,
             offset: const Offset(0, 4),
           ),
@@ -544,7 +544,7 @@ class _PersonRegistryScreenState extends ConsumerState<PersonRegistryScreen>
                       shape: BoxShape.circle,
                       boxShadow: [
                         BoxShadow(
-                          color: gradient[0].withOpacity(0.3),
+                          color: gradient[0].withValues(alpha: 0.3),
                           blurRadius: 8,
                           offset: const Offset(0, 4),
                         ),
@@ -649,7 +649,7 @@ class _PersonRegistryScreenState extends ConsumerState<PersonRegistryScreen>
                             _formatTimestamp(person.timestamp),
                             style: TextStyle(
                               fontSize: 11,
-                              color: AppColors.textSecondary.withOpacity(0.7),
+                              color: AppColors.textSecondary.withValues(alpha: 0.7),
                             ),
                           ),
                         ],
@@ -660,7 +660,7 @@ class _PersonRegistryScreenState extends ConsumerState<PersonRegistryScreen>
                 Icon(
                   Icons.arrow_forward_ios_rounded,
                   size: 16,
-                  color: AppColors.textSecondary.withOpacity(0.5),
+                  color: AppColors.textSecondary.withValues(alpha: 0.5),
                 ),
               ],
             ),
@@ -715,14 +715,14 @@ class _PersonRegistryScreenState extends ConsumerState<PersonRegistryScreen>
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: [
-                    gradient[0].withOpacity(0.1),
-                    gradient[1].withOpacity(0.05),
+                    gradient[0].withValues(alpha: 0.1),
+                    gradient[1].withValues(alpha: 0.05),
                   ],
                 ),
                 shape: BoxShape.circle,
                 boxShadow: [
                   BoxShadow(
-                    color: gradient[0].withOpacity(0.2),
+                    color: gradient[0].withValues(alpha: 0.2),
                     blurRadius: 20,
                     offset: const Offset(0, 8),
                   ),
@@ -758,13 +758,13 @@ class _PersonRegistryScreenState extends ConsumerState<PersonRegistryScreen>
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: [
-                    gradient[0].withOpacity(0.1),
-                    gradient[1].withOpacity(0.1),
+                    gradient[0].withValues(alpha: 0.1),
+                    gradient[1].withValues(alpha: 0.1),
                   ],
                 ),
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: gradient[0].withOpacity(0.3),
+                  color: gradient[0].withValues(alpha: 0.3),
                 ),
               ),
               child: Row(
@@ -821,7 +821,7 @@ class _PersonRegistryScreenState extends ConsumerState<PersonRegistryScreen>
                   width: 48,
                   height: 5,
                   decoration: BoxDecoration(
-                    color: AppColors.textSecondary.withOpacity(0.3),
+                    color: AppColors.textSecondary.withValues(alpha: 0.3),
                     borderRadius: BorderRadius.circular(3),
                   ),
                 ),
@@ -838,7 +838,7 @@ class _PersonRegistryScreenState extends ConsumerState<PersonRegistryScreen>
                       shape: BoxShape.circle,
                       boxShadow: [
                         BoxShadow(
-                          color: gradient[0].withOpacity(0.3),
+                          color: gradient[0].withValues(alpha: 0.3),
                           blurRadius: 12,
                           offset: const Offset(0, 6),
                         ),
@@ -964,10 +964,10 @@ class _PersonRegistryScreenState extends ConsumerState<PersonRegistryScreen>
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: gradient[0].withOpacity(0.05),
+        color: gradient[0].withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: gradient[0].withOpacity(0.2),
+          color: gradient[0].withValues(alpha: 0.2),
         ),
       ),
       child: Row(

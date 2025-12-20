@@ -41,7 +41,7 @@ class PersonStatus {
       name: map['name'] ?? '',
       age: map['age'] ?? 0,
       status: PersonSafetyStatus.values.firstWhere(
-            (e) => e.name == map['status'],
+        (e) => e.name.toLowerCase() == map['status'].toString().toLowerCase(),
         orElse: () => PersonSafetyStatus.missing,
       ),
       lastKnownLocation: map['lastKnownLocation'] ?? '',

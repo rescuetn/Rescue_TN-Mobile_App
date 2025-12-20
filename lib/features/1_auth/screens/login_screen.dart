@@ -73,11 +73,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Row(
+              content: const Row(
                 children: [
-                  const Icon(Icons.wifi_off, color: AppColors.onPrimary),
-                  const SizedBox(width: AppPadding.small),
-                  const Expanded(
+                  Icon(Icons.wifi_off, color: AppColors.onPrimary),
+                  SizedBox(width: AppPadding.small),
+                  Expanded(
                     child: Text(
                       'No internet connection. Please check your network and try again.',
                       style: TextStyle(color: AppColors.onPrimary),
@@ -185,8 +185,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              AppColors.primary.withOpacity(0.05),
-              AppColors.accent.withOpacity(0.08),
+              AppColors.primary.withValues(alpha: 0.05),
+              AppColors.accent.withValues(alpha: 0.08),
               AppColors.background,
             ],
           ),
@@ -217,15 +217,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                               shape: BoxShape.circle,
                               gradient: LinearGradient(
                                 colors: [
-                                  AppColors.primary.withOpacity(0.3),
-                                  AppColors.accent.withOpacity(0.3),
+                                  AppColors.primary.withValues(alpha: 0.3),
+                                  AppColors.accent.withValues(alpha: 0.3),
                                 ],
                                 begin: Alignment.topLeft,
                                 end: Alignment.bottomRight,
                               ),
                               boxShadow: [
                                 BoxShadow(
-                                  color: AppColors.primary.withOpacity(0.3),
+                                  color: AppColors.primary.withValues(alpha: 0.3),
                                   blurRadius: 40,
                                   spreadRadius: 5,
                                   offset: const Offset(0, 10),
@@ -300,19 +300,19 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                         decoration: BoxDecoration(
                           gradient: LinearGradient(
                             colors: [
-                              AppColors.primary.withOpacity(0.08),
-                              AppColors.accent.withOpacity(0.08),
+                              AppColors.primary.withValues(alpha: 0.08),
+                              AppColors.accent.withValues(alpha: 0.08),
                             ],
                           ),
                           borderRadius: BorderRadius.circular(AppPadding.large),
                           border: Border.all(
-                            color: AppColors.primary.withOpacity(0.1),
+                            color: AppColors.primary.withValues(alpha: 0.1),
                           ),
                         ),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Icon(
+                            const Icon(
                               Icons.waving_hand,
                               color: AppColors.accent,
                               size: 20,
@@ -342,7 +342,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                               AppPadding.medium + AppPadding.small),
                           boxShadow: [
                             BoxShadow(
-                              color: AppColors.textPrimary.withOpacity(0.05),
+                              color: AppColors.textPrimary.withValues(alpha: 0.05),
                               blurRadius: 20,
                               offset: const Offset(0, 4),
                             ),
@@ -359,8 +359,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                                   decoration: BoxDecoration(
                                     gradient: LinearGradient(
                                       colors: [
-                                        AppColors.primary.withOpacity(0.2),
-                                        AppColors.accent.withOpacity(0.2),
+                                        AppColors.primary.withValues(alpha: 0.2),
+                                        AppColors.accent.withValues(alpha: 0.2),
                                       ],
                                     ),
                                     borderRadius: BorderRadius.circular(
@@ -494,11 +494,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                         children: [
                           Expanded(
                             child: Divider(
-                              color: AppColors.textSecondary.withOpacity(0.3),
+                              color: AppColors.textSecondary.withValues(alpha: 0.3),
                             ),
                           ),
-                          Padding(
-                            padding: const EdgeInsets.symmetric(
+                          const Padding(
+                            padding: EdgeInsets.symmetric(
                               horizontal: AppPadding.medium,
                             ),
                             child: Text(
@@ -511,7 +511,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                           ),
                           Expanded(
                             child: Divider(
-                              color: AppColors.textSecondary.withOpacity(0.3),
+                              color: AppColors.textSecondary.withValues(alpha: 0.3),
                             ),
                           ),
                         ],
@@ -523,10 +523,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                         padding: const EdgeInsets.all(
                             AppPadding.medium + AppPadding.small),
                         decoration: BoxDecoration(
-                          color: AppColors.primary.withOpacity(0.05),
+                          color: AppColors.primary.withValues(alpha: 0.05),
                           borderRadius: BorderRadius.circular(AppPadding.large),
                           border: Border.all(
-                            color: AppColors.primary.withOpacity(0.1),
+                            color: AppColors.primary.withValues(alpha: 0.1),
                           ),
                         ),
                         child: Row(
@@ -539,7 +539,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                               ),
                             ),
                             TextButton(
-                              onPressed: () => context.go('/register'),
+                              onPressed: () => context.push('/register'),
                               style: TextButton.styleFrom(
                                 foregroundColor: AppColors.primary,
                               ),
@@ -584,12 +584,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
         ),
         decoration: BoxDecoration(
           color: isSelected
-              ? color.withOpacity(0.1)
-              : AppColors.background.withOpacity(0.5),
+              ? color.withValues(alpha: 0.1)
+              : AppColors.background.withValues(alpha: 0.5),
           borderRadius: BorderRadius.circular(AppPadding.large),
           border: Border.all(
             color:
-                isSelected ? color : AppColors.textSecondary.withOpacity(0.2),
+                isSelected ? color : AppColors.textSecondary.withValues(alpha: 0.2),
             width: isSelected ? 2 : 1,
           ),
         ),
@@ -598,7 +598,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
             Container(
               padding: const EdgeInsets.all(AppPadding.medium),
               decoration: BoxDecoration(
-                color: isSelected ? color.withOpacity(0.15) : AppColors.surface,
+                color: isSelected ? color.withValues(alpha: 0.15) : AppColors.surface,
                 shape: BoxShape.circle,
               ),
               child: Icon(
@@ -644,8 +644,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
       decoration: InputDecoration(
         labelText: label,
         hintText: hint,
-        labelStyle: TextStyle(color: AppColors.textSecondary),
-        hintStyle: TextStyle(color: AppColors.textSecondary.withOpacity(0.6)),
+        labelStyle: const TextStyle(color: AppColors.textSecondary),
+        hintStyle: TextStyle(color: AppColors.textSecondary.withValues(alpha: 0.6)),
         prefixIcon: Icon(prefixIcon, size: 22, color: AppColors.primary),
         suffixIcon: suffixIcon,
         filled: true,
@@ -653,12 +653,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppPadding.large),
           borderSide:
-              BorderSide(color: AppColors.textSecondary.withOpacity(0.2)),
+              BorderSide(color: AppColors.textSecondary.withValues(alpha: 0.2)),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppPadding.large),
           borderSide:
-              BorderSide(color: AppColors.textSecondary.withOpacity(0.2)),
+              BorderSide(color: AppColors.textSecondary.withValues(alpha: 0.2)),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppPadding.large),

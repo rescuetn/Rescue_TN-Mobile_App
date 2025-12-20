@@ -55,7 +55,6 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen>
       case Severity.medium:
         return 2.0;
       case Severity.low:
-      default:
         return 1.0; // Lowest intensity
     }
   }
@@ -70,7 +69,6 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen>
       case Severity.medium:
         return Colors.yellow.shade700;
       case Severity.low:
-      default:
         return Colors.green.shade700;
     }
   }
@@ -89,7 +87,6 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen>
       case IncidentType.medical:
         return Icons.medical_services_rounded;
       case IncidentType.other:
-      default:
         return Icons.warning_rounded;
     }
   }
@@ -108,7 +105,6 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen>
       case IncidentType.medical:
         return 'Medical Emergency';
       case IncidentType.other:
-      default:
         return 'Other';
     }
   }
@@ -141,7 +137,6 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen>
       case Severity.medium:
         return BitmapDescriptor.hueYellow;
       case Severity.low:
-      default:
         return BitmapDescriptor.hueGreen;
     }
   }
@@ -177,7 +172,7 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen>
                       width: 48,
                       height: 5,
                       decoration: BoxDecoration(
-                        color: AppColors.textSecondary.withOpacity(0.3),
+                        color: AppColors.textSecondary.withValues(alpha: 0.3),
                         borderRadius: BorderRadius.circular(3),
                       ),
                     ),
@@ -190,9 +185,9 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen>
                       Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: color.withOpacity(0.1),
+                          color: color.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: color.withOpacity(0.3)),
+                          border: Border.all(color: color.withValues(alpha: 0.3)),
                         ),
                         child: Icon(
                           icon,
@@ -243,9 +238,9 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen>
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: color.withOpacity(0.05),
+                      color: color.withValues(alpha: 0.05),
                       borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: color.withOpacity(0.2)),
+                      border: Border.all(color: color.withValues(alpha: 0.2)),
                     ),
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -284,9 +279,9 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen>
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: color.withOpacity(0.05),
+                      color: color.withValues(alpha: 0.05),
                       borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: color.withOpacity(0.2)),
+                      border: Border.all(color: color.withValues(alpha: 0.2)),
                     ),
                     child: Row(
                       children: [
@@ -325,9 +320,9 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen>
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: color.withOpacity(0.05),
+                      color: color.withValues(alpha: 0.05),
                       borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: color.withOpacity(0.2)),
+                      border: Border.all(color: color.withValues(alpha: 0.2)),
                     ),
                     child: Row(
                       children: [
@@ -366,9 +361,9 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen>
                     Container(
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: color.withOpacity(0.05),
+                        color: color.withValues(alpha: 0.05),
                         borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: color.withOpacity(0.2)),
+                        border: Border.all(color: color.withValues(alpha: 0.2)),
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -484,10 +479,10 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen>
                     // Back Button
                     Container(
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.25),
+                        color: Colors.white.withValues(alpha: 0.25),
                         borderRadius: BorderRadius.circular(14),
                         border: Border.all(
-                          color: Colors.white.withOpacity(0.3),
+                          color: Colors.white.withValues(alpha: 0.3),
                           width: 1,
                         ),
                       ),
@@ -514,7 +509,7 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen>
                           Text(
                             'Live incident visualization',
                             style: textTheme.bodyMedium?.copyWith(
-                              color: Colors.white.withOpacity(0.9),
+                              color: Colors.white.withValues(alpha: 0.9),
                             ),
                           ),
                         ],
@@ -523,7 +518,7 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen>
                     Container(
                       padding: const EdgeInsets.all(10),
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.25),
+                        color: Colors.white.withValues(alpha: 0.25),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: const Icon(
@@ -646,7 +641,7 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen>
                                         gradient: LinearGradient(
                                           colors: [
                                             Colors.blue.shade50,
-                                            Colors.blue.shade100.withOpacity(0.5),
+                                            Colors.blue.shade100.withValues(alpha: 0.5),
                                           ],
                                         ),
                                         shape: BoxShape.circle,
@@ -687,13 +682,7 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen>
                             _createMarkers(incidents);
                           }
 
-                          // Convert incidents to heatmap points
-                          final heatmapPoints = incidents.map((incident) {
-                            return WeightedLatLng(
-                              LatLng(incident.latitude, incident.longitude),
-                              weight: _getWeightForSeverity(incident.severity),
-                            );
-                          }).toSet();
+
 
                           // Create circles for visual representation (fallback if heatmap not supported)
                           final circles = incidents.map((incident) {
@@ -702,8 +691,8 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen>
                               circleId: CircleId(incident.id ?? DateTime.now().toString()),
                               center: LatLng(incident.latitude, incident.longitude),
                               radius: _getWeightForSeverity(incident.severity) * 500,
-                              fillColor: color.withOpacity(0.3),
-                              strokeColor: color.withOpacity(0.8),
+                              fillColor: color.withValues(alpha: 0.3),
+                              strokeColor: color.withValues(alpha: 0.8),
                               strokeWidth: 2,
                             );
                           }).toSet();
@@ -744,7 +733,7 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen>
                                     borderRadius: BorderRadius.circular(16),
                                     boxShadow: [
                                       BoxShadow(
-                                        color: Colors.black.withOpacity(0.1),
+                                        color: Colors.black.withValues(alpha: 0.1),
                                         blurRadius: 16,
                                         offset: const Offset(0, 4),
                                       ),
@@ -869,7 +858,7 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen>
               ? LinearGradient(
             colors: [
               AppColors.primary,
-              AppColors.primary.withOpacity(0.8),
+              AppColors.primary.withValues(alpha: 0.8),
             ],
           )
               : null,
@@ -877,7 +866,7 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen>
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.1),
+              color: Colors.black.withValues(alpha: 0.1),
               blurRadius: 12,
               offset: const Offset(0, 4),
             ),

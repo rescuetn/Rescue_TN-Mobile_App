@@ -94,7 +94,9 @@ class Alert {
       message: map['message'] ?? 'No message provided.',
       level: AlertLevel.values.firstWhere(
         (e) => e.name == map['level'],
-        orElse: () => AlertLevel.info,
+        orElse: () => map['level'] == 'critical'
+            ? AlertLevel.severe
+            : AlertLevel.info,
       ),
       timestamp: timestamp,
       targetRoles: map['targetRoles'] != null

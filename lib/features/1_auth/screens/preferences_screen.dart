@@ -28,7 +28,7 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
         padding: const EdgeInsets.all(AppPadding.large),
         children: [
           const SizedBox(height: AppPadding.medium),
-          Icon(
+          const Icon(
             Icons.settings,
             size: 60,
             color: AppColors.primary,
@@ -144,7 +144,7 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -154,17 +154,17 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
         leading: Container(
           padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(
-            color: AppColors.primary.withOpacity(0.1),
+            color: AppColors.primary.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(10),
           ),
           child: Icon(icon, color: AppColors.primary),
         ),
         title: Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
-        subtitle: Text(subtitle, style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+        subtitle: Text(subtitle, style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
         trailing: Switch(
           value: value,
           onChanged: onChanged,
-          activeColor: AppColors.primary,
+          activeThumbColor: AppColors.primary,
         ),
       ),
     );
@@ -178,7 +178,7 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -188,13 +188,13 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
         leading: Container(
           padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(
-            color: AppColors.primary.withOpacity(0.1),
+            color: AppColors.primary.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(10),
           ),
           child: Icon(icon, color: AppColors.primary),
         ),
         title: Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
-        trailing: Text(value, style: TextStyle(color: AppColors.textSecondary)),
+        trailing: Text(value, style: const TextStyle(color: AppColors.textSecondary)),
       ),
     );
   }

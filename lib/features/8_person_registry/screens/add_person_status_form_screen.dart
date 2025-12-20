@@ -134,8 +134,12 @@ class _AddPersonStatusScreenState extends ConsumerState<AddPersonStatusScreen>
               margin: const EdgeInsets.all(16),
             ),
           );
-          // Use GoRouter's pop for correct navigation
-          context.pop();
+          // Use GoRouter's pop or go for correct navigation
+          if (context.canPop()) {
+            context.pop();
+          } else {
+            context.go('/home');
+          }
         }
       } catch (e) {
         if (mounted) {
@@ -182,7 +186,7 @@ class _AddPersonStatusScreenState extends ConsumerState<AddPersonStatusScreen>
             colors: [
               statusGradient[0],
               statusGradient[1],
-              statusGradient[1].withOpacity(0.8),
+              statusGradient[1].withValues(alpha: 0.8),
               AppColors.background,
             ],
             stops: const [0.0, 0.15, 0.3, 0.3],
@@ -202,17 +206,23 @@ class _AddPersonStatusScreenState extends ConsumerState<AddPersonStatusScreen>
                         color: Colors.transparent,
                         child: Container(
                           decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.25),
+                            color: Colors.white.withValues(alpha: 0.25),
                             borderRadius: BorderRadius.circular(14),
                             border: Border.all(
-                              color: Colors.white.withOpacity(0.3),
+                              color: Colors.white.withValues(alpha: 0.3),
                               width: 1,
                             ),
                           ),
                           child: IconButton(
                             icon: const Icon(Icons.arrow_back_rounded,
                                 color: Colors.white),
-                            onPressed: () => context.pop(), // Use context.pop()
+                            onPressed: () {
+                              if (context.canPop()) {
+                                context.pop();
+                              } else {
+                                context.go('/home');
+                              }
+                            },
                           ),
                         ),
                       ),
@@ -234,7 +244,7 @@ class _AddPersonStatusScreenState extends ConsumerState<AddPersonStatusScreen>
                           Text(
                             'Add to safety registry',
                             style: textTheme.bodyMedium?.copyWith(
-                              color: Colors.white.withOpacity(0.9),
+                              color: Colors.white.withValues(alpha: 0.9),
                             ),
                           ),
                         ],
@@ -243,7 +253,7 @@ class _AddPersonStatusScreenState extends ConsumerState<AddPersonStatusScreen>
                     Container(
                       padding: const EdgeInsets.all(10),
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.25),
+                        color: Colors.white.withValues(alpha: 0.25),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Icon(
@@ -284,7 +294,7 @@ class _AddPersonStatusScreenState extends ConsumerState<AddPersonStatusScreen>
                                   gradient: LinearGradient(
                                     colors: [
                                       Colors.blue.shade50,
-                                      Colors.blue.shade100.withOpacity(0.5),
+                                      Colors.blue.shade100.withValues(alpha: 0.5),
                                     ],
                                   ),
                                   borderRadius: BorderRadius.circular(20),
@@ -468,7 +478,7 @@ class _AddPersonStatusScreenState extends ConsumerState<AddPersonStatusScreen>
             borderRadius: BorderRadius.circular(12),
             boxShadow: [
               BoxShadow(
-                color: gradient[0].withOpacity(0.3),
+                color: gradient[0].withValues(alpha: 0.3),
                 blurRadius: 8,
                 offset: const Offset(0, 4),
               ),
@@ -519,7 +529,7 @@ class _AddPersonStatusScreenState extends ConsumerState<AddPersonStatusScreen>
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: AppColors.textPrimary.withOpacity(0.06),
+            color: AppColors.textPrimary.withValues(alpha: 0.06),
             blurRadius: 16,
             offset: const Offset(0, 4),
           ),
@@ -545,7 +555,7 @@ class _AddPersonStatusScreenState extends ConsumerState<AddPersonStatusScreen>
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(20),
             borderSide: BorderSide(
-              color: AppColors.textSecondary.withOpacity(0.15),
+              color: AppColors.textSecondary.withValues(alpha: 0.15),
             ),
           ),
           focusedBorder: OutlineInputBorder(
@@ -595,26 +605,26 @@ class _AddPersonStatusScreenState extends ConsumerState<AddPersonStatusScreen>
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
           color: isSelected
-              ? gradient[0].withOpacity(0.1)
+              ? gradient[0].withValues(alpha: 0.1)
               : AppColors.surface,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
             color: isSelected
-                ? gradient[0].withOpacity(0.5)
-                : AppColors.textSecondary.withOpacity(0.15),
+                ? gradient[0].withValues(alpha: 0.5)
+                : AppColors.textSecondary.withValues(alpha: 0.15),
             width: isSelected ? 2 : 1,
           ),
           boxShadow: isSelected
               ? [
             BoxShadow(
-              color: gradient[0].withOpacity(0.2),
+              color: gradient[0].withValues(alpha: 0.2),
               blurRadius: 12,
               offset: const Offset(0, 4),
             ),
           ]
               : [
             BoxShadow(
-              color: AppColors.textPrimary.withOpacity(0.06),
+              color: AppColors.textPrimary.withValues(alpha: 0.06),
               blurRadius: 16,
               offset: const Offset(0, 4),
             ),
@@ -629,7 +639,7 @@ class _AddPersonStatusScreenState extends ConsumerState<AddPersonStatusScreen>
                 borderRadius: BorderRadius.circular(14),
                 boxShadow: [
                   BoxShadow(
-                    color: gradient[0].withOpacity(0.3),
+                    color: gradient[0].withValues(alpha: 0.3),
                     blurRadius: 8,
                     offset: const Offset(0, 4),
                   ),
@@ -681,7 +691,7 @@ class _AddPersonStatusScreenState extends ConsumerState<AddPersonStatusScreen>
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   border: Border.all(
-                    color: AppColors.textSecondary.withOpacity(0.3),
+                    color: AppColors.textSecondary.withValues(alpha: 0.3),
                     width: 2,
                   ),
                 ),

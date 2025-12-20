@@ -16,7 +16,7 @@ class AlertCard extends StatelessWidget {
     return Card(
       elevation: 4,
       color: backgroundColor,
-      shadowColor: accentColor.withOpacity(0.3),
+      shadowColor: accentColor.withValues(alpha: 0.3),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
         side: BorderSide(color: accentColor, width: 1.5),
@@ -29,7 +29,7 @@ class AlertCard extends StatelessWidget {
             end: Alignment.bottomRight,
             colors: [
               backgroundColor,
-              backgroundColor.withOpacity(0.8),
+              backgroundColor.withValues(alpha: 0.8),
             ],
           ),
         ),
@@ -44,7 +44,7 @@ class AlertCard extends StatelessWidget {
                     padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: accentColor.withOpacity(0.2),
+                      color: accentColor.withValues(alpha: 0.2),
                     ),
                     child: Icon(
                       _getIcon(alert.level),
@@ -87,8 +87,8 @@ class AlertCard extends StatelessWidget {
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     colors: [
-                      accentColor.withOpacity(0.3),
-                      accentColor.withOpacity(0),
+                      accentColor.withValues(alpha: 0.3),
+                      accentColor.withValues(alpha: 0),
                     ],
                   ),
                 ),
@@ -98,8 +98,8 @@ class AlertCard extends StatelessWidget {
                 alert.message,
                 style: textTheme.bodyLarge?.copyWith(
                   color: isDarkMode
-                      ? Colors.white.withOpacity(0.85)
-                      : Colors.black87.withOpacity(0.85),
+                      ? Colors.white.withValues(alpha: 0.85)
+                      : Colors.black87.withValues(alpha: 0.85),
                   height: 1.5,
                 ),
                 maxLines: 3,
@@ -115,8 +115,8 @@ class AlertCard extends StatelessWidget {
                           .format(alert.timestamp),
                       style: textTheme.bodySmall?.copyWith(
                         color: isDarkMode
-                            ? Colors.white.withOpacity(0.6)
-                            : Colors.black54.withOpacity(0.7),
+                            ? Colors.white.withValues(alpha: 0.6)
+                            : Colors.black54.withValues(alpha: 0.7),
                       ),
                     ),
                   ),
@@ -124,7 +124,7 @@ class AlertCard extends StatelessWidget {
                     padding:
                         const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                     decoration: BoxDecoration(
-                      color: accentColor.withOpacity(0.2),
+                      color: accentColor.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(
@@ -162,11 +162,11 @@ class AlertCard extends StatelessWidget {
     if (isDarkMode) {
       switch (level) {
         case AlertLevel.severe:
-          return Colors.red.shade900.withOpacity(0.3);
+          return Colors.red.shade900.withValues(alpha: 0.3);
         case AlertLevel.warning:
-          return Colors.orange.shade900.withOpacity(0.3);
+          return Colors.orange.shade900.withValues(alpha: 0.3);
         case AlertLevel.info:
-          return Colors.blue.shade900.withOpacity(0.3);
+          return Colors.blue.shade900.withValues(alpha: 0.3);
       }
     } else {
       switch (level) {

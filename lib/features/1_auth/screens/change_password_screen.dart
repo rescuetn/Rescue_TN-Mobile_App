@@ -106,7 +106,7 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
               Icon(
                 Icons.lock_reset,
                 size: 80,
-                color: AppColors.primary.withOpacity(0.5),
+                color: AppColors.primary.withValues(alpha: 0.5),
               ),
               const SizedBox(height: AppPadding.large),
               const Text(
@@ -118,7 +118,7 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: AppPadding.small),
-              Text(
+              const Text(
                 'Enter your current password and choose a new one',
                 style: TextStyle(
                   color: AppColors.textSecondary,

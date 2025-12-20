@@ -12,9 +12,9 @@ class ShelterDetailsBottomSheet extends StatelessWidget {
     final occupancyPercentage = (shelter.currentOccupancy / shelter.capacity) * 100;
 
     return Container(
-      decoration: BoxDecoration(
+      decoration: const BoxDecoration(
         color: AppColors.surface,
-        borderRadius: const BorderRadius.only(
+        borderRadius: BorderRadius.only(
           topLeft: Radius.circular(24),
           topRight: Radius.circular(24),
         ),
@@ -32,7 +32,7 @@ class ShelterDetailsBottomSheet extends StatelessWidget {
                   width: 48,
                   height: 5,
                   decoration: BoxDecoration(
-                    color: AppColors.textSecondary.withOpacity(0.3),
+                    color: AppColors.textSecondary.withValues(alpha: 0.3),
                     borderRadius: BorderRadius.circular(3),
                   ),
                 ),
@@ -47,14 +47,14 @@ class ShelterDetailsBottomSheet extends StatelessWidget {
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
                         colors: [
-                          _getStatusColor(shelter.status).withOpacity(0.8),
+                          _getStatusColor(shelter.status).withValues(alpha: 0.8),
                           _getStatusColor(shelter.status),
                         ],
                       ),
                       borderRadius: BorderRadius.circular(16),
                       boxShadow: [
                         BoxShadow(
-                          color: _getStatusColor(shelter.status).withOpacity(0.3),
+                          color: _getStatusColor(shelter.status).withValues(alpha: 0.3),
                           blurRadius: 8,
                           offset: const Offset(0, 4),
                         ),
@@ -93,19 +93,66 @@ class ShelterDetailsBottomSheet extends StatelessWidget {
               ),
               const SizedBox(height: 24),
 
+              // Government Verified Badge
+              if (shelter.isGovernmentDesignated) ...[
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.blue.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: Colors.blue.withValues(alpha: 0.3),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.verified_rounded,
+                        color: Colors.blue,
+                        size: 20,
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Government Safe Shelter',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: Colors.blue,
+                                fontSize: 14,
+                              ),
+                            ),
+                            Text(
+                              'Verified safe zone for emergencies',
+                              style: TextStyle(
+                                color: Colors.blue.shade700,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+              ],
+
               // Status Badge
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     colors: [
-                      _getStatusColor(shelter.status).withOpacity(0.1),
-                      _getStatusColor(shelter.status).withOpacity(0.05),
+                      _getStatusColor(shelter.status).withValues(alpha: 0.1),
+                      _getStatusColor(shelter.status).withValues(alpha: 0.05),
                     ],
                   ),
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(
-                    color: _getStatusColor(shelter.status).withOpacity(0.3),
+                    color: _getStatusColor(shelter.status).withValues(alpha: 0.3),
                     width: 1.5,
                   ),
                 ),
@@ -138,7 +185,7 @@ class ShelterDetailsBottomSheet extends StatelessWidget {
                   color: AppColors.background,
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(
-                    color: AppColors.textSecondary.withOpacity(0.1),
+                    color: AppColors.textSecondary.withValues(alpha: 0.1),
                   ),
                 ),
                 child: Column(
@@ -150,8 +197,8 @@ class ShelterDetailsBottomSheet extends StatelessWidget {
                           padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
                             color: occupancyPercentage > 90
-                                ? Colors.red.withOpacity(0.1)
-                                : Colors.green.withOpacity(0.1),
+                                ? Colors.red.withValues(alpha: 0.1)
+                                : Colors.green.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(10),
                           ),
                           child: Icon(
@@ -165,7 +212,7 @@ class ShelterDetailsBottomSheet extends StatelessWidget {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(
+                              const Text(
                                 'Occupancy',
                                 style: TextStyle(
                                   fontSize: 13,
@@ -192,8 +239,8 @@ class ShelterDetailsBottomSheet extends StatelessWidget {
                           ),
                           decoration: BoxDecoration(
                             color: occupancyPercentage > 90
-                                ? Colors.red.withOpacity(0.15)
-                                : Colors.green.withOpacity(0.15),
+                                ? Colors.red.withValues(alpha: 0.15)
+                                : Colors.green.withValues(alpha: 0.15),
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Text(
@@ -230,7 +277,7 @@ class ShelterDetailsBottomSheet extends StatelessWidget {
                       children: [
                         Text(
                           '${shelter.capacity - shelter.currentOccupancy} spaces available',
-                          style: TextStyle(
+                          style: const TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w600,
                             color: AppColors.textSecondary,
@@ -267,7 +314,7 @@ class ShelterDetailsBottomSheet extends StatelessWidget {
                         borderRadius: BorderRadius.circular(16),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.blue.shade300.withOpacity(0.4),
+                            color: Colors.blue.shade300.withValues(alpha: 0.4),
                             blurRadius: 12,
                             offset: const Offset(0, 4),
                           ),

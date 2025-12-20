@@ -40,6 +40,7 @@ class _ImageUploadWidgetState extends State<ImageUploadWidget> {
         widget.onImageSelected(imageFile);
       }
     } catch (e) {
+      if (!mounted) return;
       // Handle potential errors, e.g., if the user denies permissions
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Failed to pick image: $e')),

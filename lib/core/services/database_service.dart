@@ -105,7 +105,10 @@ class FirestoreDatabaseService implements DatabaseService {
         .snapshots()
         .map((snapshot) => snapshot.docs
             .map((doc) => Incident.fromMap(doc.data(), doc.id))
-            .toList());
+            .toList())
+        .handleError((error) {
+      return <Incident>[];
+    });
   }
 
   // --- TASK METHODS ---
@@ -119,14 +122,12 @@ class FirestoreDatabaseService implements DatabaseService {
               try {
                 return Task.fromMap(doc.data(), doc.id);
               } catch (e) {
-                print('Error parsing task ${doc.id}: $e');
                 return null;
               }
             })
             .whereType<Task>()
             .toList())
         .handleError((error) {
-          print('Error in getTasksStream: $error');
           return <Task>[];
         });
   }
@@ -158,24 +159,33 @@ class FirestoreDatabaseService implements DatabaseService {
 
   // --- PREPAREDNESS PLAN METHODS ---
   @override
+  @override
   Future<void> checkAndCreateDefaultPlan(String userId) async {
     try {
       final planCollection = _firestore
           .collection('users')
           .doc(userId)
           .collection('preparedness_plan');
-      final snapshot = await planCollection.limit(1).get();
+      
+      // Fetch current plan to check for missing items
+      final snapshot = await planCollection.get();
+      final existingIds = snapshot.docs.map((doc) => doc.id).toSet();
+      
+      final batch = _firestore.batch();
+      bool updatesNeeded = false;
 
-      if (snapshot.docs.isEmpty) {
-        final batch = _firestore.batch();
-        for (final item in _defaultPlan) {
+      for (final item in _defaultPlan) {
+        if (!existingIds.contains(item.id)) {
           final docRef = planCollection.doc(item.id);
           batch.set(docRef, item.toMap());
+          updatesNeeded = true;
         }
+      }
+
+      if (updatesNeeded) {
         await batch.commit();
       }
     } catch (e) {
-      print('Error in checkAndCreateDefaultPlan: $e');
       rethrow;
     }
   }
@@ -193,12 +203,10 @@ class FirestoreDatabaseService implements DatabaseService {
                 .map((doc) => PreparednessItem.fromMap(doc.data(), doc.id))
                 .toList();
           } catch (e) {
-            print('Error parsing preparedness items: $e');
             return <PreparednessItem>[];
           }
         })
         .handleError((error) {
-          print('Error in getPreparednessPlanStream: $error');
           return <PreparednessItem>[];
         });
   }
@@ -217,10 +225,15 @@ class FirestoreDatabaseService implements DatabaseService {
   // --- SHELTER METHOD ---
   @override
   Stream<List<Shelter>> getSheltersStream() {
-    return _firestore.collection('shelters').snapshots().map((snapshot) =>
-        snapshot.docs
+    return _firestore
+        .collection('shelters')
+        .snapshots()
+        .map((snapshot) => snapshot.docs
             .map((doc) => Shelter.fromMap(doc.data(), doc.id))
-            .toList());
+            .toList())
+        .handleError((error) {
+      return <Shelter>[];
+    });
   }
 
   // --- ALERTS METHODS ---
@@ -248,7 +261,6 @@ class FirestoreDatabaseService implements DatabaseService {
             .toList())
         .handleError((error) {
           // If ordering fails, try without ordering
-          print('Error in getAlertsStream: $error');
           return <Alert>[];
         });
   }

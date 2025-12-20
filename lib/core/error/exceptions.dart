@@ -1,6 +1,7 @@
 /// This file defines custom exception classes for the application.
 /// These are used to represent specific error scenarios that can occur
 /// in the data layer, such as server communication failures or cache errors.
+library;
 
 /// Represents an error that occurs during a network request to a server (e.g., Firebase).
 class ServerException implements Exception {

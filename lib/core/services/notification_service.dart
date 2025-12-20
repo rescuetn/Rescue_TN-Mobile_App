@@ -1,3 +1,4 @@
+// ignore_for_file: empty_catches
 import 'dart:async';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -37,13 +38,11 @@ class NotificationService {
       final token = await _firebaseMessaging.getToken();
       if (token != null) {
         _fcmTokenController.add(token);
-        print('FCM Token: $token');
       }
 
       // Listen for token refresh
       FirebaseMessaging.instance.onTokenRefresh.listen((newToken) {
         _fcmTokenController.add(newToken);
-        print('FCM Token Refreshed: $newToken');
         // You should update this token in your Firestore user document
       });
 
@@ -62,16 +61,11 @@ class NotificationService {
         _handleNotificationTap(message);
       });
     } catch (e) {
-      print('Error initializing FCM: $e');
     }
   }
 
   /// Handle foreground notifications (app is open)
   void _handleForegroundNotification(RemoteMessage message) {
-    print('Foreground notification received:');
-    print('Title: ${message.notification?.title}');
-    print('Body: ${message.notification?.body}');
-    print('Data: ${message.data}');
 
     // Create Alert from FCM message
     final alert = Alert.fromFCM(
@@ -86,14 +80,10 @@ class NotificationService {
 
   /// Handle notification tap (notification opened)
   void _handleNotificationTap(RemoteMessage message) {
-    print('Notification tapped:');
-    print('Title: ${message.notification?.title}');
-    print('Body: ${message.notification?.body}');
 
     // You can navigate to specific screens based on actionUrl
     final actionUrl = message.data['actionUrl'];
     if (actionUrl != null) {
-      print('Action URL: $actionUrl');
       // Navigation will be handled in the app's main widget
     }
   }
@@ -112,9 +102,7 @@ class NotificationService {
   Future<void> subscribeToTopic(String topic) async {
     try {
       await _firebaseMessaging.subscribeToTopic(topic);
-      print('Subscribed to topic: $topic');
     } catch (e) {
-      print('Error subscribing to topic: $e');
     }
   }
 
@@ -122,9 +110,7 @@ class NotificationService {
   Future<void> unsubscribeFromTopic(String topic) async {
     try {
       await _firebaseMessaging.unsubscribeFromTopic(topic);
-      print('Unsubscribed from topic: $topic');
     } catch (e) {
-      print('Error unsubscribing from topic: $e');
     }
   }
 
@@ -144,9 +130,7 @@ class NotificationService {
           break;
       }
 
-      print('Subscribed to topics for role: ${role.name}');
     } catch (e) {
-      print('Error subscribing to role topics: $e');
     }
   }
 
@@ -165,9 +149,7 @@ class NotificationService {
           break;
       }
 
-      print('Unsubscribed from topics for role: ${role.name}');
     } catch (e) {
-      print('Error unsubscribing from role topics: $e');
     }
   }
 
@@ -180,10 +162,6 @@ class NotificationService {
 /// Top-level function to handle background messages
 /// This must be a top-level function, not a method
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-  print('Handling a background message: ${message.messageId}');
-  print('Title: ${message.notification?.title}');
-  print('Body: ${message.notification?.body}');
-  print('Data: ${message.data}');
 
   // Here you can update local storage or trigger updates
   // For now, we just log the message

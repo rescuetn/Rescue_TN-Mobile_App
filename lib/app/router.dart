@@ -30,6 +30,7 @@ final routerProvider = Provider<GoRouter>((ref) {
   return GoRouter(
     initialLocation: '/login',
     refreshListenable:
+    // ignore: deprecated_member_use
     GoRouterRefreshStream(ref.watch(authStateChangesProvider.stream)),
     routes: [
       GoRoute(path: '/login', builder: (context, state) => const LoginScreen()),

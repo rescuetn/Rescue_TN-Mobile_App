@@ -1,3 +1,4 @@
+// ignore_for_file: empty_catches
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -19,9 +20,7 @@ class RescueTNApp extends ConsumerWidget {
           try {
             final notificationService = ref.read(notificationServiceProvider);
             await notificationService.subscribeToRoleTopics(user.role);
-            print('✅ User subscribed to ${user.role.name} notifications');
           } catch (e) {
-            print('❌ Error subscribing to notifications: $e');
           }
         } else {
           try {
@@ -29,10 +28,8 @@ class RescueTNApp extends ConsumerWidget {
               final notificationService = ref.read(notificationServiceProvider);
               await notificationService
                   .unsubscribeFromRoleTopics(previous!.value!.role);
-              print('✅ User unsubscribed from notifications');
             }
           } catch (e) {
-            print('❌ Error unsubscribing from notifications: $e');
           }
         }
       }
@@ -128,7 +125,7 @@ class RescueTNApp extends ConsumerWidget {
           leading: Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: accentColor.withOpacity(0.3),
+              color: accentColor.withValues(alpha: 0.3),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Icon(bannerIcon, color: accentColor, size: 24),
@@ -160,7 +157,7 @@ class RescueTNApp extends ConsumerWidget {
                             child: Text(
                               alert.message,
                               style: TextStyle(
-                                color: textColor.withOpacity(0.85),
+                                color: textColor.withValues(alpha: 0.85),
                                 fontSize: 14,
                                 height: 1.4,
                               ),
@@ -176,9 +173,9 @@ class RescueTNApp extends ConsumerWidget {
                     padding:
                         const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                     decoration: BoxDecoration(
-                      color: accentColor.withOpacity(0.2),
+                      color: accentColor.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: accentColor.withOpacity(0.5)),
+                      border: Border.all(color: accentColor.withValues(alpha: 0.5)),
                     ),
                     child: Text(
                       alert.level.name.toUpperCase(),
@@ -196,7 +193,7 @@ class RescueTNApp extends ConsumerWidget {
           actions: [
             TextButton(
               style: TextButton.styleFrom(
-                backgroundColor: accentColor.withOpacity(0.2),
+                backgroundColor: accentColor.withValues(alpha: 0.2),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8),
                 ),
@@ -220,7 +217,7 @@ class RescueTNApp extends ConsumerWidget {
                 child: Text(
                   'DISMISS',
                   style: TextStyle(
-                    color: textColor.withOpacity(0.7),
+                    color: textColor.withValues(alpha: 0.7),
                     fontWeight: FontWeight.w600,
                   ),
                 ),

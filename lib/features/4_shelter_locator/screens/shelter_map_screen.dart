@@ -178,9 +178,12 @@ class _ShelterMapScreenState extends ConsumerState<ShelterMapScreen>
     );
   }
 
-  // Dynamic marker icon based on shelter status
-  BitmapDescriptor _getMarkerIcon(ShelterStatus status) {
-    switch (status) {
+  // Dynamic marker icon based on shelter status and government designation
+  BitmapDescriptor _getMarkerIcon(Shelter shelter) {
+    if (shelter.isGovernmentDesignated) {
+      return BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure);
+    }
+    switch (shelter.status) {
       case ShelterStatus.available:
         return BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen);
       case ShelterStatus.full:
@@ -274,7 +277,7 @@ class _ShelterMapScreenState extends ConsumerState<ShelterMapScreen>
                   Icon(
                     Icons.error_outline,
                     size: 64,
-                    color: AppColors.error.withOpacity(0.5),
+                    color: AppColors.error.withValues(alpha: 0.5),
                   ),
                   const SizedBox(height: 16),
                   Text(
@@ -317,7 +320,7 @@ class _ShelterMapScreenState extends ConsumerState<ShelterMapScreen>
                     title: shelter.name,
                     snippet: '${shelter.status.name.toUpperCase()} • Tap for details',
                   ),
-                  icon: _getMarkerIcon(shelter.status),
+                  icon: _getMarkerIcon(shelter),
                   onTap: () {
                     if (!mounted) return;
                     showModalBottomSheet(
@@ -396,7 +399,7 @@ class _ShelterMapScreenState extends ConsumerState<ShelterMapScreen>
                       borderRadius: BorderRadius.circular(AppPadding.large),
                       boxShadow: [
                         BoxShadow(
-                          color: AppColors.textPrimary.withOpacity(0.1),
+                          color: AppColors.textPrimary.withValues(alpha: 0.1),
                           blurRadius: 20,
                           offset: const Offset(0, 4),
                         ),
@@ -410,7 +413,7 @@ class _ShelterMapScreenState extends ConsumerState<ShelterMapScreen>
                             children: [
                               Container(
                                 decoration: BoxDecoration(
-                                  color: AppColors.primary.withOpacity(0.1),
+                                  color: AppColors.primary.withValues(alpha: 0.1),
                                   borderRadius: BorderRadius.circular(
                                     AppBorderRadius.medium,
                                   ),
@@ -490,7 +493,7 @@ class _ShelterMapScreenState extends ConsumerState<ShelterMapScreen>
                               ),
                               Container(
                                 decoration: BoxDecoration(
-                                  color: AppColors.accent.withOpacity(0.1),
+                                  color: AppColors.accent.withValues(alpha: 0.1),
                                   borderRadius: BorderRadius.circular(
                                     AppBorderRadius.medium,
                                   ),
@@ -590,7 +593,7 @@ class _ShelterMapScreenState extends ConsumerState<ShelterMapScreen>
                           shape: BoxShape.circle,
                           boxShadow: [
                             BoxShadow(
-                              color: AppColors.textPrimary.withOpacity(0.1),
+                              color: AppColors.textPrimary.withValues(alpha: 0.1),
                               blurRadius: 15,
                               offset: const Offset(0, 4),
                             ),
@@ -666,13 +669,13 @@ class _ShelterMapScreenState extends ConsumerState<ShelterMapScreen>
           color: isSelected ? color : AppColors.background,
           borderRadius: BorderRadius.circular(AppBorderRadius.circle),
           border: Border.all(
-            color: isSelected ? color : AppColors.textSecondary.withOpacity(0.3),
+            color: isSelected ? color : AppColors.textSecondary.withValues(alpha: 0.3),
             width: isSelected ? 2 : 1,
           ),
           boxShadow: isSelected
               ? [
             BoxShadow(
-              color: color.withOpacity(0.3),
+              color: color.withValues(alpha: 0.3),
               blurRadius: 8,
               offset: const Offset(0, 2),
             ),
@@ -704,8 +707,8 @@ class _ShelterMapScreenState extends ConsumerState<ShelterMapScreen>
               ),
               decoration: BoxDecoration(
                 color: isSelected
-                    ? AppColors.onPrimary.withOpacity(0.2)
-                    : color.withOpacity(0.2),
+                    ? AppColors.onPrimary.withValues(alpha: 0.2)
+                    : color.withValues(alpha: 0.2),
                 borderRadius: BorderRadius.circular(AppBorderRadius.small),
               ),
               child: Text(
@@ -744,7 +747,7 @@ class _ShelterMapScreenState extends ConsumerState<ShelterMapScreen>
         borderRadius: BorderRadius.circular(AppPadding.large),
         boxShadow: [
           BoxShadow(
-            color: AppColors.textPrimary.withOpacity(0.1),
+            color: AppColors.textPrimary.withValues(alpha: 0.1),
             blurRadius: 20,
             offset: const Offset(0, 4),
           ),
@@ -821,7 +824,7 @@ class _ShelterMapScreenState extends ConsumerState<ShelterMapScreen>
             shape: BoxShape.circle,
             boxShadow: [
               BoxShadow(
-                color: color.withOpacity(0.4),
+                color: color.withValues(alpha: 0.4),
                 blurRadius: 4,
                 offset: const Offset(0, 1),
               ),
@@ -845,7 +848,7 @@ class _ShelterMapScreenState extends ConsumerState<ShelterMapScreen>
             vertical: 2,
           ),
           decoration: BoxDecoration(
-            color: color.withOpacity(0.2),
+            color: color.withValues(alpha: 0.2),
             borderRadius: BorderRadius.circular(AppBorderRadius.small),
           ),
           child: Text(

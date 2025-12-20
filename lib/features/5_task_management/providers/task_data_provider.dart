@@ -7,32 +7,51 @@ import 'package:rescuetn/models/task_model.dart';
 
 // 1. A StreamProvider that provides a real-time stream of all tasks from Firestore.
 // The UI will listen to this to get the initial, unfiltered list of tasks.
-final tasksStreamProvider = StreamProvider<List<Task>>((ref) {
+import 'package:rescuetn/features/1_auth/providers/auth_provider.dart';
+
+// 1. A StreamProvider that provides a real-time stream of all tasks from Firestore.
+// The UI will listen to this to get the initial, unfiltered list of tasks.
+// 1. A StreamProvider that provides a real-time stream of all tasks from Firestore.
+// The UI will listen to this to get the initial, unfiltered list of tasks.
+final tasksStreamProvider = StreamProvider.autoDispose<List<Task>>((ref) {
+  final authState = ref.watch(authStateChangesProvider);
+  
+  // Return empty stream if user is not logged in to prevent permission denied errors
+  if (authState.valueOrNull == null) {
+    return Stream.value([]);
+  }
+
   final databaseService = ref.watch(databaseServiceProvider);
   return databaseService.getTasksStream();
 });
 
 // 2. A provider to hold the current filter state (e.g., 'all', 'pending').
 enum TaskFilter { all, pending, inProgress, accepted, completed }
-final taskFilterProvider = StateProvider<TaskFilter>((ref) => TaskFilter.all);
+final taskFilterProvider = StateProvider.autoDispose<TaskFilter>((ref) => TaskFilter.all);
 
 // 3. A derived provider that returns the filtered list of tasks.
 // It watches the stream and the filter provider, and returns a new list
 // whenever either one changes. It also handles loading and error states.
-final filteredTasksProvider = Provider<AsyncValue<List<Task>>>((ref) {
+final filteredTasksProvider = Provider.autoDispose<AsyncValue<List<Task>>>((ref) {
   final filter = ref.watch(taskFilterProvider);
   final tasksAsync = ref.watch(tasksStreamProvider);
 
   return tasksAsync.when(
     data: (tasks) {
+      final user = ref.read(authStateChangesProvider).value;
+      if (user == null) return const AsyncData([]);
+
+      // Filter by assignment first (Show only tasks assigned to THIS volunteer)
+      final myTasks = tasks.where((t) => t.assignedTo == user.uid).toList();
+
       if (filter == TaskFilter.all) {
-        return AsyncData(tasks);
+        return AsyncData(myTasks);
       } else {
         final correspondingStatus = TaskStatus.values.firstWhere(
               (status) => status.name == filter.name,
         );
         final filteredList =
-        tasks.where((task) => task.status == correspondingStatus).toList();
+        myTasks.where((task) => task.status == correspondingStatus).toList();
         return AsyncData(filteredList);
       }
     },
@@ -42,9 +61,9 @@ final filteredTasksProvider = Provider<AsyncValue<List<Task>>>((ref) {
 });
 
 // 4. Providers for selecting a specific task.
-final selectedTaskIdProvider = StateProvider<String?>((ref) => null);
+final selectedTaskIdProvider = StateProvider.autoDispose<String?>((ref) => null);
 
-final selectedTaskProvider = Provider<Task?>((ref) {
+final selectedTaskProvider = Provider.autoDispose<Task?>((ref) {
   final selectedId = ref.watch(selectedTaskIdProvider);
   final tasksAsync = ref.watch(tasksStreamProvider);
 

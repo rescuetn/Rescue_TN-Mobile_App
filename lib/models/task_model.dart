@@ -9,6 +9,7 @@ class Task {
   final String description;
   final Severity severity;
   final TaskStatus status;
+  final String? assignedTo; // NEW: Field to store assigned volunteer ID
 
   const Task({
     required this.id,
@@ -17,9 +18,13 @@ class Task {
     required this.description,
     required this.severity,
     required this.status,
+    this.assignedTo,
   });
 
-  Task copyWith({TaskStatus? status}) {
+  Task copyWith({
+    TaskStatus? status,
+    String? assignedTo,
+  }) {
     return Task(
       id: id,
       title: title,
@@ -27,6 +32,7 @@ class Task {
       description: description,
       severity: severity,
       status: status ?? this.status,
+      assignedTo: assignedTo ?? this.assignedTo,
     );
   }
 
@@ -45,6 +51,7 @@ class Task {
             (e) => e.name == map['status'],
         orElse: () => TaskStatus.pending,
       ),
+      assignedTo: map['assignedTo'],
     );
   }
 
@@ -56,6 +63,7 @@ class Task {
       'description': description,
       'severity': severity.name,
       'status': status.name,
+      'assignedTo': assignedTo,
     };
   }
 }

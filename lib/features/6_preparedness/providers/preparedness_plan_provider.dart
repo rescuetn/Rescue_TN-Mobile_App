@@ -30,7 +30,7 @@ class PreparednessController extends StateNotifier<bool> {
 ///
 /// It also intelligently checks for and creates a default plan for the user the
 /// first time they access this feature, ensuring every user has a checklist.
-final preparednessPlanProvider = StreamProvider<List<PreparednessItem>>((ref) {
+final preparednessPlanProvider = StreamProvider.autoDispose<List<PreparednessItem>>((ref) {
   final user = ref.watch(authStateChangesProvider).value;
   final dbService = ref.watch(databaseServiceProvider);
 
@@ -41,13 +41,12 @@ final preparednessPlanProvider = StreamProvider<List<PreparednessItem>>((ref) {
       try {
         await dbService.checkAndCreateDefaultPlan(user.uid);
       } catch (e) {
-        print('Error checking/creating default plan: $e');
+        // Silently fail in production or log to crashlytics
       }
     });
     
     // 2. Return the live stream of their personal plan from the sub-collection.
     return dbService.getPreparednessPlanStream(user.uid).handleError((error) {
-      print('Error in preparedness plan stream: $error');
       return <PreparednessItem>[];
     });
   }
@@ -58,7 +57,7 @@ final preparednessPlanProvider = StreamProvider<List<PreparednessItem>>((ref) {
 
 /// A derived provider that calculates the completion percentage from the live data stream.
 /// It correctly handles the loading, error, and data states of the stream.
-final preparednessProgressProvider = Provider<AsyncValue<double>>((ref) {
+final preparednessProgressProvider = Provider.autoDispose<AsyncValue<double>>((ref) {
   final planAsync = ref.watch(preparednessPlanProvider);
   return planAsync.when(
     data: (items) {

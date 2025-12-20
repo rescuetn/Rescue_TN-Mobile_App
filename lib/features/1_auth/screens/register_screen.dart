@@ -53,7 +53,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
   String? _selectedDistrict;
 
   // State for volunteer skills
-  Set<VolunteerSkill> _selectedSkills = {};
+  final Set<VolunteerSkill> _selectedSkills = {};
 
   @override
   void initState() {
@@ -103,11 +103,11 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
     if (_selectedRole == UserRole.volunteer && _selectedSkills.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Row(
+          content: const Row(
             children: [
-              const Icon(Icons.error_outline, color: AppColors.onPrimary),
-              const SizedBox(width: AppPadding.small),
-              const Expanded(
+              Icon(Icons.error_outline, color: AppColors.onPrimary),
+              SizedBox(width: AppPadding.small),
+              Expanded(
                 child: Text(
                   'Please select at least one skill',
                   style: TextStyle(color: AppColors.onPrimary),
@@ -137,11 +137,11 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Row(
+              content: const Row(
                 children: [
-                  const Icon(Icons.wifi_off, color: AppColors.onPrimary),
-                  const SizedBox(width: AppPadding.small),
-                  const Expanded(
+                  Icon(Icons.wifi_off, color: AppColors.onPrimary),
+                  SizedBox(width: AppPadding.small),
+                  Expanded(
                     child: Text(
                       'No internet connection. Please check your network and try again.',
                       style: TextStyle(color: AppColors.onPrimary),
@@ -179,11 +179,11 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: Row(
+                content: const Row(
                   children: [
-                    const Icon(Icons.error_outline, color: AppColors.onPrimary),
-                    const SizedBox(width: AppPadding.small),
-                    const Expanded(
+                    Icon(Icons.error_outline, color: AppColors.onPrimary),
+                    SizedBox(width: AppPadding.small),
+                    Expanded(
                       child: Text(
                         'Please enter a valid age (1-150)',
                         style: TextStyle(color: AppColors.onPrimary),
@@ -205,10 +205,12 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
         }
       }
 
+
       // 4. Call the createUser method with email, password, phone, address, district, age, role, and skills.
       await authService.createUserWithEmailAndPassword(
         email: _emailController.text.trim(),
         password: _passwordController.text.trim(),
+        fullName: _nameController.text.trim(), // Added fullName
         phoneNumber: _phoneController.text.trim(),
         address: _addressController.text.trim().isNotEmpty
             ? _addressController.text.trim()
@@ -314,8 +316,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              AppColors.primary.withOpacity(0.05),
-              AppColors.accent.withOpacity(0.08),
+              AppColors.primary.withValues(alpha: 0.05),
+              AppColors.accent.withValues(alpha: 0.08),
               AppColors.background,
             ],
           ),
@@ -335,7 +337,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
                             BorderRadius.circular(AppBorderRadius.medium),
                         boxShadow: [
                           BoxShadow(
-                            color: AppColors.textPrimary.withOpacity(0.05),
+                            color: AppColors.textPrimary.withValues(alpha: 0.05),
                             blurRadius: 8,
                             offset: const Offset(0, 2),
                           ),
@@ -399,7 +401,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
                                     boxShadow: [
                                       BoxShadow(
                                         color:
-                                            AppColors.primary.withOpacity(0.3),
+                                            AppColors.primary.withValues(alpha: 0.3),
                                         blurRadius: 20,
                                         offset: const Offset(0, 8),
                                       ),
@@ -449,7 +451,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
                                   boxShadow: [
                                     BoxShadow(
                                       color: AppColors.textPrimary
-                                          .withOpacity(0.05),
+                                          .withValues(alpha: 0.05),
                                       blurRadius: 20,
                                       offset: const Offset(0, 4),
                                     ),
@@ -466,7 +468,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
                                               AppPadding.small),
                                           decoration: BoxDecoration(
                                             color: AppColors.primary
-                                                .withOpacity(0.1),
+                                                .withValues(alpha: 0.1),
                                             borderRadius: BorderRadius.circular(
                                                 AppBorderRadius.small),
                                           ),
@@ -566,7 +568,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
 
                                     // --- District Dropdown (Required) ---
                                     DropdownButtonFormField<String>(
-                                      value: _selectedDistrict,
+                                      initialValue: _selectedDistrict,
                                       decoration: InputDecoration(
                                         labelText: 'District',
                                         hintText: 'Select your district',
@@ -574,27 +576,27 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
                                             color: AppColors.textSecondary),
                                         hintStyle: TextStyle(
                                             color: AppColors.textSecondary
-                                                .withOpacity(0.6)),
+                                                .withValues(alpha: 0.6)),
                                         prefixIcon: const Icon(
                                             Icons.map_outlined,
                                             size: 22,
                                             color: AppColors.primary),
                                         filled: true,
                                         fillColor: AppColors.background
-                                            .withOpacity(0.5),
+                                            .withValues(alpha: 0.5),
                                         border: OutlineInputBorder(
                                           borderRadius: BorderRadius.circular(
                                               AppBorderRadius.medium),
                                           borderSide: BorderSide(
                                               color: AppColors.textSecondary
-                                                  .withOpacity(0.2)),
+                                                  .withValues(alpha: 0.2)),
                                         ),
                                         enabledBorder: OutlineInputBorder(
                                           borderRadius: BorderRadius.circular(
                                               AppBorderRadius.medium),
                                           borderSide: BorderSide(
                                               color: AppColors.textSecondary
-                                                  .withOpacity(0.2)),
+                                                  .withValues(alpha: 0.2)),
                                         ),
                                         focusedBorder: OutlineInputBorder(
                                           borderRadius: BorderRadius.circular(
@@ -671,7 +673,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
                                               AppPadding.small),
                                           decoration: BoxDecoration(
                                             color: AppColors.error
-                                                .withOpacity(0.1),
+                                                .withValues(alpha: 0.1),
                                             borderRadius: BorderRadius.circular(
                                                 AppBorderRadius.small),
                                           ),
@@ -753,7 +755,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
                                               AppPadding.small),
                                           decoration: BoxDecoration(
                                             color: AppColors.accent
-                                                .withOpacity(0.1),
+                                                .withValues(alpha: 0.1),
                                             borderRadius: BorderRadius.circular(
                                                 AppBorderRadius.small),
                                           ),
@@ -777,7 +779,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
 
                                     // --- Role Selection Dropdown ---
                                     DropdownButtonFormField<UserRole>(
-                                      value: _selectedRole,
+                                      initialValue: _selectedRole,
                                       decoration: InputDecoration(
                                         labelText: 'Register as',
                                         hintText: 'Select your role',
@@ -785,27 +787,27 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
                                             color: AppColors.textSecondary),
                                         hintStyle: TextStyle(
                                             color: AppColors.textSecondary
-                                                .withOpacity(0.6)),
+                                                .withValues(alpha: 0.6)),
                                         prefixIcon: const Icon(
                                             Icons.badge_outlined,
                                             size: 22,
                                             color: AppColors.accent),
                                         filled: true,
                                         fillColor: AppColors.background
-                                            .withOpacity(0.5),
+                                            .withValues(alpha: 0.5),
                                         border: OutlineInputBorder(
                                           borderRadius: BorderRadius.circular(
                                               AppBorderRadius.medium),
                                           borderSide: BorderSide(
                                               color: AppColors.textSecondary
-                                                  .withOpacity(0.2)),
+                                                  .withValues(alpha: 0.2)),
                                         ),
                                         enabledBorder: OutlineInputBorder(
                                           borderRadius: BorderRadius.circular(
                                               AppBorderRadius.medium),
                                           borderSide: BorderSide(
                                               color: AppColors.textSecondary
-                                                  .withOpacity(0.2)),
+                                                  .withValues(alpha: 0.2)),
                                         ),
                                         focusedBorder: OutlineInputBorder(
                                           borderRadius: BorderRadius.circular(
@@ -861,7 +863,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
                                                 AppPadding.small),
                                             decoration: BoxDecoration(
                                               color:
-                                                  Colors.green.withOpacity(0.1),
+                                                  Colors.green.withValues(alpha: 0.1),
                                               borderRadius:
                                                   BorderRadius.circular(
                                                       AppBorderRadius.small),
@@ -903,16 +905,16 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
                                           decoration: BoxDecoration(
                                             color: isSelected
                                                 ? AppColors.primary
-                                                    .withOpacity(0.1)
+                                                    .withValues(alpha: 0.1)
                                                 : AppColors.background
-                                                    .withOpacity(0.5),
+                                                    .withValues(alpha: 0.5),
                                             borderRadius: BorderRadius.circular(
                                                 AppBorderRadius.medium),
                                             border: Border.all(
                                               color: isSelected
                                                   ? AppColors.primary
                                                   : AppColors.textSecondary
-                                                      .withOpacity(0.2),
+                                                      .withValues(alpha: 0.2),
                                               width: isSelected ? 2 : 1,
                                             ),
                                           ),
@@ -962,7 +964,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
                                             ),
                                           ),
                                         );
-                                      }).toList(),
+                                      }),
                                     ],
                                   ],
                                 ),
@@ -1052,20 +1054,20 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
         labelText: label,
         hintText: hint,
         labelStyle: const TextStyle(color: AppColors.textSecondary),
-        hintStyle: TextStyle(color: AppColors.textSecondary.withOpacity(0.6)),
+        hintStyle: TextStyle(color: AppColors.textSecondary.withValues(alpha: 0.6)),
         prefixIcon: Icon(prefixIcon, size: 22, color: AppColors.primary),
         suffixIcon: suffixIcon,
         filled: true,
-        fillColor: AppColors.background.withOpacity(0.5),
+        fillColor: AppColors.background.withValues(alpha: 0.5),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppBorderRadius.medium),
           borderSide:
-              BorderSide(color: AppColors.textSecondary.withOpacity(0.2)),
+              BorderSide(color: AppColors.textSecondary.withValues(alpha: 0.2)),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppBorderRadius.medium),
           borderSide:
-              BorderSide(color: AppColors.textSecondary.withOpacity(0.2)),
+              BorderSide(color: AppColors.textSecondary.withValues(alpha: 0.2)),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppBorderRadius.medium),

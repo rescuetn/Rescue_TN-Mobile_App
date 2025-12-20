@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
@@ -40,7 +39,6 @@ class _ReportIncidentScreenState extends ConsumerState<ReportIncidentScreen>
   late Animation<Offset> _slideAnimation;
 
   bool _isRecording = false;
-  String? _currentRecordingPath;
   Duration _recordingDuration = Duration.zero;
 
   @override
@@ -163,7 +161,6 @@ class _ReportIncidentScreenState extends ConsumerState<ReportIncidentScreen>
         if (mounted) {
           setState(() {
             _isRecording = true;
-            _currentRecordingPath = path;
             _recordingDuration = Duration.zero;
           });
         }
@@ -205,7 +202,6 @@ class _ReportIncidentScreenState extends ConsumerState<ReportIncidentScreen>
         setState(() {
           _audioRecordings.add(path);
           _isRecording = false;
-          _currentRecordingPath = null;
           _recordingDuration = Duration.zero;
         });
         _showSnackBar(
@@ -218,7 +214,6 @@ class _ReportIncidentScreenState extends ConsumerState<ReportIncidentScreen>
       if (mounted) {
         setState(() {
           _isRecording = false;
-          _currentRecordingPath = null;
           _recordingDuration = Duration.zero;
         });
       }
@@ -275,9 +270,9 @@ class _ReportIncidentScreenState extends ConsumerState<ReportIncidentScreen>
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
       builder: (context) => Container(
-        decoration: BoxDecoration(
+        decoration: const BoxDecoration(
           color: AppColors.surface,
-          borderRadius: const BorderRadius.only(
+          borderRadius: BorderRadius.only(
             topLeft: Radius.circular(24),
             topRight: Radius.circular(24),
           ),
@@ -291,7 +286,7 @@ class _ReportIncidentScreenState extends ConsumerState<ReportIncidentScreen>
                 width: 48,
                 height: 5,
                 decoration: BoxDecoration(
-                  color: AppColors.textSecondary.withOpacity(0.3),
+                  color: AppColors.textSecondary.withValues(alpha: 0.3),
                   borderRadius: BorderRadius.circular(3),
                 ),
               ),
@@ -305,8 +300,8 @@ class _ReportIncidentScreenState extends ConsumerState<ReportIncidentScreen>
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
                           colors: [
-                            AppColors.primary.withOpacity(0.2),
-                            AppColors.accent.withOpacity(0.2),
+                            AppColors.primary.withValues(alpha: 0.2),
+                            AppColors.accent.withValues(alpha: 0.2),
                           ],
                         ),
                         borderRadius: BorderRadius.circular(12),
@@ -373,7 +368,7 @@ class _ReportIncidentScreenState extends ConsumerState<ReportIncidentScreen>
               color: AppColors.surface,
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
-                color: AppColors.textSecondary.withOpacity(0.1),
+                color: AppColors.textSecondary.withValues(alpha: 0.1),
               ),
             ),
             child: Row(
@@ -385,7 +380,7 @@ class _ReportIncidentScreenState extends ConsumerState<ReportIncidentScreen>
                     borderRadius: BorderRadius.circular(12),
                     boxShadow: [
                       BoxShadow(
-                        color: gradient[0].withOpacity(0.3),
+                        color: gradient[0].withValues(alpha: 0.3),
                         blurRadius: 8,
                         offset: const Offset(0, 4),
                       ),
@@ -408,7 +403,7 @@ class _ReportIncidentScreenState extends ConsumerState<ReportIncidentScreen>
                       const SizedBox(height: 2),
                       Text(
                         subtitle,
-                        style: TextStyle(
+                        style: const TextStyle(
                           color: AppColors.textSecondary,
                           fontSize: 13,
                         ),
@@ -419,7 +414,7 @@ class _ReportIncidentScreenState extends ConsumerState<ReportIncidentScreen>
                 Icon(
                   Icons.arrow_forward_ios,
                   size: 16,
-                  color: AppColors.textSecondary.withOpacity(0.5),
+                  color: AppColors.textSecondary.withValues(alpha: 0.5),
                 ),
               ],
             ),
@@ -508,7 +503,7 @@ class _ReportIncidentScreenState extends ConsumerState<ReportIncidentScreen>
         // Reset provider state and navigate back
         Future.microtask(() {
           ref.read(reportIncidentProvider.notifier).reset();
-          if (mounted) context.pop();
+          if (context.mounted) context.pop();
         });
       } else if (next.error != null && previous?.error != next.error) {
         _showSnackBar(
@@ -548,10 +543,10 @@ class _ReportIncidentScreenState extends ConsumerState<ReportIncidentScreen>
                         color: Colors.transparent,
                         child: Container(
                           decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.25),
+                            color: Colors.white.withValues(alpha: 0.25),
                             borderRadius: BorderRadius.circular(14),
                             border: Border.all(
-                              color: Colors.white.withOpacity(0.3),
+                              color: Colors.white.withValues(alpha: 0.3),
                               width: 1,
                             ),
                           ),
@@ -580,7 +575,7 @@ class _ReportIncidentScreenState extends ConsumerState<ReportIncidentScreen>
                           Text(
                             'Emergency Report Form',
                             style: textTheme.bodyMedium?.copyWith(
-                              color: Colors.white.withOpacity(0.9),
+                              color: Colors.white.withValues(alpha: 0.9),
                             ),
                           ),
                         ],
@@ -589,7 +584,7 @@ class _ReportIncidentScreenState extends ConsumerState<ReportIncidentScreen>
                     Container(
                       padding: const EdgeInsets.all(10),
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.25),
+                        color: Colors.white.withValues(alpha: 0.25),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: const Icon(
@@ -609,9 +604,9 @@ class _ReportIncidentScreenState extends ConsumerState<ReportIncidentScreen>
                   child: SlideTransition(
                     position: _slideAnimation,
                     child: Container(
-                      decoration: BoxDecoration(
+                      decoration: const BoxDecoration(
                         color: AppColors.background,
-                        borderRadius: const BorderRadius.only(
+                        borderRadius: BorderRadius.only(
                           topLeft: Radius.circular(32),
                           topRight: Radius.circular(32),
                         ),
@@ -642,7 +637,7 @@ class _ReportIncidentScreenState extends ConsumerState<ReportIncidentScreen>
                                   ),
                                   boxShadow: [
                                     BoxShadow(
-                                      color: Colors.red.shade100.withOpacity(0.5),
+                                      color: Colors.red.shade100.withValues(alpha: 0.5),
                                       blurRadius: 12,
                                       offset: const Offset(0, 4),
                                     ),
@@ -724,7 +719,7 @@ class _ReportIncidentScreenState extends ConsumerState<ReportIncidentScreen>
                                   borderRadius: BorderRadius.circular(20),
                                   boxShadow: [
                                     BoxShadow(
-                                      color: AppColors.textPrimary.withOpacity(0.06),
+                                      color: AppColors.textPrimary.withValues(alpha: 0.06),
                                       blurRadius: 16,
                                       offset: const Offset(0, 4),
                                     ),
@@ -735,8 +730,8 @@ class _ReportIncidentScreenState extends ConsumerState<ReportIncidentScreen>
                                   decoration: InputDecoration(
                                     labelText: 'Description',
                                     hintText: 'Describe the incident in detail...',
-                                    prefixIcon: Padding(
-                                      padding: const EdgeInsets.only(top: 12),
+                                    prefixIcon: const Padding(
+                                      padding: EdgeInsets.only(top: 12),
                                       child: Icon(Icons.edit_note_rounded,
                                           color: AppColors.primary),
                                     ),
@@ -749,7 +744,7 @@ class _ReportIncidentScreenState extends ConsumerState<ReportIncidentScreen>
                                     enabledBorder: OutlineInputBorder(
                                       borderRadius: BorderRadius.circular(20),
                                       borderSide: BorderSide(
-                                        color: AppColors.textSecondary.withOpacity(0.15),
+                                        color: AppColors.textSecondary.withValues(alpha: 0.15),
                                       ),
                                     ),
                                     focusedBorder: OutlineInputBorder(
@@ -784,7 +779,7 @@ class _ReportIncidentScreenState extends ConsumerState<ReportIncidentScreen>
                                         shape: BoxShape.circle,
                                         boxShadow: [
                                           BoxShadow(
-                                            color: _getSeverityColor(severity).withOpacity(0.4),
+                                            color: _getSeverityColor(severity).withValues(alpha: 0.4),
                                             blurRadius: 4,
                                             spreadRadius: 1,
                                           ),
@@ -866,7 +861,7 @@ class _ReportIncidentScreenState extends ConsumerState<ReportIncidentScreen>
                                     children: [
                                       Row(
                                         children: [
-                                          SizedBox(
+                                          const SizedBox(
                                             width: 24,
                                             height: 24,
                                             child: CircularProgressIndicator(
@@ -896,7 +891,7 @@ class _ReportIncidentScreenState extends ConsumerState<ReportIncidentScreen>
                                             value: reportState.uploadProgress,
                                             minHeight: 8,
                                             backgroundColor: Colors.blue.shade100,
-                                            valueColor: AlwaysStoppedAnimation<Color>(
+                                            valueColor: const AlwaysStoppedAnimation<Color>(
                                               AppColors.primary,
                                             ),
                                           ),
@@ -952,7 +947,7 @@ class _ReportIncidentScreenState extends ConsumerState<ReportIncidentScreen>
             borderRadius: BorderRadius.circular(14),
             boxShadow: [
               BoxShadow(
-                color: gradient[0].withOpacity(0.3),
+                color: gradient[0].withValues(alpha: 0.3),
                 blurRadius: 12,
                 offset: const Offset(0, 4),
               ),
@@ -976,7 +971,7 @@ class _ReportIncidentScreenState extends ConsumerState<ReportIncidentScreen>
               const SizedBox(height: 2),
               Text(
                 subtitle,
-                style: TextStyle(
+                style: const TextStyle(
                   fontSize: 13,
                   color: AppColors.textSecondary,
                 ),
@@ -1003,14 +998,14 @@ class _ReportIncidentScreenState extends ConsumerState<ReportIncidentScreen>
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: AppColors.textPrimary.withOpacity(0.06),
+            color: AppColors.textPrimary.withValues(alpha: 0.06),
             blurRadius: 16,
             offset: const Offset(0, 4),
           ),
         ],
       ),
       child: DropdownButtonFormField<T>(
-        value: value,
+        initialValue: value,
         decoration: InputDecoration(
           labelText: label,
           prefixIcon: Icon(icon, color: AppColors.primary),
@@ -1023,7 +1018,7 @@ class _ReportIncidentScreenState extends ConsumerState<ReportIncidentScreen>
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(20),
             borderSide: BorderSide(
-              color: AppColors.textSecondary.withOpacity(0.15),
+              color: AppColors.textSecondary.withValues(alpha: 0.15),
             ),
           ),
           focusedBorder: OutlineInputBorder(
@@ -1054,7 +1049,7 @@ class _ReportIncidentScreenState extends ConsumerState<ReportIncidentScreen>
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: AppColors.textPrimary.withOpacity(0.06),
+            color: AppColors.textPrimary.withValues(alpha: 0.06),
             blurRadius: 16,
             offset: const Offset(0, 4),
           ),
@@ -1081,7 +1076,7 @@ class _ReportIncidentScreenState extends ConsumerState<ReportIncidentScreen>
                               borderRadius: BorderRadius.circular(20),
                               boxShadow: [
                                 BoxShadow(
-                                  color: AppColors.textPrimary.withOpacity(0.15),
+                                  color: AppColors.textPrimary.withValues(alpha: 0.15),
                                   blurRadius: 12,
                                   offset: const Offset(0, 4),
                                 ),
@@ -1110,7 +1105,7 @@ class _ReportIncidentScreenState extends ConsumerState<ReportIncidentScreen>
                                 shape: BoxShape.circle,
                                 boxShadow: [
                                   BoxShadow(
-                                    color: Colors.black.withOpacity(0.3),
+                                    color: Colors.black.withValues(alpha: 0.3),
                                     blurRadius: 8,
                                   ),
                                 ],
@@ -1135,13 +1130,13 @@ class _ReportIncidentScreenState extends ConsumerState<ReportIncidentScreen>
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 colors: [
-                  AppColors.primary.withOpacity(0.1),
-                  AppColors.accent.withOpacity(0.1),
+                  AppColors.primary.withValues(alpha: 0.1),
+                  AppColors.accent.withValues(alpha: 0.1),
                 ],
               ),
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
-                color: AppColors.primary.withOpacity(0.3),
+                color: AppColors.primary.withValues(alpha: 0.3),
                 width: 1.5,
               ),
             ),
@@ -1155,7 +1150,7 @@ class _ReportIncidentScreenState extends ConsumerState<ReportIncidentScreen>
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(
+                      const Icon(
                         Icons.add_photo_alternate_rounded,
                         color: AppColors.primary,
                       ),
@@ -1175,8 +1170,8 @@ class _ReportIncidentScreenState extends ConsumerState<ReportIncidentScreen>
             ),
           ),
           if (_pickedImages.isEmpty)
-            Padding(
-              padding: const EdgeInsets.only(top: 12),
+            const Padding(
+              padding: EdgeInsets.only(top: 12),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -1185,7 +1180,7 @@ class _ReportIncidentScreenState extends ConsumerState<ReportIncidentScreen>
                     size: 14,
                     color: AppColors.textSecondary,
                   ),
-                  const SizedBox(width: 6),
+                  SizedBox(width: 6),
                   Text(
                     'Optional: Add photos to provide visual evidence',
                     style: TextStyle(
@@ -1209,7 +1204,7 @@ class _ReportIncidentScreenState extends ConsumerState<ReportIncidentScreen>
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: AppColors.textPrimary.withOpacity(0.06),
+            color: AppColors.textPrimary.withValues(alpha: 0.06),
             blurRadius: 16,
             offset: const Offset(0, 4),
           ),
@@ -1231,7 +1226,7 @@ class _ReportIncidentScreenState extends ConsumerState<ReportIncidentScreen>
                     gradient: LinearGradient(
                       colors: [
                         Colors.pink.shade50,
-                        Colors.pink.shade100.withOpacity(0.3),
+                        Colors.pink.shade100.withValues(alpha: 0.3),
                       ],
                     ),
                     borderRadius: BorderRadius.circular(16),
@@ -1336,7 +1331,7 @@ class _ReportIncidentScreenState extends ConsumerState<ReportIncidentScreen>
                             shape: BoxShape.circle,
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.red.shade300.withOpacity(0.5),
+                                color: Colors.red.shade300.withValues(alpha: 0.5),
                                 blurRadius: 20,
                                 spreadRadius: 5,
                               ),
@@ -1389,7 +1384,7 @@ class _ReportIncidentScreenState extends ConsumerState<ReportIncidentScreen>
                       borderRadius: BorderRadius.circular(16),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.red.shade300.withOpacity(0.5),
+                          color: Colors.red.shade300.withValues(alpha: 0.5),
                           blurRadius: 12,
                           offset: const Offset(0, 4),
                         ),
@@ -1436,8 +1431,8 @@ class _ReportIncidentScreenState extends ConsumerState<ReportIncidentScreen>
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: [
-                    Colors.pink.shade400.withOpacity(0.1),
-                    Colors.pink.shade600.withOpacity(0.1),
+                    Colors.pink.shade400.withValues(alpha: 0.1),
+                    Colors.pink.shade600.withValues(alpha: 0.1),
                   ],
                 ),
                 borderRadius: BorderRadius.circular(16),
@@ -1490,8 +1485,8 @@ class _ReportIncidentScreenState extends ConsumerState<ReportIncidentScreen>
             ),
 
           if (_audioRecordings.isEmpty && !_isRecording)
-            Padding(
-              padding: const EdgeInsets.only(top: 12),
+            const Padding(
+              padding: EdgeInsets.only(top: 12),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -1500,7 +1495,7 @@ class _ReportIncidentScreenState extends ConsumerState<ReportIncidentScreen>
                     size: 14,
                     color: AppColors.textSecondary,
                   ),
-                  const SizedBox(width: 6),
+                  SizedBox(width: 6),
                   Text(
                     'Optional: Record audio description of the incident',
                     style: TextStyle(
@@ -1524,7 +1519,7 @@ class _ReportIncidentScreenState extends ConsumerState<ReportIncidentScreen>
           end: Alignment.bottomRight,
           colors: [
             Colors.teal.shade50,
-            Colors.teal.shade100.withOpacity(0.5),
+            Colors.teal.shade100.withValues(alpha: 0.5),
           ],
         ),
         borderRadius: BorderRadius.circular(20),
@@ -1534,14 +1529,14 @@ class _ReportIncidentScreenState extends ConsumerState<ReportIncidentScreen>
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.teal.shade200.withOpacity(0.3),
+            color: Colors.teal.shade200.withValues(alpha: 0.3),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
         ],
       ),
       child: DropdownButtonFormField<String>(
-        value: _selectedDistrict,
+        initialValue: _selectedDistrict,
         decoration: InputDecoration(
           labelText: 'Select District',
           hintText: 'Choose the district',
@@ -1650,11 +1645,11 @@ class _ReportIncidentScreenState extends ConsumerState<ReportIncidentScreen>
           colors: isLocationAvailable
               ? [
             Colors.green.shade50,
-            Colors.green.shade100.withOpacity(0.5),
+            Colors.green.shade100.withValues(alpha: 0.5),
           ]
               : [
             Colors.orange.shade50,
-            Colors.orange.shade100.withOpacity(0.5),
+            Colors.orange.shade100.withValues(alpha: 0.5),
           ],
         ),
         borderRadius: BorderRadius.circular(24),
@@ -1665,7 +1660,7 @@ class _ReportIncidentScreenState extends ConsumerState<ReportIncidentScreen>
         boxShadow: [
           BoxShadow(
             color: (isLocationAvailable ? Colors.green.shade200 : Colors.orange.shade200)
-                .withOpacity(0.5),
+                .withValues(alpha: 0.5),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -1685,7 +1680,7 @@ class _ReportIncidentScreenState extends ConsumerState<ReportIncidentScreen>
               boxShadow: [
                 BoxShadow(
                   color: (isLocationAvailable ? Colors.green.shade300 : Colors.orange.shade300)
-                      .withOpacity(0.5),
+                      .withValues(alpha: 0.5),
                   blurRadius: 8,
                   offset: const Offset(0, 2),
                 ),

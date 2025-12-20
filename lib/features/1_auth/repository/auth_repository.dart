@@ -55,6 +55,7 @@ class FirebaseAuthService implements AuthService {
   Future<void> createUserWithEmailAndPassword({
     required String email,
     required String password,
+    String? fullName,
     required String phoneNumber,
     String? address,
     String? district,
@@ -98,6 +99,7 @@ class FirebaseAuthService implements AuthService {
     final appUser = AppUser(
       uid: firebaseUser.uid,
       email: email,
+      fullName: fullName,
       phoneNumber: phoneNumber,
       address: address,
       district: district,

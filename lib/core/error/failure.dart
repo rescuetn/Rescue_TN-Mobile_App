@@ -15,15 +15,15 @@ abstract class Failure extends Equatable {
 
 /// Represents a failure to communicate with a remote server (e.g., API, Firebase).
 class ServerFailure extends Failure {
-  const ServerFailure(String message) : super(message);
+  const ServerFailure(super.message);
 }
 
 /// Represents a failure to read from or write to the local cache.
 class CacheFailure extends Failure {
-  const CacheFailure(String message) : super(message);
+  const CacheFailure(super.message);
 }
 
 /// Represents a failure related to user authentication.
 class AuthFailure extends Failure {
-  const AuthFailure(String message) : super(message);
+  const AuthFailure(super.message);
 }

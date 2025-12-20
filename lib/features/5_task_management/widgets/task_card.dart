@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:rescuetn/app/constants.dart';
 import 'package:rescuetn/features/5_task_management/providers/task_data_provider.dart';
+import 'package:rescuetn/features/5_task_management/widgets/status_update_bottom_sheet.dart';
 import 'package:rescuetn/models/task_model.dart';
 
 class TaskCard extends ConsumerWidget {
@@ -29,7 +30,7 @@ class TaskCard extends ConsumerWidget {
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
-                _buildStatusChip(task.status),
+                _buildStatusChip(context, task.status),
               ],
             ),
             const SizedBox(height: AppPadding.small),
@@ -67,7 +68,7 @@ class TaskCard extends ConsumerWidget {
     );
   }
 
-  Widget _buildStatusChip(TaskStatus status) {
+  Widget _buildStatusChip(BuildContext context, TaskStatus status) {
     Color chipColor;
     String statusText = status.name[0].toUpperCase() + status.name.substring(1);
 
@@ -86,12 +87,25 @@ class TaskCard extends ConsumerWidget {
         break;
     }
 
-    return Chip(
-      label: Text(statusText,
-          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-      backgroundColor: chipColor,
-      padding: const EdgeInsets.symmetric(horizontal: 8),
-      visualDensity: VisualDensity.compact,
+    return InkWell(
+      onTap: () {
+        showModalBottomSheet(
+          context: context,
+          backgroundColor: Colors.transparent,
+          isScrollControlled: true,
+          builder: (context) => StatusUpdateBottomSheet(currentTask: task),
+        );
+      },
+      borderRadius: BorderRadius.circular(16),
+      child: Chip(
+        label: Text(statusText,
+            style: const TextStyle(
+                color: Colors.white, fontWeight: FontWeight.bold)),
+        backgroundColor: chipColor,
+        padding: const EdgeInsets.symmetric(horizontal: 8),
+        visualDensity: VisualDensity.compact,
+        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap, // Expand touch area within InkWell
+      ),
     );
   }
 }

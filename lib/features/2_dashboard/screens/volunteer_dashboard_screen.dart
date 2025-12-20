@@ -136,7 +136,7 @@ class _VolunteerDashboardScreenState
           borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.1),
+              color: Colors.black.withValues(alpha: 0.1),
               blurRadius: 10,
               offset: const Offset(0, -5),
             ),
@@ -214,7 +214,7 @@ class _VolunteerDashboardScreenState
                   // Divider
                   Container(
                     height: 1,
-                    color: Colors.grey.withOpacity(0.2),
+                    color: Colors.grey.withValues(alpha: 0.2),
                   ),
                   const SizedBox(height: AppPadding.medium + 4),
 
@@ -253,7 +253,7 @@ class _VolunteerDashboardScreenState
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: AppColors.error.withOpacity(0.1),
+                color: AppColors.error.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
               child: const Icon(
@@ -299,22 +299,8 @@ class _VolunteerDashboardScreenState
             ),
             onPressed: () async {
               Navigator.pop(context);
-              try {
-                final authService = ref.read(authRepositoryProvider);
-                await authService.signOut();
-                if (mounted) {
-                  context.go('/login');
-                }
-              } catch (e) {
-                if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Error logging out: $e'),
-                      backgroundColor: AppColors.error,
-                    ),
-                  );
-                }
-              }
+              final authService = ref.read(authRepositoryProvider);
+              await authService.signOut();
             },
             child: const Text(
               'Logout',
@@ -346,10 +332,10 @@ class _VolunteerDashboardScreenState
         child: Container(
           padding: const EdgeInsets.all(AppPadding.medium),
           decoration: BoxDecoration(
-            color: color.withOpacity(0.08),
+            color: color.withValues(alpha: 0.08),
             borderRadius: BorderRadius.circular(AppBorderRadius.medium),
             border: Border.all(
-              color: color.withOpacity(0.2),
+              color: color.withValues(alpha: 0.2),
               width: 1.5,
             ),
           ),
@@ -358,7 +344,7 @@ class _VolunteerDashboardScreenState
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: color.withOpacity(0.15),
+                  color: color.withValues(alpha: 0.15),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
@@ -383,7 +369,7 @@ class _VolunteerDashboardScreenState
                     const SizedBox(height: 2),
                     Text(
                       subtitle,
-                      style: TextStyle(
+                      style: const TextStyle(
                         fontSize: 13,
                         color: AppColors.textSecondary,
                       ),
@@ -394,7 +380,7 @@ class _VolunteerDashboardScreenState
               Icon(
                 Icons.arrow_forward_ios,
                 size: 16,
-                color: color.withOpacity(0.6),
+                color: color.withValues(alpha: 0.6),
               ),
             ],
           ),
@@ -454,18 +440,18 @@ class _VolunteerDashboardScreenState
                                   decoration: BoxDecoration(
                                     gradient: LinearGradient(
                                       colors: [
-                                        Colors.white.withOpacity(0.3),
-                                        Colors.white.withOpacity(0.15),
+                                        Colors.white.withValues(alpha: 0.3),
+                                        Colors.white.withValues(alpha: 0.15),
                                       ],
                                     ),
                                     borderRadius: BorderRadius.circular(AppBorderRadius.medium + 2),
                                     border: Border.all(
-                                      color: Colors.white.withOpacity(0.3),
+                                      color: Colors.white.withValues(alpha: 0.3),
                                       width: 1.5,
                                     ),
                                     boxShadow: [
                                       BoxShadow(
-                                        color: Colors.black.withOpacity(0.15),
+                                        color: Colors.black.withValues(alpha: 0.15),
                                         blurRadius: 12,
                                         offset: const Offset(0, 4),
                                       ),
@@ -490,7 +476,7 @@ class _VolunteerDashboardScreenState
                                         letterSpacing: 0.8,
                                         shadows: [
                                           Shadow(
-                                            color: Colors.black.withOpacity(0.25),
+                                            color: Colors.black.withValues(alpha: 0.25),
                                             offset: const Offset(0, 2),
                                             blurRadius: 4,
                                           ),
@@ -510,7 +496,7 @@ class _VolunteerDashboardScreenState
                                         borderRadius: BorderRadius.circular(AppBorderRadius.small + 2),
                                         boxShadow: [
                                           BoxShadow(
-                                            color: AppColors.accent.withOpacity(0.4),
+                                            color: AppColors.accent.withValues(alpha: 0.4),
                                             blurRadius: 6,
                                             offset: const Offset(0, 2),
                                           ),
@@ -552,7 +538,7 @@ class _VolunteerDashboardScreenState
                                             Container(
                                               padding: const EdgeInsets.all(6),
                                               decoration: BoxDecoration(
-                                                color: status.color.withOpacity(0.15),
+                                                color: status.color.withValues(alpha: 0.15),
                                                 shape: BoxShape.circle,
                                               ),
                                               child: Icon(
@@ -597,18 +583,18 @@ class _VolunteerDashboardScreenState
                                         decoration: BoxDecoration(
                                           gradient: LinearGradient(
                                             colors: [
-                                              (user?.status ?? VolunteerStatus.available).color.withOpacity(0.9),
-                                              (user?.status ?? VolunteerStatus.available).color.withOpacity(0.7),
+                                              (user?.status ?? VolunteerStatus.available).color.withValues(alpha: 0.9),
+                                              (user?.status ?? VolunteerStatus.available).color.withValues(alpha: 0.7),
                                             ],
                                           ),
                                           borderRadius: BorderRadius.circular(AppBorderRadius.medium + 2),
                                           border: Border.all(
-                                            color: Colors.white.withOpacity(0.3),
+                                            color: Colors.white.withValues(alpha: 0.3),
                                             width: 1.5,
                                           ),
                                           boxShadow: [
                                             BoxShadow(
-                                              color: (user?.status ?? VolunteerStatus.available).color.withOpacity(0.4),
+                                              color: (user?.status ?? VolunteerStatus.available).color.withValues(alpha: 0.4),
                                               blurRadius: 12,
                                               offset: const Offset(0, 4),
                                             ),
@@ -649,7 +635,7 @@ class _VolunteerDashboardScreenState
                                             height: 16,
                                             decoration: BoxDecoration(
                                               shape: BoxShape.circle,
-                                              color: Colors.white.withOpacity(0.3),
+                                              color: Colors.white.withValues(alpha: 0.3),
                                             ),
                                             child: const CircularProgressIndicator(
                                               strokeWidth: 2,
@@ -666,18 +652,18 @@ class _VolunteerDashboardScreenState
                                   decoration: BoxDecoration(
                                     gradient: LinearGradient(
                                       colors: [
-                                        Colors.white.withOpacity(0.3),
-                                        Colors.white.withOpacity(0.15),
+                                        Colors.white.withValues(alpha: 0.3),
+                                        Colors.white.withValues(alpha: 0.15),
                                       ],
                                     ),
                                     borderRadius: BorderRadius.circular(AppBorderRadius.medium + 2),
                                     border: Border.all(
-                                      color: Colors.white.withOpacity(0.3),
+                                      color: Colors.white.withValues(alpha: 0.3),
                                       width: 1.5,
                                     ),
                                     boxShadow: [
                                       BoxShadow(
-                                        color: Colors.black.withOpacity(0.15),
+                                        color: Colors.black.withValues(alpha: 0.15),
                                         blurRadius: 12,
                                         offset: const Offset(0, 4),
                                       ),
@@ -697,7 +683,7 @@ class _VolunteerDashboardScreenState
                         );
                       },
                       loading: () => const SizedBox.shrink(),
-                      error: (e, s) => const Text('Error loading user', style: TextStyle(color: Colors.white)),
+                      error: (e, s) => const SizedBox.shrink(),
                     ),
                   ),
 
@@ -731,7 +717,7 @@ class _VolunteerDashboardScreenState
                                   borderRadius: BorderRadius.circular(24),
                                   boxShadow: [
                                     BoxShadow(
-                                      color: Colors.red.withOpacity(0.2),
+                                      color: Colors.red.withValues(alpha: 0.2),
                                       blurRadius: 30,
                                       offset: const Offset(0, 10),
                                       spreadRadius: -5,
@@ -754,7 +740,7 @@ class _VolunteerDashboardScreenState
                                             borderRadius: BorderRadius.circular(AppBorderRadius.large + 2),
                                             boxShadow: [
                                               BoxShadow(
-                                                color: Colors.red.withOpacity(0.4),
+                                                color: Colors.red.withValues(alpha: 0.4),
                                                 blurRadius: 16,
                                                 offset: const Offset(0, 6),
                                               ),
@@ -839,7 +825,7 @@ class _VolunteerDashboardScreenState
                                 borderRadius: BorderRadius.circular(24),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: Colors.red.withOpacity(0.15),
+                                    color: Colors.red.withValues(alpha: 0.15),
                                     blurRadius: 25,
                                     offset: const Offset(0, 8),
                                   ),
@@ -849,17 +835,7 @@ class _VolunteerDashboardScreenState
                                 child: CircularProgressIndicator(color: AppColors.primary, strokeWidth: 3),
                               ),
                             ),
-                            error: (e, s) => Container(
-                              margin: const EdgeInsets.symmetric(horizontal: AppPadding.large, vertical: AppPadding.small),
-                              padding: const EdgeInsets.all(AppPadding.large),
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(24),
-                              ),
-                              child: const Center(
-                                child: Text('Error loading stats', style: TextStyle(color: AppColors.error)),
-                              ),
-                            ),
+                            error: (e, s) => const SizedBox.shrink(),
                           ),
 
                           const SizedBox(height: AppPadding.small),
@@ -874,13 +850,13 @@ class _VolunteerDashboardScreenState
                                   decoration: BoxDecoration(
                                     gradient: LinearGradient(
                                       colors: [
-                                        AppColors.primary.withOpacity(0.15),
-                                        AppColors.primary.withOpacity(0.08),
+                                        AppColors.primary.withValues(alpha: 0.15),
+                                        AppColors.primary.withValues(alpha: 0.08),
                                       ],
                                     ),
                                     borderRadius: BorderRadius.circular(12),
                                     border: Border.all(
-                                      color: AppColors.primary.withOpacity(0.3),
+                                      color: AppColors.primary.withValues(alpha: 0.3),
                                       width: 1.5,
                                     ),
                                   ),
@@ -964,13 +940,13 @@ class _VolunteerDashboardScreenState
                                   decoration: BoxDecoration(
                                     gradient: LinearGradient(
                                       colors: [
-                                        AppColors.primary.withOpacity(0.15),
-                                        AppColors.primary.withOpacity(0.08),
+                                        AppColors.primary.withValues(alpha: 0.15),
+                                        AppColors.primary.withValues(alpha: 0.08),
                                       ],
                                     ),
                                     borderRadius: BorderRadius.circular(12),
                                     border: Border.all(
-                                      color: AppColors.primary.withOpacity(0.3),
+                                      color: AppColors.primary.withValues(alpha: 0.3),
                                       width: 1.5,
                                     ),
                                   ),
@@ -1014,13 +990,13 @@ class _VolunteerDashboardScreenState
                                         decoration: BoxDecoration(
                                           gradient: LinearGradient(
                                             colors: [
-                                              Colors.red.withOpacity(0.15),
-                                              Colors.red.withOpacity(0.08),
+                                              Colors.red.withValues(alpha: 0.15),
+                                              Colors.red.withValues(alpha: 0.08),
                                             ],
                                           ),
                                           borderRadius: BorderRadius.circular(12),
                                           border: Border.all(
-                                            color: Colors.red.withOpacity(0.3),
+                                            color: Colors.red.withValues(alpha: 0.3),
                                             width: 1.5,
                                           ),
                                         ),
@@ -1054,7 +1030,7 @@ class _VolunteerDashboardScreenState
                                       borderRadius: BorderRadius.circular(AppBorderRadius.large),
                                       boxShadow: [
                                         BoxShadow(
-                                          color: Colors.red.withOpacity(0.3),
+                                          color: Colors.red.withValues(alpha: 0.3),
                                           blurRadius: 12,
                                           offset: const Offset(0, 4),
                                         ),
@@ -1087,55 +1063,7 @@ class _VolunteerDashboardScreenState
                                 strokeWidth: 3,
                               ),
                             ),
-                            error: (err, stack) => Center(
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Container(
-                                    padding: const EdgeInsets.all(AppPadding.xLarge),
-                                    decoration: BoxDecoration(
-                                      gradient: LinearGradient(
-                                        colors: [
-                                          AppColors.error.withOpacity(0.1),
-                                          AppColors.error.withOpacity(0.05),
-                                        ],
-                                      ),
-                                      shape: BoxShape.circle,
-                                      border: Border.all(
-                                        color: AppColors.error.withOpacity(0.2),
-                                        width: 2,
-                                      ),
-                                    ),
-                                    child: Icon(
-                                      Icons.error_outline,
-                                      size: 72,
-                                      color: AppColors.error.withOpacity(0.6),
-                                    ),
-                                  ),
-                                  const SizedBox(height: AppPadding.large),
-                                  Text(
-                                    'Failed to load tasks',
-                                    style: textTheme.titleLarge?.copyWith(
-                                      color: AppColors.textPrimary,
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 22,
-                                    ),
-                                  ),
-                                  const SizedBox(height: AppPadding.small + 4),
-                                  Padding(
-                                    padding: const EdgeInsets.symmetric(horizontal: AppPadding.xLarge + 8),
-                                    child: Text(
-                                      err.toString(),
-                                      style: textTheme.bodyMedium?.copyWith(
-                                        color: AppColors.textSecondary,
-                                        fontSize: 15,
-                                      ),
-                                      textAlign: TextAlign.center,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
+                            error: (err, stack) => const SizedBox.shrink(),
                             data: (tasks) => tasks.isEmpty
                                 ? Center(
                               child: Column(
@@ -1146,20 +1074,20 @@ class _VolunteerDashboardScreenState
                                     decoration: BoxDecoration(
                                       gradient: LinearGradient(
                                         colors: [
-                                          Colors.red.withOpacity(0.1),
-                                          Colors.red.withOpacity(0.05),
+                                          Colors.red.withValues(alpha: 0.1),
+                                          Colors.red.withValues(alpha: 0.05),
                                         ],
                                       ),
                                       shape: BoxShape.circle,
                                       border: Border.all(
-                                        color: Colors.red.withOpacity(0.2),
+                                        color: Colors.red.withValues(alpha: 0.2),
                                         width: 2,
                                       ),
                                     ),
                                     child: Icon(
                                       Icons.task_alt,
                                       size: 80,
-                                      color: Colors.red.withOpacity(0.4),
+                                      color: Colors.red.withValues(alpha: 0.4),
                                     ),
                                   ),
                                   const SizedBox(height: AppPadding.large + 4),
@@ -1238,7 +1166,7 @@ class _VolunteerDashboardScreenState
             borderRadius: BorderRadius.circular(AppBorderRadius.large + 2),
             boxShadow: [
               BoxShadow(
-                color: gradient.colors.first.withOpacity(0.4),
+                color: gradient.colors.first.withValues(alpha: 0.4),
                 blurRadius: 20,
                 offset: const Offset(0, 8),
                 spreadRadius: -2,
@@ -1252,10 +1180,10 @@ class _VolunteerDashboardScreenState
               Container(
                 padding: const EdgeInsets.all(AppPadding.medium),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.25),
+                  color: Colors.white.withValues(alpha: 0.25),
                   borderRadius: BorderRadius.circular(AppBorderRadius.medium + 2),
                   border: Border.all(
-                    color: Colors.white.withOpacity(0.3),
+                    color: Colors.white.withValues(alpha: 0.3),
                     width: 1.5,
                   ),
                 ),
@@ -1283,7 +1211,7 @@ class _VolunteerDashboardScreenState
                     subtitle,
                     style: TextStyle(
                       fontSize: 13,
-                      color: Colors.white.withOpacity(0.95),
+                      color: Colors.white.withValues(alpha: 0.95),
                       fontWeight: FontWeight.w500,
                       letterSpacing: 0.2,
                     ),
@@ -1308,15 +1236,15 @@ class _VolunteerDashboardScreenState
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            color.withOpacity(0.12),
-            color.withOpacity(0.06),
+            color.withValues(alpha: 0.12),
+            color.withValues(alpha: 0.06),
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(AppBorderRadius.large),
         border: Border.all(
-          color: color.withOpacity(0.25),
+          color: color.withValues(alpha: 0.25),
           width: 1.5,
         ),
       ),
@@ -1326,7 +1254,7 @@ class _VolunteerDashboardScreenState
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
               gradient: LinearGradient(
-                colors: [color.withOpacity(0.2), color.withOpacity(0.1)],
+                colors: [color.withValues(alpha: 0.2), color.withValues(alpha: 0.1)],
               ),
               shape: BoxShape.circle,
             ),
@@ -1415,7 +1343,7 @@ class _VolunteerDashboardScreenState
                   decoration: BoxDecoration(
                     gradient: isSelected
                         ? LinearGradient(
-                      colors: [filterColor, filterColor.withOpacity(0.85)],
+                      colors: [filterColor, filterColor.withValues(alpha: 0.85)],
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                     )
@@ -1425,13 +1353,13 @@ class _VolunteerDashboardScreenState
                     border: Border.all(
                       color: isSelected
                           ? filterColor
-                          : AppColors.textSecondary.withOpacity(0.25),
+                          : AppColors.textSecondary.withValues(alpha: 0.25),
                       width: isSelected ? 2 : 1.5,
                     ),
                     boxShadow: isSelected
                         ? [
                       BoxShadow(
-                        color: filterColor.withOpacity(0.35),
+                        color: filterColor.withValues(alpha: 0.35),
                         blurRadius: 12,
                         offset: const Offset(0, 4),
                       ),
