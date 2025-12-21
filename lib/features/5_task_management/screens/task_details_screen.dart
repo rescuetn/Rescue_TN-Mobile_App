@@ -9,6 +9,8 @@ import 'dart:io';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:rescuetn/core/services/storage_service.dart';
+import 'package:record/record.dart';
+import 'package:path_provider/path_provider.dart';
 
 class TaskDetailsScreen extends ConsumerStatefulWidget {
   final Task? initialTask;
@@ -106,16 +108,22 @@ class _TaskDetailsScreenState extends ConsumerState<TaskDetailsScreen>
     final task = ref.read(selectedTaskProvider).value;
     if (task == null) return;
 
+    // Capture the outer context for navigation
+    final outerContext = context;
+
     // Local state for the modal
     File? selectedImage;
+    File? selectedAudio;
     bool isUploading = false;
+    bool isRecording = false;
     TaskStatus? selectedStatus;
+    final audioRecorder = AudioRecorder();
 
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
-      builder: (context) => StatefulBuilder(
+      builder: (modalContext) => StatefulBuilder(
         builder: (context, setModalState) => Container(
           decoration: const BoxDecoration(
             color: AppColors.surface,
@@ -187,28 +195,65 @@ class _TaskDetailsScreenState extends ConsumerState<TaskDetailsScreen>
                       ),
                     ),
                   ] else ...[
-                    // Status Options
-                    if (task.status == TaskStatus.pending)
+                    // Status Options based on current task status
+                    
+                    // For PENDING tasks: Show Accept Task and Start Working options
+                    if (task.status == TaskStatus.pending) ...[
+                      _buildEnhancedStatusOption(
+                        TaskStatus.accepted,
+                        [Colors.teal.shade400, Colors.teal.shade600],
+                        Icons.thumb_up_rounded,
+                        onTap: () {
+                          Navigator.pop(context);
+                          _updateStatus(TaskStatus.accepted);
+                        },
+                      ),
+                      const SizedBox(height: 12),
                       _buildEnhancedStatusOption(
                         TaskStatus.inProgress,
                         [Colors.blue.shade400, Colors.blue.shade600],
                         Icons.work_rounded,
-                        onTap: () => _updateStatus(TaskStatus.inProgress),
+                        onTap: () {
+                          Navigator.pop(context);
+                          _updateStatus(TaskStatus.inProgress);
+                        },
                       ),
+                    ],
 
-                    if (task.status == TaskStatus.inProgress || task.status == TaskStatus.accepted) ...[
-                      // Only show 'Mark Completed' button if not yet selected or already selecting completion
-                      if (selectedStatus != TaskStatus.completed)
-                        _buildEnhancedStatusOption(
-                          TaskStatus.completed,
-                          [Colors.green.shade400, Colors.green.shade600],
-                          Icons.check_circle_rounded,
-                          onTap: () {
-                            setModalState(() {
-                              selectedStatus = TaskStatus.completed;
-                            });
-                          },
-                        ),
+                    // For ACCEPTED tasks: Show Start Working and Mark Completed options
+                    if (task.status == TaskStatus.accepted) ...[
+                      _buildEnhancedStatusOption(
+                        TaskStatus.inProgress,
+                        [Colors.blue.shade400, Colors.blue.shade600],
+                        Icons.work_rounded,
+                        onTap: () {
+                          Navigator.pop(context);
+                          _updateStatus(TaskStatus.inProgress);
+                        },
+                      ),
+                      const SizedBox(height: 12),
+                      _buildEnhancedStatusOption(
+                        TaskStatus.completed,
+                        [Colors.green.shade400, Colors.green.shade600],
+                        Icons.check_circle_rounded,
+                        onTap: () {
+                          Navigator.pop(context); // Close bottom sheet
+                          outerContext.push('/task-complete/${task.id}', extra: task);
+                        },
+                      ),
+                    ],
+
+                    // For IN_PROGRESS tasks: Show Mark Completed option
+                    if (task.status == TaskStatus.inProgress) ...[
+                      _buildEnhancedStatusOption(
+                        TaskStatus.completed,
+                        [Colors.green.shade400, Colors.green.shade600],
+                        Icons.check_circle_rounded,
+                        onTap: () {
+                          Navigator.pop(context); // Close bottom sheet
+                          outerContext.push('/task-complete/${task.id}', extra: task);
+                        },
+                      ),
                     ],
 
                     // Completion Flow with Image Upload
@@ -318,6 +363,95 @@ class _TaskDetailsScreenState extends ConsumerState<TaskDetailsScreen>
                                 ),
                               ),
 
+                            const SizedBox(height: 16),
+                            
+                            // Audio Recording Section
+                            Text(
+                              "Audio Recording (Optional)",
+                              style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            
+                            if (selectedAudio != null)
+                              Container(
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: Colors.green.shade50,
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(color: Colors.green.shade200),
+                                ),
+                                child: Row(
+                                  children: [
+                                    Icon(Icons.audiotrack, color: Colors.green.shade700),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: Text(
+                                        "Audio recorded",
+                                        style: TextStyle(
+                                          color: Colors.green.shade700,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                    ),
+                                    IconButton(
+                                      icon: const Icon(Icons.delete, color: Colors.red),
+                                      onPressed: () => setModalState(() => selectedAudio = null),
+                                    ),
+                                  ],
+                                ),
+                              )
+                            else
+                              InkWell(
+                                onTap: () async {
+                                  if (isRecording) {
+                                    // Stop recording
+                                    final path = await audioRecorder.stop();
+                                    setModalState(() => isRecording = false);
+                                    if (path != null) {
+                                      setModalState(() => selectedAudio = File(path));
+                                    }
+                                  } else {
+                                    // Start recording
+                                    if (await audioRecorder.hasPermission()) {
+                                      final dir = await getTemporaryDirectory();
+                                      final path = '${dir.path}/task_audio_${DateTime.now().millisecondsSinceEpoch}.m4a';
+                                      await audioRecorder.start(const RecordConfig(), path: path);
+                                      setModalState(() => isRecording = true);
+                                    }
+                                  }
+                                },
+                                borderRadius: BorderRadius.circular(12),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+                                  decoration: BoxDecoration(
+                                    color: isRecording ? Colors.red.shade50 : Colors.orange.shade50,
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(
+                                      color: isRecording ? Colors.red : Colors.orange,
+                                    ),
+                                  ),
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(
+                                        isRecording ? Icons.stop : Icons.mic,
+                                        color: isRecording ? Colors.red : Colors.orange.shade700,
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Text(
+                                        isRecording ? "Stop Recording" : "Record Audio",
+                                        style: TextStyle(
+                                          color: isRecording ? Colors.red : Colors.orange.shade700,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+
                             const SizedBox(height: 24),
                             ElevatedButton(
                               onPressed: selectedImage == null
@@ -325,12 +459,25 @@ class _TaskDetailsScreenState extends ConsumerState<TaskDetailsScreen>
                                   : () async {
                                 setModalState(() => isUploading = true);
                                 try {
-                                  // Upload image
                                   final storageService = ref.read(storageServiceProvider);
+                                  
+                                  // Upload image
                                   final imageUrl = await storageService.uploadTaskCompletionImage(
                                     task.id,
                                     selectedImage!,
                                   );
+
+                                  // Upload audio if present
+                                  String? audioUrl;
+                                  if (selectedAudio != null) {
+                                    audioUrl = await storageService.uploadTaskCompletionAudio(
+                                      task.id,
+                                      selectedAudio!,
+                                    );
+                                  }
+
+                                  // Dispose recorder
+                                  await audioRecorder.dispose();
 
                                   if (context.mounted) {
                                     // Close modal first
@@ -340,6 +487,7 @@ class _TaskDetailsScreenState extends ConsumerState<TaskDetailsScreen>
                                     await _updateStatus(
                                       TaskStatus.completed,
                                       completionImageUrl: imageUrl,
+                                      completionAudioUrl: audioUrl,
                                     );
                                   }
                                 } catch (e) {
@@ -386,13 +534,13 @@ class _TaskDetailsScreenState extends ConsumerState<TaskDetailsScreen>
     );
   }
 
-  Future<void> _updateStatus(TaskStatus status, {String? completionImageUrl}) async {
+  Future<void> _updateStatus(TaskStatus status, {String? completionImageUrl, String? completionAudioUrl}) async {
     final currentTask = ref.read(selectedTaskProvider).value ?? widget.initialTask;
     if (currentTask != null) {
       try {
         await ref
             .read(databaseServiceProvider)
-            .updateTaskStatus(currentTask.id, status, completionImageUrl: completionImageUrl);
+            .updateTaskStatus(currentTask.id, status, completionImageUrl: completionImageUrl, completionAudioUrl: completionAudioUrl);
             
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -1139,21 +1287,36 @@ class _TaskDetailsScreenState extends ConsumerState<TaskDetailsScreen>
                     child: Material(
                       color: Colors.transparent,
                       child: InkWell(
-                        onTap: _showStatusUpdateDialog,
+                        onTap: () {
+                          // For in-progress or accepted tasks, go directly to completion screen
+                          if (task.status == TaskStatus.inProgress || 
+                              task.status == TaskStatus.accepted) {
+                            context.push('/task-complete/${task.id}', extra: task);
+                          } else {
+                            // For other statuses, show the status update dialog
+                            _showStatusUpdateDialog();
+                          }
+                        },
                         borderRadius: BorderRadius.circular(16),
-                        child: const Padding(
-                          padding: EdgeInsets.symmetric(vertical: 16),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 16),
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               Icon(
-                                Icons.update_rounded,
+                                (task.status == TaskStatus.inProgress || 
+                                 task.status == TaskStatus.accepted)
+                                    ? Icons.check_circle_rounded
+                                    : Icons.update_rounded,
                                 color: Colors.white,
                               ),
-                              SizedBox(width: 12),
+                              const SizedBox(width: 12),
                               Text(
-                                'Update Status',
-                                style: TextStyle(
+                                (task.status == TaskStatus.inProgress || 
+                                 task.status == TaskStatus.accepted)
+                                    ? 'Mark Completed'
+                                    : 'Update Status',
+                                style: const TextStyle(
                                   color: Colors.white,
                                   fontSize: 16,
                                   fontWeight: FontWeight.bold,

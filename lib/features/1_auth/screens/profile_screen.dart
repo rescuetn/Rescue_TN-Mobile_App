@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:rescuetn/app/constants.dart';
 import 'package:rescuetn/features/1_auth/providers/auth_provider.dart';
 import 'package:rescuetn/models/user_model.dart';
+import 'package:rescuetn/core/providers/locale_provider.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
@@ -333,14 +334,14 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
 
 
                         // --- Account Section ---
-                        _buildSectionHeader('Account', Icons.person),
+                        _buildSectionHeader("profile.account".tr(context), Icons.person),
                         const SizedBox(height: AppPadding.medium),
                         _buildEnhancedProfileCard(
                           children: [
                             _buildEnhancedProfileOption(
                               icon: Icons.person_outline,
-                              title: 'Edit Profile',
-                              subtitle: 'Update your personal information',
+                              title: "profile.editProfile".tr(context),
+                              subtitle: "profile.accountSubtitle".tr(context),
                               color: const Color(0xFF3B82F6),
                               onTap: () => context.push('/edit-profile'),
                             ),
@@ -350,8 +351,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
                             ),
                             _buildEnhancedProfileOption(
                               icon: Icons.lock_outline,
-                              title: 'Change Password',
-                              subtitle: 'Update your security credentials',
+                              title: "profile.changePassword".tr(context),
+                              subtitle: "profile.securitySubtitle".tr(context),
                               color: const Color(0xFF8B5CF6),
                               onTap: () => context.push('/change-password'),
                             ),
@@ -360,14 +361,14 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
                         const SizedBox(height: AppPadding.large),
 
                         // --- Preferences Section ---
-                        _buildSectionHeader('Preferences', Icons.tune),
+                        _buildSectionHeader("profile.preferences".tr(context), Icons.tune),
                         const SizedBox(height: AppPadding.medium),
                         _buildEnhancedProfileCard(
                           children: [
                             _buildEnhancedSwitchOption(
                               icon: Icons.notifications_active_outlined,
-                              title: 'Push Notifications',
-                              subtitle: 'Receive emergency alerts',
+                              title: "profile.pushNotifications".tr(context),
+                              subtitle: "profile.notificationsSubtitle".tr(context),
                               color: const Color(0xFFF59E0B),
                               value: _notificationsEnabled,
                               onChanged: (value) {
@@ -385,8 +386,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
                             ),
                             _buildEnhancedSwitchOption(
                               icon: Icons.location_on_outlined,
-                              title: 'Location Services',
-                              subtitle: 'Share location for emergencies',
+                              title: "profile.locationServices".tr(context),
+                              subtitle: "profile.locationSubtitle".tr(context),
                               color: const Color(0xFFEC4899),
                               value: _locationEnabled,
                               onChanged: (value) {
@@ -403,14 +404,14 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
                         const SizedBox(height: AppPadding.large),
 
                         // --- Support Section ---
-                        _buildSectionHeader('Support', Icons.support_agent),
+                        _buildSectionHeader("profile.support".tr(context), Icons.support_agent),
                         const SizedBox(height: AppPadding.medium),
                         _buildEnhancedProfileCard(
                           children: [
                             _buildEnhancedProfileOption(
                               icon: Icons.help_outline,
-                              title: 'Help Center',
-                              subtitle: 'Get help and support',
+                              title: "profile.helpCenter".tr(context),
+                              subtitle: "profile.helpSubtitle".tr(context),
                               color: const Color(0xFF06B6D4),
                               onTap: () => context.push('/help-center'),
                             ),
@@ -420,8 +421,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
                             ),
                             _buildEnhancedProfileOption(
                               icon: Icons.info_outline,
-                              title: 'About',
-                              subtitle: 'App version and information',
+                              title: "profile.about".tr(context),
+                              subtitle: "profile.aboutSubtitle".tr(context),
                               color: const Color(0xFF6366F1),
                               onTap: () => _showAboutDialog(context),
                             ),
@@ -431,8 +432,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
                             ),
                             _buildEnhancedProfileOption(
                               icon: Icons.privacy_tip_outlined,
-                              title: 'Privacy Policy',
-                              subtitle: 'Learn how we protect your data',
+                              title: "profile.privacyPolicy".tr(context),
+                              subtitle: "profile.privacySubtitle".tr(context),
                               color: const Color(0xFF14B8A6),
                               onTap: () => context.push('/privacy-policy'),
                             ),
@@ -460,8 +461,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
                           ),
                           child: ElevatedButton.icon(
                             icon: const Icon(Icons.logout, size: 22),
-                            label: const Text(
-                              'Logout',
+                            label: Text(
+                              "profile.logout".tr(context),
                               style: TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.bold,
@@ -682,17 +683,17 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
               child: const Icon(Icons.logout, color: AppColors.error),
             ),
             const SizedBox(width: 12),
-            const Text('Logout', style: TextStyle(fontSize: 20)),
+            Text("profile.logoutConfirmTitle".tr(context), style: const TextStyle(fontSize: 20)),
           ],
         ),
-        content: const Text(
-          'Are you sure you want to logout?',
+        content: Text(
+          "profile.logoutConfirmMessage".tr(context),
           style: TextStyle(fontSize: 15),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel', style: TextStyle(fontSize: 15)),
+            child: Text("profile.cancel".tr(context), style: const TextStyle(fontSize: 15)),
           ),
           ElevatedButton(
             onPressed: _handleLogout,
@@ -704,7 +705,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
                 borderRadius: BorderRadius.circular(12),
               ),
             ),
-            child: const Text('Logout'),
+            child: Text("profile.logout".tr(context)),
           ),
         ],
       ),

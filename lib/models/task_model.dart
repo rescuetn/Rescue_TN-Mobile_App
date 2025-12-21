@@ -20,7 +20,12 @@ class Task {
   final String? volunteerName;
   final DateTime? completedAt;
   final DateTime? updatedAt;
-  final String? completionImageUrl; // Proof of completion
+  final String? completionImageUrl; // Proof of completion (image)
+  final String? completionAudioUrl; // Proof of completion (audio)
+  final String? completionNotes; // Description of work done
+  final bool? needsMoreVolunteers; // Flag if more help needed
+  final int? additionalVolunteersNeeded; // Number of extra volunteers
+  final String? challengesFaced; // Obstacles encountered
 
   const Task({
     required this.id,
@@ -38,13 +43,22 @@ class Task {
     this.completedAt,
     this.updatedAt,
     this.completionImageUrl,
+    this.completionAudioUrl,
+    this.completionNotes,
+    this.needsMoreVolunteers,
+    this.additionalVolunteersNeeded,
+    this.challengesFaced,
   });
 
   Task copyWith({
     TaskStatus? status,
     String? assignedTo,
     String? completionImageUrl,
-    // Add other fields if needed for copyWith, but these are primarily for status updates
+    String? completionAudioUrl,
+    String? completionNotes,
+    bool? needsMoreVolunteers,
+    int? additionalVolunteersNeeded,
+    String? challengesFaced,
   }) {
     return Task(
       id: id,
@@ -62,6 +76,11 @@ class Task {
       completedAt: completedAt,
       updatedAt: updatedAt,
       completionImageUrl: completionImageUrl ?? this.completionImageUrl,
+      completionAudioUrl: completionAudioUrl ?? this.completionAudioUrl,
+      completionNotes: completionNotes ?? this.completionNotes,
+      needsMoreVolunteers: needsMoreVolunteers ?? this.needsMoreVolunteers,
+      additionalVolunteersNeeded: additionalVolunteersNeeded ?? this.additionalVolunteersNeeded,
+      challengesFaced: challengesFaced ?? this.challengesFaced,
     );
   }
 
@@ -89,6 +108,11 @@ class Task {
       completedAt: _parseTimestamp(map['completedAt']),
       updatedAt: _parseTimestamp(map['updatedAt']),
       completionImageUrl: map['completionImageUrl'],
+      completionAudioUrl: map['completionAudioUrl'],
+      completionNotes: map['completionNotes'],
+      needsMoreVolunteers: map['needsMoreVolunteers'],
+      additionalVolunteersNeeded: map['additionalVolunteersNeeded'],
+      challengesFaced: map['challengesFaced'],
     );
   }
 
@@ -109,6 +133,11 @@ class Task {
       'completedAt': completedAt,
       'updatedAt': updatedAt ?? DateTime.now(),
       'completionImageUrl': completionImageUrl,
+      'completionAudioUrl': completionAudioUrl,
+      'completionNotes': completionNotes,
+      'needsMoreVolunteers': needsMoreVolunteers,
+      'additionalVolunteersNeeded': additionalVolunteersNeeded,
+      'challengesFaced': challengesFaced,
     };
   }
 

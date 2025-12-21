@@ -29,7 +29,14 @@ abstract class DatabaseService {
   // Task operations
   Stream<List<Task>> getTasksStream();
   Future<Task?> getTask(String taskId);
-  Future<void> updateTaskStatus(String taskId, TaskStatus newStatus, {String? completionImageUrl});
+  Future<void> updateTaskStatus(String taskId, TaskStatus newStatus, {
+    String? completionImageUrl,
+    String? completionAudioUrl,
+    String? completionNotes,
+    bool? needsMoreVolunteers,
+    int? additionalVolunteersNeeded,
+    String? challengesFaced,
+  });
 
   // Person Status operations
   Future<void> addPersonStatus(PersonStatus personStatus);
@@ -173,7 +180,14 @@ class FirestoreDatabaseService implements DatabaseService {
   }
 
   @override
-  Future<void> updateTaskStatus(String taskId, TaskStatus newStatus, {String? completionImageUrl}) async {
+  Future<void> updateTaskStatus(String taskId, TaskStatus newStatus, {
+    String? completionImageUrl,
+    String? completionAudioUrl,
+    String? completionNotes,
+    bool? needsMoreVolunteers,
+    int? additionalVolunteersNeeded,
+    String? challengesFaced,
+  }) async {
     final Map<String, dynamic> updates = {
       'status': newStatus.name,
       'updatedAt': FieldValue.serverTimestamp(),
@@ -183,7 +197,21 @@ class FirestoreDatabaseService implements DatabaseService {
       if (completionImageUrl != null) {
         updates['completionImageUrl'] = completionImageUrl;
       }
-      // Set completedAt only if not already set (or always update if you prefer)
+      if (completionAudioUrl != null) {
+        updates['completionAudioUrl'] = completionAudioUrl;
+      }
+      if (completionNotes != null) {
+        updates['completionNotes'] = completionNotes;
+      }
+      if (needsMoreVolunteers != null) {
+        updates['needsMoreVolunteers'] = needsMoreVolunteers;
+      }
+      if (additionalVolunteersNeeded != null) {
+        updates['additionalVolunteersNeeded'] = additionalVolunteersNeeded;
+      }
+      if (challengesFaced != null) {
+        updates['challengesFaced'] = challengesFaced;
+      }
       updates['completedAt'] = FieldValue.serverTimestamp();
     }
 
@@ -251,15 +279,21 @@ class FirestoreDatabaseService implements DatabaseService {
         .transform(StreamTransformer.fromHandlers(
           handleData: (snapshot, sink) {
             try {
+              // If the snapshot is empty, it might mean the default plan hasn't been created yet.
+              // However, since we return a list, an empty list is a valid state (no items).
+              // The provider (preparednessPlanProvider) is responsible for triggering creation.
+              
               sink.add(snapshot.docs
                   .map((doc) => PreparednessItem.fromMap(doc.data(), doc.id))
                   .toList());
             } catch (e) {
-              sink.add(<PreparednessItem>[]);
+               debugPrint("Error parsing preparedness plan: $e");
+               sink.add(<PreparednessItem>[]);
             }
           },
           handleError: (error, stackTrace, sink) {
-            sink.add(<PreparednessItem>[]);
+            debugPrint("Error in preparedness stream: $error");
+            sink.add(<PreparednessItem>[]); // Emit empty list instead of crashing
           },
         ));
   }

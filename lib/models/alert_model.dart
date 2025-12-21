@@ -75,12 +75,15 @@ class Alert {
 
   // A factory constructor to create an Alert from a Firestore document.
   factory Alert.fromMap(Map<String, dynamic> map, String id) {
-    // Handle both 'timestamp' and 'createdAt' fields with proper null handling
+    // Handle multiple timestamp field names with proper null handling
     DateTime timestamp;
     final createdAtValue = map['createdAt'];
+    final sentAtValue = map['sentAt'];
     final timestampValue = map['timestamp'];
     
-    if (createdAtValue is Timestamp) {
+    if (sentAtValue is Timestamp) {
+      timestamp = sentAtValue.toDate();
+    } else if (createdAtValue is Timestamp) {
       timestamp = createdAtValue.toDate();
     } else if (timestampValue is Timestamp) {
       timestamp = timestampValue.toDate();
@@ -88,20 +91,36 @@ class Alert {
       timestamp = DateTime.now();
     }
 
+    // Parse level from 'category' field (backend schema) or 'level' (fallback)
+    final levelString = (map['category'] ?? map['level'])?.toString().toLowerCase();
+    
+    AlertLevel parsedLevel = AlertLevel.info; // default
+    if (levelString == 'severe' || levelString == 'critical' || levelString == 'high') {
+      parsedLevel = AlertLevel.severe;
+    } else if (levelString == 'warning' || levelString == 'medium') {
+      parsedLevel = AlertLevel.warning;
+    } else if (levelString == 'info' || levelString == 'low') {
+      parsedLevel = AlertLevel.info;
+    }
+
+    // Parse target roles from 'recipientGroups' (backend) or 'targetRoles' (fallback)
+    List<String>? targetRoles;
+    final recipientGroups = map['recipientGroups'];
+    final targetRolesField = map['targetRoles'];
+    
+    if (recipientGroups != null && recipientGroups is List) {
+      targetRoles = List<String>.from(recipientGroups);
+    } else if (targetRolesField != null && targetRolesField is List) {
+      targetRoles = List<String>.from(targetRolesField);
+    }
+
     return Alert(
       id: id,
       title: map['title'] ?? 'No Title',
       message: map['message'] ?? 'No message provided.',
-      level: AlertLevel.values.firstWhere(
-        (e) => e.name == map['level'],
-        orElse: () => map['level'] == 'critical'
-            ? AlertLevel.severe
-            : AlertLevel.info,
-      ),
+      level: parsedLevel,
       timestamp: timestamp,
-      targetRoles: map['targetRoles'] != null
-          ? List<String>.from(map['targetRoles'])
-          : null,
+      targetRoles: targetRoles,
       imageUrl: map['imageUrl'],
       isRead: map['isRead'] ?? false,
       actionUrl: map['actionUrl'],

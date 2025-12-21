@@ -1,7 +1,9 @@
 // ignore_for_file: empty_catches
 import 'dart:async';
+import 'dart:ui';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:rescuetn/models/alert_model.dart';
 import 'package:rescuetn/models/user_model.dart';
 
@@ -9,6 +11,7 @@ import 'package:rescuetn/models/user_model.dart';
 /// and broadcast them to the app via streams.
 class NotificationService {
   final FirebaseMessaging _firebaseMessaging = FirebaseMessaging.instance;
+  final FlutterLocalNotificationsPlugin _localNotificationsPlugin = FlutterLocalNotificationsPlugin();
 
   // Stream controllers for different notification types
   final _notificationController = StreamController<Alert>.broadcast();
@@ -60,8 +63,50 @@ class NotificationService {
       FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
         _handleNotificationTap(message);
       });
+
+      // Initialize local notifications
+      await _initializeLocalNotifications();  
     } catch (e) {
     }
+  }
+
+  /// Initialize flutter_local_notifications plugin
+  Future<void> _initializeLocalNotifications() async {
+    const AndroidInitializationSettings androidSettings =
+        AndroidInitializationSettings('@mipmap/ic_launcher');
+
+    const DarwinInitializationSettings iosSettings =
+        DarwinInitializationSettings(
+      requestAlertPermission: true,
+      requestBadgePermission: true,
+      requestSoundPermission: true,
+    );
+
+    const InitializationSettings initSettings = InitializationSettings(
+      android: androidSettings,
+      iOS: iosSettings,
+    );
+
+    await _localNotificationsPlugin.initialize(
+      initSettings,
+      onDidReceiveNotificationResponse: (NotificationResponse response) {
+        // Handle notification tap - can navigate to alerts screen
+      },
+    );
+
+    // Create high-importance notification channel for Android
+    const AndroidNotificationChannel emergencyChannel = AndroidNotificationChannel(
+      'emergency_alerts',
+      'Emergency Alerts',
+      description: 'Critical alerts for emergencies',
+      importance: Importance.high,
+      playSound: true,
+      enableVibration: true,
+    );
+
+    await _localNotificationsPlugin
+        .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
+        ?.createNotificationChannel(emergencyChannel);
   }
 
   /// Handle foreground notifications (app is open)
@@ -74,8 +119,90 @@ class NotificationService {
       body: message.notification?.body,
     );
 
-    // Broadcast to listeners
+    // Show system notification
+    showLocalNotification(alert);
+
+    // Broadcast to listeners (for in-app overlay)
     _notificationController.add(alert);
+  }
+
+  /// Show a local system notification (public for external use)
+  Future<void> showLocalNotification(Alert alert) async {
+    // Determine notification priority based on alert level
+    AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
+      'emergency_alerts',
+      'Emergency Alerts',
+      channelDescription: 'Critical alerts for emergencies',
+      importance: alert.level == AlertLevel.severe ? Importance.max : Importance.high,
+      priority: alert.level == AlertLevel.severe ? Priority.max : Priority.high,
+      ticker: alert.title,
+      playSound: true,
+      enableVibration: true,
+      icon: '@mipmap/ic_launcher',
+      color: alert.level == AlertLevel.severe
+          ? const Color(0xFFD32F2F) // Red for severe
+          : (alert.level == AlertLevel.warning
+              ? const Color(0xFFFFA000) // Orange for warning
+              : const Color(0xFF1976D2)), // Blue for info
+    );
+
+    const DarwinNotificationDetails iosDetails = DarwinNotificationDetails(
+      presentAlert: true,
+      presentBadge: true,
+      presentSound: true,
+    );
+
+    NotificationDetails notificationDetails = NotificationDetails(
+      android: androidDetails,
+      iOS: iosDetails,
+    );
+
+    await _localNotificationsPlugin.show(
+      alert.id.hashCode, // Unique ID based on alert ID
+      alert.title,
+      alert.message,
+      notificationDetails,
+      payload: alert.actionUrl,
+    );
+  }
+
+  /// Show a local notification for task assignments
+  Future<void> showTaskNotification(String taskId, String title, String description, String severity) async {
+    final isHighPriority = severity.toLowerCase() == 'high';
+    
+    AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
+      'task_assignments',
+      'Task Assignments',
+      channelDescription: 'Notifications for new task assignments',
+      importance: isHighPriority ? Importance.max : Importance.high,
+      priority: isHighPriority ? Priority.max : Priority.high,
+      ticker: 'New Task: $title',
+      playSound: true,
+      enableVibration: true,
+      icon: '@mipmap/ic_launcher',
+      color: isHighPriority
+          ? const Color(0xFFFF9800) // Orange for urgent
+          : const Color(0xFF1976D2), // Blue for normal
+    );
+
+    const DarwinNotificationDetails iosDetails = DarwinNotificationDetails(
+      presentAlert: true,
+      presentBadge: true,
+      presentSound: true,
+    );
+
+    NotificationDetails notificationDetails = NotificationDetails(
+      android: androidDetails,
+      iOS: iosDetails,
+    );
+
+    await _localNotificationsPlugin.show(
+      taskId.hashCode,
+      '📋 New Task: $title',
+      description.isNotEmpty ? description : 'You have been assigned a new task.',
+      notificationDetails,
+      payload: '/tasks/$taskId',
+    );
   }
 
   /// Handle notification tap (notification opened)

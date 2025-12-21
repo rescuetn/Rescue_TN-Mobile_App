@@ -41,11 +41,12 @@ final preparednessPlanProvider = StreamProvider.autoDispose<List<PreparednessIte
       final dbService = ref.watch(databaseServiceProvider);
 
       // 1. Check for and create the default plan if it's the user's first time.
+      // We don't await this inside the stream builder or else we block the UI.
+      // We fire and forget, but the stream will update when the docs are added.
       Future(() async {
         try {
           await dbService.checkAndCreateDefaultPlan(user.uid);
         } catch (e) {
-          // Prepare default plan failed, but stream should still work
           debugPrint('Error preparing default plan: $e');
         }
       });

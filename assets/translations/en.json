@@ -226,5 +226,42 @@
         "loginError": "You must be logged in to submit a report.",
         "success": "Person status reported successfully!",
         "failure": "Failed to submit report"
+    },
+    "profile": {
+        "title": "Profile",
+        "account": "Account",
+        "editProfile": "Edit Profile",
+        "changePassword": "Change Password",
+        "preferences": "Preferences",
+        "pushNotifications": "Push Notifications",
+        "locationServices": "Location Services",
+        "support": "Support",
+        "helpCenter": "Help Center",
+        "about": "About",
+        "privacyPolicy": "Privacy Policy",
+        "logout": "Logout",
+        "logoutConfirmTitle": "Logout",
+        "logoutConfirmMessage": "Are you sure you want to logout?",
+        "cancel": "Cancel",
+        "accountSubtitle": "Update your personal information",
+        "securitySubtitle": "Update your security credentials",
+        "notificationsSubtitle": "Receive emergency alerts",
+        "locationSubtitle": "Share location for emergencies",
+        "helpSubtitle": "Get help and support",
+        "aboutSubtitle": "App version and information",
+        "privacySubtitle": "Learn how we protect your data"
+    },
+    "editProfile": {
+        "title": "Edit Profile",
+        "fullName": "Full Name",
+        "phoneNumber": "Phone Number",
+        "address": "Address (Optional)",
+        "age": "Age (Optional)",
+        "saveChanges": "Save Changes",
+        "successMessage": "Profile updated successfully!",
+        "errorGeneric": "Error updating profile",
+        "validationName": "Please enter your full name",
+        "validationPhone": "Please enter a valid phone number",
+        "validationAge": "Age must be between 1 and 150"
     }
 }

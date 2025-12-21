@@ -16,6 +16,7 @@ import 'package:rescuetn/features/2_dashboard/screens/volunteer_dashboard_screen
 import 'package:rescuetn/features/3_incident_reporting/screens/report_incident_screen.dart';
 import 'package:rescuetn/features/4_shelter_locator/screens/shelter_map_screen.dart';
 import 'package:rescuetn/features/5_task_management/screens/task_details_screen.dart';
+import 'package:rescuetn/features/5_task_management/screens/task_completion_screen.dart';
 // --- CORRECTED IMPORTS ---
 import 'package:rescuetn/features/6_preparedness/screens/preparedness_plan_screen.dart';
 import 'package:rescuetn/features/7_alerts/screens/alert_screen.dart';
@@ -65,6 +66,14 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/preparedness-plan', builder: (context, state) => const PreparednessPlanScreen()),
       GoRoute(path: '/add-person-status', builder: (context, state) => const AddPersonStatusScreen()),
       GoRoute(path: '/heatmap', builder: (context, state) => const HeatmapScreen()),
+      GoRoute(
+        path: '/task-complete/:id',
+        builder: (context, state) {
+          final taskId = state.pathParameters['id']!;
+          final task = state.extra as Task?;
+          return TaskCompletionScreen(taskId: taskId, initialTask: task);
+        },
+      ),
     ],
     redirect: (context, state) {
       final authState = ref.read(authStateChangesProvider);

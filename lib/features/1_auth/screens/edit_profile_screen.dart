@@ -6,6 +6,7 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'dart:io';
 import 'package:rescuetn/app/constants.dart';
 import 'package:rescuetn/common_widgets/custom_button.dart';
+import 'package:rescuetn/core/providers/locale_provider.dart';
 import 'package:rescuetn/core/services/database_service.dart';
 import 'package:rescuetn/features/1_auth/providers/auth_provider.dart';
 
@@ -88,7 +89,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     try {
       final user = ref.read(authStateChangesProvider).value;
       if (user == null) {
-        throw Exception('User not found');
+        throw Exception("editProfile.errorGeneric".tr(context));
       }
 
       // Upload image if selected
@@ -102,7 +103,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
       if (_ageController.text.trim().isNotEmpty) {
         age = int.tryParse(_ageController.text.trim());
         if (age == null || age < 1 || age > 150) {
-          throw Exception('Please enter a valid age (1-150)');
+          throw Exception("editProfile.validationAge".tr(context));
         }
       }
 
@@ -122,11 +123,11 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: const Row(
+            content: Row(
               children: [
                 Icon(Icons.check_circle, color: Colors.white),
                 SizedBox(width: 12),
-                Text('Profile updated successfully!'),
+                Text("editProfile.successMessage".tr(context)),
               ],
             ),
             backgroundColor: Colors.green,
@@ -146,7 +147,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
               children: [
                 const Icon(Icons.error_outline, color: Colors.white),
                 const SizedBox(width: 12),
-                Expanded(child: Text('Error: ${e.toString()}')),
+                Expanded(child: Text('Error: ${e.toString()}')), // Leaving error technical for now or make it generic
               ],
             ),
             backgroundColor: AppColors.error,
@@ -170,7 +171,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Edit Profile'),
+        title: Text("editProfile.title".tr(context)),
         backgroundColor: AppColors.primary,
         foregroundColor: Colors.white,
       ),
@@ -235,7 +236,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                     TextFormField(
                       controller: _nameController,
                       decoration: InputDecoration(
-                        labelText: 'Full Name',
+                        labelText: "editProfile.fullName".tr(context),
                         prefixIcon: const Icon(Icons.person),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
@@ -243,7 +244,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                       ),
                       validator: (value) {
                         if (value == null || value.trim().isEmpty) {
-                          return 'Please enter your full name';
+                          return "editProfile.validationName".tr(context);
                         }
                         return null;
                       },
@@ -254,7 +255,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                     TextFormField(
                       controller: _phoneController,
                       decoration: InputDecoration(
-                        labelText: 'Phone Number',
+                        labelText: "editProfile.phoneNumber".tr(context),
                         prefixIcon: const Icon(Icons.phone),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
@@ -263,11 +264,11 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                       keyboardType: TextInputType.phone,
                       validator: (value) {
                         if (value == null || value.isEmpty) {
-                          return 'Phone number is required';
+                          return "editProfile.validationPhone".tr(context);
                         }
                         final cleaned = value.replaceAll(RegExp(r'[\s\-\(\)]'), '');
                         if (cleaned.length < 10 || !RegExp(r'^[0-9]+$').hasMatch(cleaned)) {
-                          return 'Please enter a valid phone number';
+                          return "editProfile.validationPhone".tr(context);
                         }
                         return null;
                       },
@@ -278,7 +279,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                     TextFormField(
                       controller: _addressController,
                       decoration: InputDecoration(
-                        labelText: 'Address (Optional)',
+                        labelText: "editProfile.address".tr(context),
                         prefixIcon: const Icon(Icons.location_on),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
@@ -293,7 +294,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                     TextFormField(
                       controller: _ageController,
                       decoration: InputDecoration(
-                        labelText: 'Age (Optional)',
+                        labelText: "editProfile.age".tr(context),
                         prefixIcon: const Icon(Icons.calendar_today),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
@@ -304,7 +305,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                         if (value != null && value.isNotEmpty) {
                           final age = int.tryParse(value);
                           if (age == null || age < 1 || age > 150) {
-                            return 'Age must be between 1 and 150';
+                            return "editProfile.validationAge".tr(context);
                           }
                         }
                         return null;
@@ -314,7 +315,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
 
                     // Save Button
                     CustomButton(
-                      text: 'Save Changes',
+                      text: "editProfile.saveChanges".tr(context),
                       onPressed: _saveProfile,
                       isLoading: _isLoading,
                     ),

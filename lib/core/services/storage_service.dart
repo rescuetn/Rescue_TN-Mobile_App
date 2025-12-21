@@ -27,4 +27,20 @@ class StorageService {
       throw Exception('Failed to upload image: $e');
     }
   }
+
+  /// Uploads a task completion audio to Firebase Storage.
+  /// Returns the download URL of the uploaded audio.
+  Future<String> uploadTaskCompletionAudio(String taskId, File audioFile) async {
+    try {
+      final fileName = '${DateTime.now().millisecondsSinceEpoch}_${path.basename(audioFile.path)}';
+      final ref = _storage.ref().child('task_completion_proofs/$taskId/audio_$fileName');
+      
+      final uploadTask = ref.putFile(audioFile);
+      final snapshot = await uploadTask;
+      
+      return await snapshot.ref.getDownloadURL();
+    } catch (e) {
+      throw Exception('Failed to upload audio: $e');
+    }
+  }
 }
