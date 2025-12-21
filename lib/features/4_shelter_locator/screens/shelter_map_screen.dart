@@ -222,20 +222,22 @@ class _ShelterMapScreenState extends ConsumerState<ShelterMapScreen>
     }
   }
 
-  // Dynamically center map to show all shelters
+  // Dynamically center map to show all shelters with valid coordinates
   void _fitMapToBounds(List<Shelter> shelters) {
-    if (shelters.isEmpty || _mapController == null) return;
+    // Filter to only shelters with valid coordinates
+    final sheltersWithCoords = shelters.where((s) => s.hasValidCoordinates).toList();
+    if (sheltersWithCoords.isEmpty || _mapController == null) return;
 
-    double minLat = shelters.first.latitude;
-    double maxLat = shelters.first.latitude;
-    double minLng = shelters.first.longitude;
-    double maxLng = shelters.first.longitude;
+    double minLat = sheltersWithCoords.first.latitude!;
+    double maxLat = sheltersWithCoords.first.latitude!;
+    double minLng = sheltersWithCoords.first.longitude!;
+    double maxLng = sheltersWithCoords.first.longitude!;
 
-    for (var shelter in shelters) {
-      if (shelter.latitude < minLat) minLat = shelter.latitude;
-      if (shelter.latitude > maxLat) maxLat = shelter.latitude;
-      if (shelter.longitude < minLng) minLng = shelter.longitude;
-      if (shelter.longitude > maxLng) maxLng = shelter.longitude;
+    for (var shelter in sheltersWithCoords) {
+      if (shelter.latitude! < minLat) minLat = shelter.latitude!;
+      if (shelter.latitude! > maxLat) maxLat = shelter.latitude!;
+      if (shelter.longitude! < minLng) minLng = shelter.longitude!;
+      if (shelter.longitude! > maxLng) maxLng = shelter.longitude!;
     }
 
     final bounds = LatLngBounds(
@@ -312,14 +314,15 @@ class _ShelterMapScreenState extends ConsumerState<ShelterMapScreen>
               ),
             ),
             data: (filteredShelters) {
-              // Dynamically create markers from live filtered data
-              final markers = filteredShelters.map((shelter) {
+              // Dynamically create markers only for shelters with valid coordinates
+              final sheltersWithCoords = filteredShelters.where((s) => s.hasValidCoordinates).toList();
+              final markers = sheltersWithCoords.map((shelter) {
                 return Marker(
                   markerId: MarkerId(shelter.id),
-                  position: LatLng(shelter.latitude, shelter.longitude),
+                  position: LatLng(shelter.latitude!, shelter.longitude!),
                   infoWindow: InfoWindow(
                     title: shelter.name,
-                    snippet: '${shelter.status.name.toUpperCase()} • Tap for details',
+                    snippet: '${shelter.district.isNotEmpty ? shelter.district : shelter.status.name.toUpperCase()} • Tap for details',
                   ),
                   icon: _getMarkerIcon(shelter),
                   onTap: () {

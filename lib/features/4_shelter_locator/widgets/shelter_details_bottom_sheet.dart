@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:rescuetn/app/constants.dart';
+import 'package:rescuetn/features/4_shelter_locator/screens/shelter_navigation_screen.dart';
 import 'package:rescuetn/models/shelter_model.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class ShelterDetailsBottomSheet extends StatelessWidget {
   final Shelter shelter;
@@ -9,9 +11,14 @@ class ShelterDetailsBottomSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
-    final occupancyPercentage = (shelter.currentOccupancy / shelter.capacity) * 100;
+    final occupancyPercentage = shelter.capacity > 0 
+        ? (shelter.currentOccupancy / shelter.capacity) * 100 
+        : 0.0;
 
     return Container(
+      constraints: BoxConstraints(
+        maxHeight: MediaQuery.of(context).size.height * 0.85,
+      ),
       decoration: const BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.only(
@@ -20,7 +27,7 @@ class ShelterDetailsBottomSheet extends StatelessWidget {
         ),
       ),
       child: SafeArea(
-        child: Padding(
+        child: SingleChildScrollView(
           padding: const EdgeInsets.all(24),
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -39,7 +46,7 @@ class ShelterDetailsBottomSheet extends StatelessWidget {
               ),
               const SizedBox(height: 24),
 
-              // Header with icon
+              // Header with icon and name
               Row(
                 children: [
                   Container(
@@ -91,7 +98,38 @@ class ShelterDetailsBottomSheet extends StatelessWidget {
                   ),
                 ],
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 20),
+
+              // District Badge
+              if (shelter.district.isNotEmpty) ...[
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: AppColors.primary.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(
+                        Icons.location_city_rounded,
+                        size: 18,
+                        color: AppColors.primary,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        shelter.district,
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.primary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+              ],
 
               // Government Verified Badge
               if (shelter.isGovernmentDesignated) ...[
@@ -176,7 +214,18 @@ class ShelterDetailsBottomSheet extends StatelessWidget {
                   ],
                 ),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 20),
+
+              // Location/Address Section
+              if (shelter.location.isNotEmpty) ...[
+                _buildInfoCard(
+                  icon: Icons.place_rounded,
+                  iconColor: Colors.red,
+                  title: 'Location',
+                  content: shelter.location,
+                ),
+                const SizedBox(height: 16),
+              ],
 
               // Occupancy Section
               Container(
@@ -297,74 +346,252 @@ class ShelterDetailsBottomSheet extends StatelessWidget {
                   ],
                 ),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 20),
+
+              // Amenities Section
+              if (shelter.amenities.isNotEmpty) ...[
+                Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: AppColors.background,
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: AppColors.textSecondary.withValues(alpha: 0.1),
+                    ),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: Colors.purple.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: const Icon(
+                              Icons.check_circle_outline_rounded,
+                              color: Colors.purple,
+                              size: 20,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          const Text(
+                            'Available Amenities',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: shelter.amenities.map((amenity) {
+                          return Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 14,
+                              vertical: 8,
+                            ),
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: [
+                                  _getAmenityColor(amenity).withValues(alpha: 0.15),
+                                  _getAmenityColor(amenity).withValues(alpha: 0.05),
+                                ],
+                              ),
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(
+                                color: _getAmenityColor(amenity).withValues(alpha: 0.3),
+                              ),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  _getAmenityIcon(amenity),
+                                  size: 16,
+                                  color: _getAmenityColor(amenity),
+                                ),
+                                const SizedBox(width: 6),
+                                Text(
+                                  amenity,
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w600,
+                                    color: _getAmenityColor(amenity),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        }).toList(),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 20),
+              ],
+
+              // Contact Section
+              if (shelter.contactPerson.isNotEmpty || shelter.contactPhone.isNotEmpty) ...[
+                Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: AppColors.background,
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: AppColors.textSecondary.withValues(alpha: 0.1),
+                    ),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: Colors.teal.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: const Icon(
+                              Icons.contact_phone_rounded,
+                              color: Colors.teal,
+                              size: 20,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          const Text(
+                            'Contact Information',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      if (shelter.contactPerson.isNotEmpty) ...[
+                        Row(
+                          children: [
+                            const Icon(
+                              Icons.person_rounded,
+                              size: 18,
+                              color: AppColors.textSecondary,
+                            ),
+                            const SizedBox(width: 10),
+                            Text(
+                              shelter.contactPerson,
+                              style: const TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.textPrimary,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                      ],
+                      if (shelter.contactPhone.isNotEmpty) ...[
+                        Row(
+                          children: [
+                            const Icon(
+                              Icons.phone_rounded,
+                              size: 18,
+                              color: AppColors.textSecondary,
+                            ),
+                            const SizedBox(width: 10),
+                            Text(
+                              shelter.contactPhone,
+                              style: const TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.textPrimary,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 24),
+              ],
 
               // Action Buttons
               Row(
                 children: [
-                  Expanded(
-                    child: Container(
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [
-                            Colors.blue.shade500,
-                            Colors.blue.shade700,
+                  // Get Directions Button
+                  if (shelter.hasValidCoordinates)
+                    Expanded(
+                      child: Container(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [
+                              Colors.blue.shade500,
+                              Colors.blue.shade700,
+                            ],
+                          ),
+                          borderRadius: BorderRadius.circular(16),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.blue.shade300.withValues(alpha: 0.4),
+                              blurRadius: 12,
+                              offset: const Offset(0, 4),
+                            ),
                           ],
                         ),
+                        child: ElevatedButton.icon(
+                          onPressed: () => _navigateToDirections(context),
+                          icon: const Icon(Icons.directions_rounded, color: Colors.white),
+                          label: const Text(
+                            'Get Directions',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                          ),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.transparent,
+                            shadowColor: Colors.transparent,
+                            minimumSize: const Size(double.infinity, 56),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  if (shelter.hasValidCoordinates && shelter.contactPhone.isNotEmpty)
+                    const SizedBox(width: 12),
+                  // Call Button
+                  if (shelter.contactPhone.isNotEmpty)
+                    Container(
+                      decoration: BoxDecoration(
+                        color: AppColors.background,
                         borderRadius: BorderRadius.circular(16),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.blue.shade300.withValues(alpha: 0.4),
-                            blurRadius: 12,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
-                      ),
-                      child: ElevatedButton.icon(
-                        onPressed: () {
-                          // In a real app, this would open Google Maps for navigation
-                        },
-                        icon: const Icon(Icons.directions_rounded, color: Colors.white),
-                        label: const Text(
-                          'Get Directions',
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
-                        ),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.transparent,
-                          shadowColor: Colors.transparent,
-                          minimumSize: const Size(double.infinity, 56),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
-                          ),
+                        border: Border.all(
+                          color: Colors.green.shade200,
+                          width: 1.5,
                         ),
                       ),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Container(
-                    decoration: BoxDecoration(
-                      color: AppColors.background,
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(
-                        color: Colors.blue.shade200,
-                        width: 1.5,
+                      child: IconButton(
+                        onPressed: () => _makePhoneCall(context),
+                        icon: Icon(
+                          Icons.phone_rounded,
+                          color: Colors.green.shade700,
+                        ),
+                        iconSize: 24,
+                        padding: const EdgeInsets.all(16),
+                        tooltip: 'Call ${shelter.contactPerson}',
                       ),
                     ),
-                    child: IconButton(
-                      onPressed: () {
-                        // Call shelter functionality
-                      },
-                      icon: Icon(
-                        Icons.phone_rounded,
-                        color: Colors.blue.shade700,
-                      ),
-                      iconSize: 24,
-                      padding: const EdgeInsets.all(16),
-                    ),
-                  ),
                 ],
               ),
               const SizedBox(height: 16),
@@ -373,6 +600,92 @@ class ShelterDetailsBottomSheet extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  Widget _buildInfoCard({
+    required IconData icon,
+    required Color iconColor,
+    required String title,
+    required String content,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.background,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: AppColors.textSecondary.withValues(alpha: 0.1),
+        ),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: iconColor.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(
+              icon,
+              color: iconColor,
+              size: 20,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  content,
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  IconData _getAmenityIcon(String amenity) {
+    final amenityLower = amenity.toLowerCase();
+    if (amenityLower.contains('electric')) return Icons.electrical_services_rounded;
+    if (amenityLower.contains('food')) return Icons.restaurant_rounded;
+    if (amenityLower.contains('water')) return Icons.water_drop_rounded;
+    if (amenityLower.contains('bed')) return Icons.bed_rounded;
+    if (amenityLower.contains('generator')) return Icons.power_rounded;
+    if (amenityLower.contains('medical') || amenityLower.contains('first aid')) return Icons.medical_services_rounded;
+    if (amenityLower.contains('toilet') || amenityLower.contains('restroom')) return Icons.wc_rounded;
+    if (amenityLower.contains('wifi') || amenityLower.contains('internet')) return Icons.wifi_rounded;
+    return Icons.check_circle_outline_rounded;
+  }
+
+  Color _getAmenityColor(String amenity) {
+    final amenityLower = amenity.toLowerCase();
+    if (amenityLower.contains('electric')) return Colors.amber.shade700;
+    if (amenityLower.contains('food')) return Colors.orange.shade700;
+    if (amenityLower.contains('water')) return Colors.blue.shade600;
+    if (amenityLower.contains('bed')) return Colors.indigo.shade600;
+    if (amenityLower.contains('generator')) return Colors.deepOrange.shade600;
+    if (amenityLower.contains('medical') || amenityLower.contains('first aid')) return Colors.red.shade600;
+    if (amenityLower.contains('toilet') || amenityLower.contains('restroom')) return Colors.teal.shade600;
+    if (amenityLower.contains('wifi') || amenityLower.contains('internet')) return Colors.purple.shade600;
+    return Colors.green.shade600;
   }
 
   IconData _getStatusIcon(ShelterStatus status) {
@@ -405,6 +718,60 @@ class ShelterDetailsBottomSheet extends StatelessWidget {
         return Colors.orange.shade600;
       case ShelterStatus.closed:
         return Colors.red.shade600;
+    }
+  }
+
+  void _navigateToDirections(BuildContext context) {
+    if (!shelter.hasValidCoordinates) return;
+    
+    // Close the bottom sheet first
+    Navigator.pop(context);
+    
+    // Navigate to the in-app navigation screen
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ShelterNavigationScreen(shelter: shelter),
+      ),
+    );
+  }
+
+  Future<void> _openMapsForDirections(BuildContext context) async {
+    if (!shelter.hasValidCoordinates) return;
+    
+    final url = Uri.parse(
+      'https://www.google.com/maps/dir/?api=1&destination=${shelter.latitude},${shelter.longitude}'
+    );
+    
+    if (await canLaunchUrl(url)) {
+      await launchUrl(url, mode: LaunchMode.externalApplication);
+    } else {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Could not open maps'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _makePhoneCall(BuildContext context) async {
+    final phoneNumber = shelter.contactPhone.replaceAll(RegExp(r'[^\d+]'), '');
+    final url = Uri.parse('tel:$phoneNumber');
+    
+    if (await canLaunchUrl(url)) {
+      await launchUrl(url);
+    } else {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Could not make phone call'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 }

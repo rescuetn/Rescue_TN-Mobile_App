@@ -235,10 +235,11 @@ class FirestoreDatabaseService implements DatabaseService {
             .toList());
   }
 
-  // --- PREPAREDNESS PLAN METHODS ---
   @override
   @override
   Future<void> checkAndCreateDefaultPlan(String userId) async {
+    debugPrint('📋 checkAndCreateDefaultPlan called for user: $userId');
+    
     try {
       final planCollection = _firestore
           .collection('users')
@@ -246,18 +247,23 @@ class FirestoreDatabaseService implements DatabaseService {
           .collection('preparedness_plan');
       
       // Fetch current user's plan to check for missing items
+      debugPrint('📋 Fetching existing preparedness items...');
       final snapshot = await planCollection.get();
       final existingIds = snapshot.docs.map((doc) => doc.id).toSet();
+      debugPrint('📋 Found ${existingIds.length} existing items: $existingIds');
       
       // Use hardcoded defaults directly (government can add templates to backend later)
       // This ensures users always get a plan even if backend templates don't exist
       List<PreparednessItem> templates = List.from(_defaultPlan);
+      debugPrint('📋 Default templates count: ${templates.length}');
       
       // Try to fetch additional templates from backend (optional)
       try {
         final templatesSnapshot = await _firestore
             .collection('preparedness_templates')
             .get();
+        
+        debugPrint('📋 Backend templates found: ${templatesSnapshot.docs.length}');
         
         if (templatesSnapshot.docs.isNotEmpty) {
           final backendTemplates = templatesSnapshot.docs
@@ -266,28 +272,34 @@ class FirestoreDatabaseService implements DatabaseService {
           // Sort by order field
           backendTemplates.sort((a, b) => a.order.compareTo(b.order));
           templates = backendTemplates;
+          debugPrint('📋 Using ${templates.length} backend templates');
         }
       } catch (e) {
-        debugPrint('Backend templates not available, using defaults: $e');
+        debugPrint('📋 Backend templates not available, using defaults: $e');
       }
       
       final batch = _firestore.batch();
-      bool updatesNeeded = false;
+      int itemsToCreate = 0;
 
       for (final item in templates) {
         if (!existingIds.contains(item.id)) {
           final docRef = planCollection.doc(item.id);
           batch.set(docRef, item.toMap());
-          updatesNeeded = true;
+          itemsToCreate++;
+          debugPrint('📋 Will create item: ${item.id} - ${item.title}');
         }
       }
 
-      if (updatesNeeded) {
+      if (itemsToCreate > 0) {
+        debugPrint('📋 Committing batch with $itemsToCreate new items...');
         await batch.commit();
-        debugPrint('Created ${templates.length} preparedness items for user $userId');
+        debugPrint('📋 ✅ Successfully created $itemsToCreate preparedness items for user $userId');
+      } else {
+        debugPrint('📋 No new items needed, user already has all templates');
       }
-    } catch (e) {
-      debugPrint('Error in checkAndCreateDefaultPlan: $e');
+    } catch (e, stack) {
+      debugPrint('📋 ❌ Error in checkAndCreateDefaultPlan: $e');
+      debugPrint('📋 Stack trace: $stack');
       // Don't rethrow - let the user see empty state rather than crash
     }
   }
