@@ -48,37 +48,6 @@ class _PublicDashboardScreenState extends ConsumerState<PublicDashboardScreen>
     super.dispose();
   }
 
-  Future<void> _makeEmergencyCall() async {
-    final Uri phoneUri = Uri(scheme: 'tel', path: '108');
-    if (await canLaunchUrl(phoneUri)) {
-      await launchUrl(phoneUri);
-    } else {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Row(
-              children: [
-                Icon(Icons.error_outline, color: Colors.white),
-                SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    'Unable to make call. Please dial 108 manually.',
-                    style: TextStyle(fontSize: 15),
-                  ),
-                ),
-              ],
-            ),
-            backgroundColor: AppColors.error,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-            margin: const EdgeInsets.all(16),
-          ),
-        );
-      }
-    }
-    }
 
   /// Show settings/logout dialog
   void _showSettingsMenu() {
@@ -844,97 +813,6 @@ class _PublicDashboardScreenState extends ConsumerState<PublicDashboardScreen>
                         ),
                       ),
 
-                      // Emergency Banner
-                      SliverToBoxAdapter(
-                        child: GestureDetector(
-                          onTap: _makeEmergencyCall,
-                          child: Container(
-                            margin: const EdgeInsets.symmetric(
-                              horizontal: AppPadding.large,
-                              vertical: AppPadding.large,
-                            ),
-                            padding: const EdgeInsets.all(AppPadding.large),
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                colors: [
-                                  Colors.red.shade500,
-                                  Colors.red.shade700,
-                                ],
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
-                              ),
-                              borderRadius: BorderRadius.circular(AppBorderRadius.large),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.red.withValues(alpha: 0.4),
-                                  blurRadius: 20,
-                                  offset: const Offset(0, 8),
-                                ),
-                              ],
-                            ),
-                            child: Row(
-                              children: [
-                                Container(
-                                  padding: const EdgeInsets.all(AppPadding.medium),
-                                  decoration: BoxDecoration(
-                                    color: AppColors.onPrimary.withValues(alpha: 0.25),
-                                    borderRadius: BorderRadius.circular(AppBorderRadius.medium),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: Colors.black.withValues(alpha: 0.2),
-                                        blurRadius: 8,
-                                        offset: const Offset(0, 2),
-                                      ),
-                                    ],
-                                  ),
-                                  child: const Icon(
-                                    Icons.phone_in_talk,
-                                    color: AppColors.onPrimary,
-                                    size: 28,
-                                  ),
-                                ),
-                                const SizedBox(width: AppPadding.large),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        "dashboard.emergencyBannerTitle".tr(context),
-                                        style: textTheme.titleMedium?.copyWith(
-                                          color: AppColors.onPrimary,
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 17,
-                                          letterSpacing: 0.3,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 2),
-                                      Text(
-                                        "dashboard.emergencyBannerSubtitle".tr(context),
-                                        style: textTheme.bodyMedium?.copyWith(
-                                          color: AppColors.onPrimary.withValues(alpha: 0.95),
-                                          fontSize: 13,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                Container(
-                                  padding: const EdgeInsets.all(8),
-                                  decoration: BoxDecoration(
-                                    color: AppColors.onPrimary.withValues(alpha: 0.2),
-                                    shape: BoxShape.circle,
-                                  ),
-                                  child: const Icon(
-                                    Icons.arrow_forward_ios,
-                                    color: AppColors.onPrimary,
-                                    size: 18,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
 
                       // Section Header
                       SliverToBoxAdapter(

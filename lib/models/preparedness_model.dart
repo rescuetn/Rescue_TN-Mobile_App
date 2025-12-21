@@ -1,6 +1,6 @@
 import 'package:flutter/foundation.dart';
 
-enum PreparednessCategory { essentials, documents, actions, other } // Added 'other' for fallback
+enum PreparednessCategory { essentials, documents, actions, other }
 
 @immutable
 class PreparednessItem {
@@ -9,6 +9,7 @@ class PreparednessItem {
   final String description;
   final PreparednessCategory category;
   final bool isCompleted;
+  final int order;
 
   const PreparednessItem({
     required this.id,
@@ -16,6 +17,7 @@ class PreparednessItem {
     required this.description,
     required this.category,
     this.isCompleted = false,
+    this.order = 0,
   });
 
   PreparednessItem copyWith({bool? isCompleted}) {
@@ -25,6 +27,7 @@ class PreparednessItem {
       description: description,
       category: category,
       isCompleted: isCompleted ?? this.isCompleted,
+      order: order,
     );
   }
 
@@ -35,6 +38,7 @@ class PreparednessItem {
       'description': description,
       'category': category.name,
       'isCompleted': isCompleted,
+      'order': order,
     };
   }
 
@@ -44,13 +48,12 @@ class PreparednessItem {
       id: id,
       title: map['title'] ?? '',
       description: map['description'] ?? '',
-      // This safely handles cases where the category name might be missing or incorrect in the database.
       category: PreparednessCategory.values.firstWhere(
-            (e) => e.name == map['category'],
+        (e) => e.name == map['category'],
         orElse: () => PreparednessCategory.other,
       ),
       isCompleted: map['isCompleted'] ?? false,
+      order: map['order'] ?? 0,
     );
   }
 }
-

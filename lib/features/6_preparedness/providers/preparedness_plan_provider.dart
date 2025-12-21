@@ -29,34 +29,27 @@ class PreparednessController extends StateNotifier<bool> {
 
 /// A StreamProvider that provides a live stream of the user's preparedness plan from Firestore.
 ///
-/// It also intelligently checks for and creates a default plan for the user the
-/// first time they access this feature, ensuring every user has a checklist.
-final preparednessPlanProvider = StreamProvider.autoDispose<List<PreparednessItem>>((ref) {
+/// It ensures default plan items are created before streaming data.
+final preparednessPlanProvider = StreamProvider.autoDispose<List<PreparednessItem>>((ref) async* {
   final userAsync = ref.watch(authStateChangesProvider);
+  
+  final user = userAsync.valueOrNull;
+  if (user == null) {
+    yield [];
+    return;
+  }
 
-  return userAsync.when(
-    data: (user) {
-      if (user == null) return Stream.value([]);
+  final dbService = ref.watch(databaseServiceProvider);
 
-      final dbService = ref.watch(databaseServiceProvider);
-
-      // 1. Check for and create the default plan if it's the user's first time.
-      // We don't await this inside the stream builder or else we block the UI.
-      // We fire and forget, but the stream will update when the docs are added.
-      Future(() async {
-        try {
-          await dbService.checkAndCreateDefaultPlan(user.uid);
-        } catch (e) {
-          debugPrint('Error preparing default plan: $e');
-        }
-      });
-      
-      // 2. Return the live stream of their personal plan from the sub-collection.
-      return dbService.getPreparednessPlanStream(user.uid);
-    },
-    loading: () => Stream.value([]),
-    error: (_, __) => Stream.value([]),
-  );
+  // First, ensure the default plan exists (await this to ensure it completes)
+  try {
+    await dbService.checkAndCreateDefaultPlan(user.uid);
+  } catch (e) {
+    debugPrint('Error preparing default plan: $e');
+  }
+  
+  // Then stream the live data
+  yield* dbService.getPreparednessPlanStream(user.uid);
 });
 
 /// A derived provider that calculates the completion percentage from the live data stream.
@@ -73,4 +66,3 @@ final preparednessProgressProvider = Provider.autoDispose<AsyncValue<double>>((r
     error: (e, st) => AsyncError(e, st),
   );
 });
-

@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import 'package:rescuetn/app/constants.dart';
 import 'package:rescuetn/features/3_incident_reporting/repository/incident_repository.dart';
 import 'package:rescuetn/models/incident_model.dart';
+import 'package:rescuetn/core/utils/translation_helper.dart';
 
 class HeatmapScreen extends ConsumerStatefulWidget {
   const HeatmapScreen({super.key});
@@ -92,22 +93,9 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen>
     }
   }
 
-  /// Get formatted type label
+  /// Get formatted type label (translated)
   String _getTypeLabel(IncidentType type) {
-    switch (type) {
-      case IncidentType.flood:
-        return 'Flood';
-      case IncidentType.fire:
-        return 'Fire';
-      case IncidentType.earthquake:
-        return 'Earthquake';
-      case IncidentType.accident:
-        return 'Accident';
-      case IncidentType.medical:
-        return 'Medical Emergency';
-      case IncidentType.other:
-        return 'Other';
-    }
+    return TranslationHelper.translateIncidentType(context, type);
   }
 
   /// Create markers from incidents

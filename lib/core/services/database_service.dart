@@ -245,14 +245,36 @@ class FirestoreDatabaseService implements DatabaseService {
           .doc(userId)
           .collection('preparedness_plan');
       
-      // Fetch current plan to check for missing items
+      // Fetch current user's plan to check for missing items
       final snapshot = await planCollection.get();
       final existingIds = snapshot.docs.map((doc) => doc.id).toSet();
+      
+      // Use hardcoded defaults directly (government can add templates to backend later)
+      // This ensures users always get a plan even if backend templates don't exist
+      List<PreparednessItem> templates = List.from(_defaultPlan);
+      
+      // Try to fetch additional templates from backend (optional)
+      try {
+        final templatesSnapshot = await _firestore
+            .collection('preparedness_templates')
+            .get();
+        
+        if (templatesSnapshot.docs.isNotEmpty) {
+          final backendTemplates = templatesSnapshot.docs
+              .map((doc) => PreparednessItem.fromMap(doc.data(), doc.id))
+              .toList();
+          // Sort by order field
+          backendTemplates.sort((a, b) => a.order.compareTo(b.order));
+          templates = backendTemplates;
+        }
+      } catch (e) {
+        debugPrint('Backend templates not available, using defaults: $e');
+      }
       
       final batch = _firestore.batch();
       bool updatesNeeded = false;
 
-      for (final item in _defaultPlan) {
+      for (final item in templates) {
         if (!existingIds.contains(item.id)) {
           final docRef = planCollection.doc(item.id);
           batch.set(docRef, item.toMap());
@@ -262,10 +284,11 @@ class FirestoreDatabaseService implements DatabaseService {
 
       if (updatesNeeded) {
         await batch.commit();
+        debugPrint('Created ${templates.length} preparedness items for user $userId');
       }
     } catch (e) {
-      // Silently fail or log to crashlytics in production
-      rethrow;
+      debugPrint('Error in checkAndCreateDefaultPlan: $e');
+      // Don't rethrow - let the user see empty state rather than crash
     }
   }
 
@@ -383,32 +406,37 @@ class FirestoreDatabaseService implements DatabaseService {
   }
 }
 
-// Helper list containing the default preparedness items for new users.
+// Helper list containing the default preparedness items for new users (fallback if backend empty).
 const List<PreparednessItem> _defaultPlan = [
   PreparednessItem(
       id: 'p-01',
       title: 'Emergency Water Supply',
       description: 'Store at least 1 gallon of water per person per day.',
-      category: PreparednessCategory.essentials),
+      category: PreparednessCategory.essentials,
+      order: 1),
   PreparednessItem(
       id: 'p-02',
       title: 'Non-perishable Food',
       description: 'Stock a 3-day supply of non-perishable food.',
-      category: PreparednessCategory.essentials),
+      category: PreparednessCategory.essentials,
+      order: 2),
   PreparednessItem(
       id: 'p-03',
       title: 'First-Aid Kit',
       description: 'Ensure your first-aid kit is fully stocked.',
-      category: PreparednessCategory.essentials),
+      category: PreparednessCategory.essentials,
+      order: 3),
   PreparednessItem(
       id: 'p-04',
       title: 'Secure Important Documents',
       description:
           'Keep copies of passports, Aadhaar cards, etc., in a waterproof bag.',
-      category: PreparednessCategory.documents),
+      category: PreparednessCategory.documents,
+      order: 4),
   PreparednessItem(
       id: 'p-05',
       title: 'Know Your Evacuation Route',
       description: 'Identify your local evacuation routes and have a plan.',
-      category: PreparednessCategory.actions),
+      category: PreparednessCategory.actions,
+      order: 5),
 ];

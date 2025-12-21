@@ -12,6 +12,7 @@ import 'package:record/record.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:rescuetn/features/3_incident_reporting/providers/incident_provider.dart';
 import 'package:rescuetn/core/providers/locale_provider.dart';
+import 'package:rescuetn/core/utils/translation_helper.dart';
 
 class ReportIncidentScreen extends ConsumerStatefulWidget {
   const ReportIncidentScreen({super.key});
@@ -712,7 +713,7 @@ class _ReportIncidentScreenState extends ConsumerState<ReportIncidentScreen>
                                   children: [
                                     Icon(_getIncidentIcon(type), size: 20),
                                     const SizedBox(width: 12),
-                                    Text(type.name[0].toUpperCase() + type.name.substring(1)),
+                                    Text(TranslationHelper.translateIncidentType(context, type)),
                                   ],
                                 ),
                                 validator: (value) =>
@@ -795,7 +796,7 @@ class _ReportIncidentScreenState extends ConsumerState<ReportIncidentScreen>
                                       ),
                                     ),
                                     const SizedBox(width: 12),
-                                    Text(severity.name[0].toUpperCase() + severity.name.substring(1)),
+                                    Text(TranslationHelper.translateSeverity(context, severity)),
                                   ],
                                 ),
                                 validator: (value) =>
@@ -806,7 +807,7 @@ class _ReportIncidentScreenState extends ConsumerState<ReportIncidentScreen>
                               // Evidence Section
                               _buildEnhancedSectionHeader(
                                 icon: Icons.camera_alt_rounded,
-                                title: 'Photo Evidence',
+                                title: 'taskCompletion.photoEvidence'.tr(context),
                                 subtitle: 'Add photos to support your report',
                                 gradient: [Colors.purple.shade400, Colors.purple.shade600],
                               ),

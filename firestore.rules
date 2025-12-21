@@ -69,6 +69,12 @@ service cloud.firestore {
       allow delete: if false;
     }
     
+    // Preparedness Templates - Read by all authenticated
+    match /preparedness_templates/{templateId} {
+      allow read: if isAuthenticated();
+      allow write: if false; // Admin only
+    }
+    
     // Shelters - Read only
     match /shelters/{shelterId} {
       allow read: if isAuthenticated();

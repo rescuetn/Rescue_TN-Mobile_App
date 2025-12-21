@@ -1,7 +1,59 @@
 {
     "appTitle": "RescueTN",
+    "common": {
+        "loading": "Loading...",
+        "error": "Error",
+        "retry": "Retry",
+        "cancel": "Cancel",
+        "save": "Save",
+        "submit": "Submit",
+        "delete": "Delete",
+        "edit": "Edit",
+        "back": "Back",
+        "next": "Next",
+        "done": "Done",
+        "yes": "Yes",
+        "no": "No",
+        "ok": "OK",
+        "close": "Close",
+        "search": "Search",
+        "noData": "No data available",
+        "success": "Success",
+        "failed": "Failed"
+    },
+    "incidentTypes": {
+        "flood": "Flood",
+        "fire": "Fire",
+        "earthquake": "Earthquake",
+        "accident": "Accident",
+        "medical": "Medical Emergency",
+        "other": "Other",
+        "cyclone": "Cyclone",
+        "landslide": "Landslide",
+        "drought": "Drought",
+        "tsunami": "Tsunami"
+    },
+    "severityLevels": {
+        "low": "Low",
+        "medium": "Medium",
+        "high": "High",
+        "critical": "Critical"
+    },
+    "taskStatuses": {
+        "pending": "Pending",
+        "accepted": "Accepted",
+        "inProgress": "In Progress",
+        "completed": "Completed",
+        "cancelled": "Cancelled"
+    },
+    "shelterStatuses": {
+        "open": "Open",
+        "full": "Full",
+        "closed": "Closed"
+    },
     "dashboard": {
         "welcome": "Welcome back, Volunteer!",
+        "publicWelcome": "Hello",
         "volunteer": "VOLUNTEER",
         "status": "Status",
         "available": "Available",
@@ -46,7 +98,13 @@
         "stayPreparedSubtitle": "Keep emergency contacts saved and your phone charged.",
         "callError": "Could not launch dialer",
         "cancel": "Cancel",
-        "defaultUser": "User"
+        "defaultUser": "User",
+        "myTasks": "My Tasks",
+        "myTasksSub": "View assignments",
+        "activeAlert": "Active Alert",
+        "activeAlerts": "Active Alerts",
+        "noActiveAlerts": "No Active Alerts",
+        "tapToViewDetails": "Tap to view details"
     },
     "settings": {
         "title": "Settings & Account",
@@ -77,7 +135,11 @@
         "enterDesc": "Please provide a description",
         "selectSeverity": "Please select severity level",
         "camera": "Camera",
-        "gallery": "Photo Gallery"
+        "gallery": "Photo Gallery",
+        "district": "District",
+        "selectDistrict": "Select District",
+        "location": "Location",
+        "currentLocation": "Current Location"
     },
     "tasks": {
         "availableTasks": "Available Tasks",
@@ -102,7 +164,48 @@
         "notFound": "Task not found",
         "detailsTitle": "Task Details",
         "detailsSubtitle": "View and manage task",
-        "active": "ACTIVE"
+        "active": "ACTIVE",
+        "markCompleted": "Mark Completed",
+        "acceptTask": "Accept Task",
+        "startWorking": "Start Working",
+        "taskAccepted": "Task accepted",
+        "taskStarted": "Task started",
+        "taskCompleted": "Task completed",
+        "assignedTo": "Assigned To",
+        "createdAt": "Created At",
+        "deadline": "Deadline",
+        "priority": "Priority",
+        "notes": "Notes"
+    },
+    "taskCompletion": {
+        "title": "Complete Task",
+        "subtitle": "Submit proof of completion",
+        "photoEvidence": "Photo Evidence",
+        "photoEvidenceSub": "Upload proof of task completion",
+        "voiceMessage": "Voice Message",
+        "voiceMessageSub": "Optional: Record audio explanation",
+        "completionNotes": "Completion Notes",
+        "completionNotesSub": "Describe what you did",
+        "notesHint": "Describe what you did to complete this task...",
+        "challenges": "Challenges Faced",
+        "challengesSub": "Optional: Any obstacles encountered",
+        "challengesHint": "Any difficulties or issues...",
+        "needMoreHelp": "Need More Help?",
+        "needMoreHelpSub": "Request additional volunteers",
+        "requestVolunteers": "Request additional volunteers",
+        "volunteersNeeded": "Number of volunteers needed",
+        "submitButton": "SUBMIT COMPLETION",
+        "uploading": "Uploading proof...",
+        "photoRequired": "Please add a photo proof",
+        "takePhoto": "Take Photo",
+        "captureCamera": "Capture using camera",
+        "chooseGallery": "Choose from Gallery",
+        "selectExisting": "Select existing photo",
+        "photoAdded": "Photo Added",
+        "audioRecorded": "Audio Recorded",
+        "startRecording": "Start Recording",
+        "stopRecording": "Stop Recording",
+        "required": "Required"
     },
     "preparedness": {
         "title": "Preparedness Plan",
@@ -112,8 +215,11 @@
         "essentials": "Essential Supplies",
         "documents": "Important Documents",
         "actions": "Action Items",
+        "other": "Other",
         "score": "Readiness Score",
-        "startCreating": "Start creating your emergency plan"
+        "startCreating": "Start creating your emergency plan",
+        "itemsCompleted": "items completed",
+        "tapToToggle": "Tap to mark complete"
     },
     "shelter": {
         "nearby": "Nearby Shelters",
@@ -124,7 +230,11 @@
         "myLocation": "My Location",
         "retry": "Retry",
         "loading": "Loading...",
-        "error": "Error loading"
+        "error": "Error loading",
+        "capacity": "Capacity",
+        "facilities": "Facilities",
+        "getDirections": "Get Directions",
+        "distance": "Distance"
     },
     "alerts": {
         "title": "Emergency Alerts",
@@ -143,7 +253,10 @@
         "emptyInfoTitle": "No Info Alerts",
         "emptyInfoMessage": "No general information announcements available.",
         "emptyAllTitle": "All Clear!",
-        "emptyAllMessage": "No active emergency alerts at the moment.\nStay safe and prepared."
+        "emptyAllMessage": "No active emergency alerts at the moment.\nStay safe and prepared.",
+        "issuedBy": "Issued by",
+        "affectedAreas": "Affected Areas",
+        "instructions": "Instructions"
     },
     "auth": {
         "noInternet": "No internet connection. Please check your network and try again.",
@@ -161,7 +274,10 @@
         "noAccount": "Don't have an account?",
         "signUp": "Sign Up",
         "errorOccurred": "An error occurred. Please try again.",
-        "invalidCreds": "Invalid email/phone or password."
+        "invalidCreds": "Invalid email/phone or password.",
+        "signingIn": "Signing in...",
+        "register": "Register",
+        "createAccount": "Create Account"
     },
     "volunteerStatus": {
         "available": "Available",
@@ -189,6 +305,7 @@
         "critical": "Critical",
         "high": "High",
         "medium": "Medium",
+        "low": "Low",
         "description": "Description",
         "coordinates": "Coordinates",
         "reported": "Reported",
@@ -222,10 +339,32 @@
         "safeDesc": "Person is safe and accounted for",
         "missingTitle": "Reported Missing",
         "missingDesc": "Person is missing or unaccounted for",
+        "foundTitle": "Found",
+        "foundDesc": "Previously missing person has been found",
         "submit": "Submit Report",
         "loginError": "You must be logged in to submit a report.",
         "success": "Person status reported successfully!",
         "failure": "Failed to submit report"
+    },
+    "personRegistry": {
+        "title": "Safety Registry",
+        "totalPeople": "total people",
+        "safe": "Safe",
+        "missing": "Missing",
+        "found": "Found",
+        "markedSafe": "Marked Safe",
+        "reportedMissing": "Reported Missing",
+        "personFound": "Found",
+        "noSafeReports": "No Safe Reports",
+        "safeAppearHere": "People marked as safe will appear here.",
+        "noMissingReports": "No Missing Reports",
+        "missingAppearHere": "Reports of missing persons will appear here.",
+        "noFoundReports": "No Found Reports",
+        "foundAppearHere": "People who have been found will appear here.",
+        "pullToRefresh": "Pull down to refresh",
+        "addReport": "Add Report",
+        "lastSeen": "Last Seen",
+        "age": "Age"
     },
     "profile": {
         "title": "Profile",
@@ -249,7 +388,8 @@
         "locationSubtitle": "Share location for emergencies",
         "helpSubtitle": "Get help and support",
         "aboutSubtitle": "App version and information",
-        "privacySubtitle": "Learn how we protect your data"
+        "privacySubtitle": "Learn how we protect your data",
+        "version": "Version"
     },
     "editProfile": {
         "title": "Edit Profile",
@@ -263,5 +403,11 @@
         "validationName": "Please enter your full name",
         "validationPhone": "Please enter a valid phone number",
         "validationAge": "Age must be between 1 and 150"
+    },
+    "notifications": {
+        "newTask": "New Task Assigned",
+        "taskUpdated": "Task Updated",
+        "newAlert": "New Emergency Alert",
+        "tapToView": "Tap to view details"
     }
 }

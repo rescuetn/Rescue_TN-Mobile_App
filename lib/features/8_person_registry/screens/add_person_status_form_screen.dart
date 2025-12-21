@@ -63,6 +63,8 @@ class _AddPersonStatusScreenState extends ConsumerState<AddPersonStatusScreen>
     switch (status) {
       case PersonSafetyStatus.safe:
         return Colors.green.shade600;
+      case PersonSafetyStatus.found:
+        return Colors.blue.shade600;
       case PersonSafetyStatus.missing:
         return Colors.orange.shade600;
     }
@@ -72,6 +74,8 @@ class _AddPersonStatusScreenState extends ConsumerState<AddPersonStatusScreen>
     switch (status) {
       case PersonSafetyStatus.safe:
         return [Colors.green.shade400, Colors.green.shade600];
+      case PersonSafetyStatus.found:
+        return [Colors.blue.shade400, Colors.blue.shade600];
       case PersonSafetyStatus.missing:
         return [Colors.orange.shade400, Colors.orange.shade600];
     }
@@ -81,6 +85,8 @@ class _AddPersonStatusScreenState extends ConsumerState<AddPersonStatusScreen>
     switch (status) {
       case PersonSafetyStatus.safe:
         return Icons.check_circle_rounded;
+      case PersonSafetyStatus.found:
+        return Icons.person_search_rounded;
       case PersonSafetyStatus.missing:
         return Icons.error_rounded;
     }

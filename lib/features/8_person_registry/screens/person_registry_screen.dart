@@ -28,7 +28,7 @@ class _PersonRegistryScreenState extends ConsumerState<PersonRegistryScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
+    _tabController = TabController(length: 3, vsync: this);
     _animationController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1200),
@@ -68,6 +68,9 @@ class _PersonRegistryScreenState extends ConsumerState<PersonRegistryScreen>
               .toList();
           final missingPeople = allPeople
               .where((p) => p.status == PersonSafetyStatus.missing)
+              .toList();
+          final foundPeople = allPeople
+              .where((p) => p.status == PersonSafetyStatus.found)
               .toList();
 
           return Container(
@@ -176,7 +179,7 @@ class _PersonRegistryScreenState extends ConsumerState<PersonRegistryScreen>
                         ),
                         const SizedBox(height: 20),
 
-                        // Stats Cards
+                        // Stats Cards Row 1
                         Row(
                           children: [
                             Expanded(
@@ -193,10 +196,16 @@ class _PersonRegistryScreenState extends ConsumerState<PersonRegistryScreen>
                                 'Missing',
                                 missingPeople.length.toString(),
                                 Icons.error_rounded,
-                                [
-                                  Colors.orange.shade400,
-                                  Colors.orange.shade600
-                                ],
+                                [Colors.orange.shade400, Colors.orange.shade600],
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: _buildStatCard(
+                                'Found',
+                                foundPeople.length.toString(),
+                                Icons.person_search_rounded,
+                                [Colors.blue.shade400, Colors.blue.shade600],
                               ),
                             ),
                           ],
@@ -245,12 +254,16 @@ class _PersonRegistryScreenState extends ConsumerState<PersonRegistryScreen>
                       ),
                       tabs: const [
                         Tab(
-                          icon: Icon(Icons.check_circle_rounded, size: 20),
-                          text: 'MARKED SAFE',
+                          icon: Icon(Icons.check_circle_rounded, size: 18),
+                          text: 'SAFE',
                         ),
                         Tab(
-                          icon: Icon(Icons.search_rounded, size: 20),
+                          icon: Icon(Icons.search_rounded, size: 18),
                           text: 'MISSING',
+                        ),
+                        Tab(
+                          icon: Icon(Icons.person_search_rounded, size: 18),
+                          text: 'FOUND',
                         ),
                       ],
                     ),
@@ -281,6 +294,10 @@ class _PersonRegistryScreenState extends ConsumerState<PersonRegistryScreen>
                               _buildEnhancedPersonList(
                                 missingPeople,
                                 PersonSafetyStatus.missing,
+                              ),
+                              _buildEnhancedPersonList(
+                                foundPeople,
+                                PersonSafetyStatus.found,
                               ),
                             ],
                           ),
@@ -507,9 +524,17 @@ class _PersonRegistryScreenState extends ConsumerState<PersonRegistryScreen>
   }
 
   Widget _buildPersonCard(PersonStatus person, PersonSafetyStatus status) {
-    final gradient = status == PersonSafetyStatus.safe
-        ? [Colors.green.shade400, Colors.green.shade600]
-        : [Colors.orange.shade400, Colors.orange.shade600];
+    List<Color> gradient;
+    switch (status) {
+      case PersonSafetyStatus.safe:
+        gradient = [Colors.green.shade400, Colors.green.shade600];
+        break;
+      case PersonSafetyStatus.found:
+        gradient = [Colors.blue.shade400, Colors.blue.shade600];
+        break;
+      case PersonSafetyStatus.missing:
+        gradient = [Colors.orange.shade400, Colors.orange.shade600];
+    }
 
     return Container(
       decoration: BoxDecoration(
@@ -629,15 +654,15 @@ class _PersonRegistryScreenState extends ConsumerState<PersonRegistryScreen>
                           Icon(
                             status == PersonSafetyStatus.safe
                                 ? Icons.check_circle_rounded
-                                : Icons.error_rounded,
+                                : status == PersonSafetyStatus.found
+                                    ? Icons.person_search_rounded
+                                    : Icons.error_rounded,
                             size: 14,
                             color: gradient[1],
                           ),
                           const SizedBox(width: 4),
                           Text(
-                            status == PersonSafetyStatus.safe
-                                ? 'Marked Safe'
-                                : 'Reported Missing',
+                            person.statusText,
                             style: TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.w600,
@@ -688,21 +713,30 @@ class _PersonRegistryScreenState extends ConsumerState<PersonRegistryScreen>
   }
 
   Widget _buildEmptyState(PersonSafetyStatus status) {
-    final gradient = status == PersonSafetyStatus.safe
-        ? [Colors.green.shade400, Colors.green.shade600]
-        : [Colors.orange.shade400, Colors.orange.shade600];
+    List<Color> gradient;
+    IconData icon;
+    String title;
+    String message;
 
-    final icon = status == PersonSafetyStatus.safe
-        ? Icons.check_circle_rounded
-        : Icons.search_rounded;
-
-    final title = status == PersonSafetyStatus.safe
-        ? 'No Safe Reports'
-        : 'No Missing Reports';
-
-    final message = status == PersonSafetyStatus.safe
-        ? 'People marked as safe will appear here.'
-        : 'Reports of missing persons will appear here.';
+    switch (status) {
+      case PersonSafetyStatus.safe:
+        gradient = [Colors.green.shade400, Colors.green.shade600];
+        icon = Icons.check_circle_rounded;
+        title = 'No Safe Reports';
+        message = 'People marked as safe will appear here.';
+        break;
+      case PersonSafetyStatus.found:
+        gradient = [Colors.blue.shade400, Colors.blue.shade600];
+        icon = Icons.person_search_rounded;
+        title = 'No Found Reports';
+        message = 'People who have been found will appear here.';
+        break;
+      case PersonSafetyStatus.missing:
+        gradient = [Colors.orange.shade400, Colors.orange.shade600];
+        icon = Icons.search_rounded;
+        title = 'No Missing Reports';
+        message = 'Reports of missing persons will appear here.';
+    }
 
     return Center(
       child: Padding(
