@@ -1,21 +1,49 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:rescuetn/core/services/database_service.dart';
 import 'package:rescuetn/models/task_model.dart';
+import 'package:rescuetn/models/user_model.dart';
+import 'package:rescuetn/features/1_auth/providers/auth_provider.dart';
+
+// ... existing code ...
+
+// 5. Provider to fetch the assigned volunteer's details
+final volunteerDetailsProvider = FutureProvider.autoDispose<AppUser?>((ref) async {
+  final taskAsync = ref.watch(selectedTaskProvider);
+  
+  return taskAsync.when(
+    data: (task) async {
+      if (task == null || task.assignedTo == null || task.assignedTo!.isEmpty) {
+        return null;
+      }
+      
+      final databaseService = ref.read(databaseServiceProvider);
+      try {
+        // Fetch the user record for the assigned volunteer
+        return await databaseService.getUserRecord(task.assignedTo!);
+      } catch (e) {
+        debugPrint('Error fetching volunteer details: $e');
+        return null;
+      }
+    },
+    loading: () => null, // Return null while loading parent task
+    error: (_, __) => null,
+  );
+});
 
 /// This file has been updated to provide a live stream of task data from Firestore,
 /// replacing the local dummy data.
 
 // 1. A StreamProvider that provides a real-time stream of all tasks from Firestore.
 // The UI will listen to this to get the initial, unfiltered list of tasks.
-import 'package:rescuetn/features/1_auth/providers/auth_provider.dart';
-
-// 1. A StreamProvider that provides a real-time stream of all tasks from Firestore.
-// The UI will listen to this to get the initial, unfiltered list of tasks.
-// 1. A StreamProvider that provides a real-time stream of all tasks from Firestore.
-// The UI will listen to this to get the initial, unfiltered list of tasks.
 final tasksStreamProvider = StreamProvider.autoDispose<List<Task>>((ref) {
   final authState = ref.watch(authStateChangesProvider);
   
+  // If auth is loading, don't return empty list yet. Keep this provider loading.
+  if (authState.isLoading) {
+    return const Stream.empty(); 
+  }
+
   // Return empty stream if user is not logged in to prevent permission denied errors
   if (authState.valueOrNull == null) {
     return Stream.value([]);
@@ -41,8 +69,18 @@ final filteredTasksProvider = Provider.autoDispose<AsyncValue<List<Task>>>((ref)
       final user = ref.read(authStateChangesProvider).value;
       if (user == null) return const AsyncData([]);
 
-      // Filter by assignment first (Show only tasks assigned to THIS volunteer)
-      final myTasks = tasks.where((t) => t.assignedTo == user.uid).toList();
+      // Filter by assignment first (Show tasks assigned to THIS volunteer OR unassigned pending tasks)
+      final myTasks = tasks.where((t) {
+        final assignedTo = t.assignedTo;
+        final isAssignedToMe = assignedTo == user.uid || 
+                             (assignedTo != null && assignedTo.isNotEmpty && (
+                               assignedTo == user.email || 
+                               (user.fullName != null && assignedTo == user.fullName) ||
+                               (user.phoneNumber.isNotEmpty && assignedTo == user.phoneNumber)
+                             ));
+        final isUnassignedPending = (assignedTo == null || assignedTo.isEmpty) && t.status == TaskStatus.pending;
+        return isAssignedToMe || isUnassignedPending;
+      }).toList();
 
       if (filter == TaskFilter.all) {
         return AsyncData(myTasks);
@@ -63,23 +101,32 @@ final filteredTasksProvider = Provider.autoDispose<AsyncValue<List<Task>>>((ref)
 // 4. Providers for selecting a specific task.
 final selectedTaskIdProvider = StateProvider.autoDispose<String?>((ref) => null);
 
-final selectedTaskProvider = Provider.autoDispose<Task?>((ref) {
+final selectedTaskProvider = FutureProvider.autoDispose<Task?>((ref) async {
   final selectedId = ref.watch(selectedTaskIdProvider);
-  final tasksAsync = ref.watch(tasksStreamProvider);
+  if (selectedId == null) return null;
 
-  // We can only find the task if the stream has successfully loaded data.
-  return tasksAsync.when(
-    data: (tasks) {
-      if (selectedId == null) return null;
-      try {
-        return tasks.firstWhere((task) => task.id == selectedId);
-      } catch (e) {
-        return null; // Return null if the task is not found in the list.
-      }
-    },
-    // In loading or error states, there is no selected task.
-    loading: () => null,
-    error: (_, __) => null,
-  );
+  final tasksAsync = ref.watch(tasksStreamProvider);
+  
+  // 1. Try to find in the existing stream first (fastest)
+  if (tasksAsync.hasValue) {
+    try {
+      return tasksAsync.value!.firstWhere((task) => task.id == selectedId);
+    } catch (_) {
+      // Not found in stream, proceed to step 2
+    }
+  }
+
+  // 2. If not in stream (or stream loading/error), fetch directly from DB
+  final databaseService = ref.read(databaseServiceProvider);
+  try {
+    return await databaseService.getTask(selectedId);
+  } catch (e) {
+    debugPrint('Error fetching selected task: $e');
+    // If it's a permission denied error, rethrow it so UI can show appropriate message
+    if (e.toString().contains('permission-denied')) {
+      rethrow;
+    }
+    return null;
+  }
 });
 

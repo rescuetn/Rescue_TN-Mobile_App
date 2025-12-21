@@ -1,5 +1,6 @@
 
 import 'package:flutter/material.dart';
+import 'package:rescuetn/core/providers/locale_provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:go_router/go_router.dart';
@@ -498,7 +499,7 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen>
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Disaster Heatmap',
+                            "heatmap.title".tr(context),
                             style: textTheme.titleLarge?.copyWith(
                               fontWeight: FontWeight.bold,
                               color: Colors.white,
@@ -507,7 +508,7 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen>
                           ),
                           const SizedBox(height: 2),
                           Text(
-                            'Live incident visualization',
+                            "heatmap.subtitle".tr(context),
                             style: textTheme.bodyMedium?.copyWith(
                               color: Colors.white.withValues(alpha: 0.9),
                             ),
@@ -550,17 +551,17 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen>
                         topRight: Radius.circular(32),
                       ),
                       child: incidentsAsync.when(
-                        loading: () => const Center(
+                        loading: () => Center(
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              CircularProgressIndicator(
+                              const CircularProgressIndicator(
                                 color: AppColors.primary,
                               ),
-                              SizedBox(height: 16),
+                              const SizedBox(height: 16),
                               Text(
-                                'Loading incident data...',
-                                style: TextStyle(
+                                "heatmap.loading".tr(context),
+                                style: const TextStyle(
                                   fontSize: 16,
                                   color: AppColors.textSecondary,
                                 ),
@@ -587,9 +588,10 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen>
                                   ),
                                 ),
                                 const SizedBox(height: 24),
-                                const Text(
-                                  'Unable to Load Map Data',
-                                  style: TextStyle(
+                                    const SizedBox(height: 24),
+                                Text(
+                                  "heatmap.errorTitle".tr(context),
+                                  style: const TextStyle(
                                     fontSize: 20,
                                     fontWeight: FontWeight.bold,
                                     color: AppColors.textPrimary,
@@ -610,7 +612,7 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen>
                                     ref.invalidate(incidentStreamProvider);
                                   },
                                   icon: const Icon(Icons.refresh_rounded),
-                                  label: const Text('Retry'),
+                                  label: Text("heatmap.retry".tr(context)),
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: AppColors.primary,
                                     foregroundColor: Colors.white,
@@ -653,19 +655,20 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen>
                                       ),
                                     ),
                                     const SizedBox(height: 32),
-                                    const Text(
-                                      'No Recent Incidents',
-                                      style: TextStyle(
+                                    const SizedBox(height: 32),
+                                    Text(
+                                      "heatmap.noIncidents".tr(context),
+                                      style: const TextStyle(
                                         fontSize: 22,
                                         fontWeight: FontWeight.bold,
                                         color: AppColors.textPrimary,
                                       ),
                                     ),
                                     const SizedBox(height: 12),
-                                    const Text(
-                                      'Great news! There are no disaster incidents to display on the map.',
+                                    Text(
+                                      "heatmap.noIncidentsMsg".tr(context),
                                       textAlign: TextAlign.center,
-                                      style: TextStyle(
+                                      style: const TextStyle(
                                         fontSize: 15,
                                         color: AppColors.textSecondary,
                                         height: 1.5,
@@ -744,22 +747,22 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen>
                                     MainAxisAlignment.spaceAround,
                                     children: [
                                       _buildStatItem(
-                                        'Total',
+                                        "heatmap.total".tr(context),
                                         incidents.length.toString(),
                                         Colors.blue.shade600,
                                       ),
                                       _buildStatItem(
-                                        'Critical',
+                                        "heatmap.critical".tr(context),
                                         criticalCount.toString(),
                                         Colors.red.shade600,
                                       ),
                                       _buildStatItem(
-                                        'High',
+                                        "heatmap.high".tr(context),
                                         highCount.toString(),
                                         Colors.orange.shade600,
                                       ),
                                       _buildStatItem(
-                                        'Medium',
+                                        "heatmap.medium".tr(context),
                                         mediumCount.toString(),
                                         Colors.yellow.shade700,
                                       ),
@@ -777,7 +780,7 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen>
                                   children: [
                                     Expanded(
                                       child: _buildToggleButton(
-                                        'Heatmap',
+                                        "heatmap.heatmap".tr(context),
                                         Icons.heat_pump_rounded,
                                         _showHeatmap,
                                             () {
@@ -790,7 +793,7 @@ class _HeatmapScreenState extends ConsumerState<HeatmapScreen>
                                     const SizedBox(width: 12),
                                     Expanded(
                                       child: _buildToggleButton(
-                                        'Markers',
+                                        "heatmap.markers".tr(context),
                                         Icons.location_on_rounded,
                                         _showMarkers,
                                             () {

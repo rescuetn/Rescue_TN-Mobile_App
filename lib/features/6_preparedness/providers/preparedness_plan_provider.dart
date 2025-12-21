@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:rescuetn/core/services/database_service.dart';
 import 'package:rescuetn/features/1_auth/providers/auth_provider.dart';
@@ -31,28 +32,30 @@ class PreparednessController extends StateNotifier<bool> {
 /// It also intelligently checks for and creates a default plan for the user the
 /// first time they access this feature, ensuring every user has a checklist.
 final preparednessPlanProvider = StreamProvider.autoDispose<List<PreparednessItem>>((ref) {
-  final user = ref.watch(authStateChangesProvider).value;
-  final dbService = ref.watch(databaseServiceProvider);
+  final userAsync = ref.watch(authStateChangesProvider);
 
-  if (user != null) {
-    // 1. Check for and create the default plan if it's the user's first time.
-    // Use async to avoid blocking and handle errors gracefully
-    Future(() async {
-      try {
-        await dbService.checkAndCreateDefaultPlan(user.uid);
-      } catch (e) {
-        // Silently fail in production or log to crashlytics
-      }
-    });
-    
-    // 2. Return the live stream of their personal plan from the sub-collection.
-    return dbService.getPreparednessPlanStream(user.uid).handleError((error) {
-      return <PreparednessItem>[];
-    });
-  }
+  return userAsync.when(
+    data: (user) {
+      if (user == null) return Stream.value([]);
 
-  // If the user is logged out, return an empty stream.
-  return Stream.value([]);
+      final dbService = ref.watch(databaseServiceProvider);
+
+      // 1. Check for and create the default plan if it's the user's first time.
+      Future(() async {
+        try {
+          await dbService.checkAndCreateDefaultPlan(user.uid);
+        } catch (e) {
+          // Prepare default plan failed, but stream should still work
+          debugPrint('Error preparing default plan: $e');
+        }
+      });
+      
+      // 2. Return the live stream of their personal plan from the sub-collection.
+      return dbService.getPreparednessPlanStream(user.uid);
+    },
+    loading: () => Stream.value([]),
+    error: (_, __) => Stream.value([]),
+  );
 });
 
 /// A derived provider that calculates the completion percentage from the live data stream.

@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:rescuetn/app/constants.dart';
 import 'package:rescuetn/features/6_preparedness/providers/preparedness_plan_provider.dart';
 import 'package:rescuetn/models/preparedness_model.dart';
+import 'package:rescuetn/core/providers/locale_provider.dart';
 
 class PreparednessPlanScreen extends ConsumerStatefulWidget {
   const PreparednessPlanScreen({super.key});
@@ -102,7 +103,7 @@ class _PreparednessPlanScreenState extends ConsumerState<PreparednessPlanScreen>
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Preparedness Plan',
+                            "preparedness.title".tr(context),
                             style: textTheme.titleLarge?.copyWith(
                               fontWeight: FontWeight.bold,
                               color: Colors.white,
@@ -111,7 +112,7 @@ class _PreparednessPlanScreenState extends ConsumerState<PreparednessPlanScreen>
                           ),
                           const SizedBox(height: 2),
                           Text(
-                            'Track Your Emergency Readiness',
+                            "preparedness.subtitle".tr(context),
                             style: textTheme.bodyMedium?.copyWith(
                               color: Colors.white.withValues(alpha: 0.9),
                             ),
@@ -150,18 +151,18 @@ class _PreparednessPlanScreenState extends ConsumerState<PreparednessPlanScreen>
                         ),
                       ),
                       child: planAsync.when(
-                        loading: () => const Center(
+                        loading: () => Center(
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              CircularProgressIndicator(
+                              const CircularProgressIndicator(
                                 valueColor: AlwaysStoppedAnimation<Color>(
                                     AppColors.primary),
                               ),
-                              SizedBox(height: 16),
-                              Text(
-                                'Loading your preparedness plan...',
-                                style: TextStyle(
+                              const SizedBox(height: 16),
+                                Text(
+                                "preparedness.loading".tr(context),
+                                style: const TextStyle(
                                   color: AppColors.textSecondary,
                                   fontSize: 14,
                                 ),
@@ -203,8 +204,8 @@ class _PreparednessPlanScreenState extends ConsumerState<PreparednessPlanScreen>
                                   Icon(Icons.checklist,
                                       size: 80, color: Colors.grey.shade300),
                                   const SizedBox(height: 16),
-                                  Text(
-                                    'No preparedness plan found',
+                                    Text(
+                                    "preparedness.empty".tr(context),
                                     style: TextStyle(
                                       fontSize: 18,
                                       fontWeight: FontWeight.bold,
@@ -213,7 +214,7 @@ class _PreparednessPlanScreenState extends ConsumerState<PreparednessPlanScreen>
                                   ),
                                   const SizedBox(height: 8),
                                   Text(
-                                    'Start creating your emergency plan',
+                                    "preparedness.startCreating".tr(context),
                                     style:
                                         TextStyle(color: Colors.grey.shade600),
                                   ),
@@ -249,21 +250,21 @@ class _PreparednessPlanScreenState extends ConsumerState<PreparednessPlanScreen>
 
                               // Checklist Sections
                               _buildCategorySection(
-                                'Essential Supplies',
+                                "preparedness.essentials".tr(context),
                                 essentials,
                                 ref,
                                 Icons.shopping_bag_rounded,
                                 Colors.blue,
                               ),
                               _buildCategorySection(
-                                'Important Documents',
+                                "preparedness.documents".tr(context),
                                 documents,
                                 ref,
                                 Icons.description_rounded,
                                 Colors.orange,
                               ),
                               _buildCategorySection(
-                                'Action Items',
+                                "preparedness.actions".tr(context),
                                 actions,
                                 ref,
                                 Icons.task_alt_rounded,
@@ -392,7 +393,7 @@ class _PreparednessPlanScreenState extends ConsumerState<PreparednessPlanScreen>
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
-                            'Readiness Score',
+                            "preparedness.score".tr(context),
                             style: textTheme.titleLarge?.copyWith(
                               fontWeight: FontWeight.bold,
                               color: Colors.black87,

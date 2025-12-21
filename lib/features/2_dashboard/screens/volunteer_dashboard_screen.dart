@@ -8,6 +8,7 @@ import 'package:rescuetn/features/5_task_management/widgets/task_card.dart';
 import 'package:rescuetn/core/services/database_service.dart';
 import 'package:rescuetn/models/task_model.dart';
 import 'package:rescuetn/models/user_model.dart';
+import 'package:rescuetn/core/providers/locale_provider.dart';
 
 class VolunteerDashboardScreen extends ConsumerStatefulWidget {
   const VolunteerDashboardScreen({super.key});
@@ -23,7 +24,7 @@ class _VolunteerDashboardScreenState
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
-  bool _isUpdatingStatus = false;
+
 
   @override
   void initState() {
@@ -54,7 +55,7 @@ class _VolunteerDashboardScreenState
 
   /// Updates volunteer status in Firestore
   Future<void> _updateVolunteerStatus(VolunteerStatus newStatus) async {
-    setState(() => _isUpdatingStatus = true);
+
 
     try {
       final authService = ref.read(authRepositoryProvider);
@@ -76,7 +77,7 @@ class _VolunteerDashboardScreenState
                 children: [
                   Icon(newStatus.icon, color: Colors.white),
                   const SizedBox(width: AppPadding.small),
-                  Text('Status: ${newStatus.label}'),
+                  Text('${"dashboard.status".tr(context)}: ${"volunteerStatus.${newStatus.name}".tr(context)}'),
                 ],
               ),
               backgroundColor: newStatus.color,
@@ -116,10 +117,6 @@ class _VolunteerDashboardScreenState
           ),
         );
       }
-    } finally {
-      if (mounted) {
-        setState(() => _isUpdatingStatus = false);
-      }
     }
   }
 
@@ -158,7 +155,7 @@ class _VolunteerDashboardScreenState
               ),
               child: Center(
                 child: Text(
-                  'Settings & Account',
+                  "settings.title".tr(context),
                   style: Theme.of(context).textTheme.titleLarge?.copyWith(
                     color: Colors.white,
                     fontWeight: FontWeight.bold,
@@ -175,8 +172,8 @@ class _VolunteerDashboardScreenState
                   // Profile Option
                   _buildSettingsMenuItem(
                     icon: Icons.person_outline,
-                    title: 'Profile',
-                    subtitle: 'View and edit your profile',
+                    title: "settings.profile".tr(context),
+                    subtitle: "View and edit your profile",
                     color: Colors.blue,
                     onTap: () {
                       Navigator.pop(context);
@@ -188,12 +185,34 @@ class _VolunteerDashboardScreenState
                   // Preferences Option
                   _buildSettingsMenuItem(
                     icon: Icons.tune_outlined,
-                    title: 'Preferences',
-                    subtitle: 'App settings and notifications',
+                    title: "settings.preferences".tr(context),
+                    subtitle: "App settings and notifications",
                     color: Colors.green,
                     onTap: () {
                       Navigator.pop(context);
                       context.push('/preferences');
+                    },
+                  ),
+                  // Language Switcher
+                  Consumer(
+                    builder: (context, ref, child) {
+                      final currentLocale = ref.watch(localeProvider);
+                      final isTamil = currentLocale.languageCode == 'ta';
+
+                      return _buildSettingsMenuItem(
+                        icon: Icons.language,
+                        title: "settings.language".tr(context),
+                        subtitle: isTamil ? "settings.tamil".tr(context) : "settings.english".tr(context),
+                        color: Colors.purple,
+                        onTap: () {
+                          // Toggle language
+                          final newLocale = isTamil ? const Locale('en') : const Locale('ta');
+                          ref.read(localeProvider.notifier).setLocale(newLocale);
+                          
+                          // Force UI rebuild if needed or show confirmation
+                          Navigator.pop(context);
+                        },
+                      );
                     },
                   ),
                   const SizedBox(height: AppPadding.medium + 4),
@@ -201,8 +220,8 @@ class _VolunteerDashboardScreenState
                   // Help & Support Option
                   _buildSettingsMenuItem(
                     icon: Icons.help_outline,
-                    title: 'Help & Support',
-                    subtitle: 'Get help and report issues',
+                    title: "settings.helpSupport".tr(context),
+                    subtitle: "Get help and report issues",
                     color: Colors.orange,
                     onTap: () {
                       Navigator.pop(context);
@@ -221,8 +240,8 @@ class _VolunteerDashboardScreenState
                   // Logout Option
                   _buildSettingsMenuItem(
                     icon: Icons.logout_outlined,
-                    title: 'Logout',
-                    subtitle: 'Sign out from your account',
+                    title: "settings.logout".tr(context),
+                    subtitle: "Sign out from your account",
                     color: AppColors.error,
                     isDestructive: true,
                     onTap: () {
@@ -263,9 +282,9 @@ class _VolunteerDashboardScreenState
               ),
             ),
             const SizedBox(width: AppPadding.medium),
-            const Text(
-              'Logout?',
-              style: TextStyle(
+            Text(
+              "dashboard.logoutTitle".tr(context),
+              style: const TextStyle(
                 fontWeight: FontWeight.bold,
                 fontSize: 20,
               ),
@@ -273,7 +292,7 @@ class _VolunteerDashboardScreenState
           ],
         ),
         content: Text(
-          'Are you sure you want to logout? You will need to sign in again to access your account.',
+          "dashboard.logoutMessage".tr(context),
           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
             color: AppColors.textSecondary,
             height: 1.5,
@@ -282,9 +301,9 @@ class _VolunteerDashboardScreenState
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text(
-              'Cancel',
-              style: TextStyle(
+            child: Text(
+              "cancel".tr(context),
+              style: const TextStyle(
                 color: AppColors.textSecondary,
                 fontWeight: FontWeight.bold,
               ),
@@ -302,9 +321,9 @@ class _VolunteerDashboardScreenState
               final authService = ref.read(authRepositoryProvider);
               await authService.signOut();
             },
-            child: const Text(
-              'Logout',
-              style: TextStyle(
+            child: Text(
+              "dashboard.confirmLogout".tr(context),
+              style: const TextStyle(
                 color: Colors.white,
                 fontWeight: FontWeight.bold,
               ),
@@ -389,6 +408,12 @@ class _VolunteerDashboardScreenState
     );
   }
 
+
+
+
+
+
+
   @override
   Widget build(BuildContext context) {
     final authState = ref.watch(authStateChangesProvider);
@@ -419,17 +444,11 @@ class _VolunteerDashboardScreenState
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Enhanced App Bar with Status Toggle and Settings
+                  // Header Block
                   Padding(
                     padding: const EdgeInsets.all(AppPadding.large),
                     child: authState.when(
                       data: (user) {
-                        final email = user?.email ?? '';
-                        String userName = email.isNotEmpty ? email.split('@').first : 'Volunteer';
-                        if (userName.isNotEmpty) {
-                          userName = userName.substring(0, 1).toUpperCase() + userName.substring(1);
-                        }
-
                         return Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
@@ -438,24 +457,8 @@ class _VolunteerDashboardScreenState
                                 Container(
                                   padding: const EdgeInsets.all(AppPadding.medium),
                                   decoration: BoxDecoration(
-                                    gradient: LinearGradient(
-                                      colors: [
-                                        Colors.white.withValues(alpha: 0.3),
-                                        Colors.white.withValues(alpha: 0.15),
-                                      ],
-                                    ),
-                                    borderRadius: BorderRadius.circular(AppBorderRadius.medium + 2),
-                                    border: Border.all(
-                                      color: Colors.white.withValues(alpha: 0.3),
-                                      width: 1.5,
-                                    ),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: Colors.black.withValues(alpha: 0.15),
-                                        blurRadius: 12,
-                                        offset: const Offset(0, 4),
-                                      ),
-                                    ],
+                                    color: Colors.white.withValues(alpha: 0.2),
+                                    borderRadius: BorderRadius.circular(AppBorderRadius.medium),
                                   ),
                                   child: const Icon(
                                     Icons.health_and_safety,
@@ -463,7 +466,7 @@ class _VolunteerDashboardScreenState
                                     size: 28,
                                   ),
                                 ),
-                                const SizedBox(width: AppPadding.medium + 2),
+                                const SizedBox(width: AppPadding.medium),
                                 Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
@@ -473,42 +476,19 @@ class _VolunteerDashboardScreenState
                                         color: AppColors.onPrimary,
                                         fontWeight: FontWeight.bold,
                                         fontSize: 24,
-                                        letterSpacing: 0.8,
-                                        shadows: [
-                                          Shadow(
-                                            color: Colors.black.withValues(alpha: 0.25),
-                                            offset: const Offset(0, 2),
-                                            blurRadius: 4,
-                                          ),
-                                        ],
                                       ),
                                     ),
-                                    const SizedBox(height: 2),
                                     Container(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: AppPadding.small + 4,
-                                        vertical: 4,
-                                      ),
+                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                                       decoration: BoxDecoration(
-                                        gradient: const LinearGradient(
-                                          colors: [AppColors.accent, Color(0xFFFFA726)],
-                                        ),
-                                        borderRadius: BorderRadius.circular(AppBorderRadius.small + 2),
-                                        boxShadow: [
-                                          BoxShadow(
-                                            color: AppColors.accent.withValues(alpha: 0.4),
-                                            blurRadius: 6,
-                                            offset: const Offset(0, 2),
-                                          ),
-                                        ],
+                                        color: AppColors.accent,
+                                        borderRadius: BorderRadius.circular(4),
                                       ),
                                       child: Text(
                                         'VOLUNTEER',
                                         style: textTheme.labelSmall?.copyWith(
                                           color: AppColors.onAccent,
                                           fontWeight: FontWeight.bold,
-                                          fontSize: 10,
-                                          letterSpacing: 1.2,
                                         ),
                                       ),
                                     ),
@@ -518,164 +498,50 @@ class _VolunteerDashboardScreenState
                             ),
                             Row(
                               children: [
-                                // Status Menu
                                 PopupMenuButton<VolunteerStatus>(
                                   initialValue: user?.status ?? VolunteerStatus.available,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(AppBorderRadius.large),
-                                  ),
-                                  onSelected: (newStatus) {
-                                    _updateVolunteerStatus(newStatus);
-                                  },
-                                  itemBuilder: (BuildContext context) {
-                                    return VolunteerStatus.values.map((status) {
-                                      final isSelected = status == (user?.status ?? VolunteerStatus.available);
-                                      return PopupMenuItem<VolunteerStatus>(
-                                        value: status,
-                                        child: Row(
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: [
-                                            Container(
-                                              padding: const EdgeInsets.all(6),
-                                              decoration: BoxDecoration(
-                                                color: status.color.withValues(alpha: 0.15),
-                                                shape: BoxShape.circle,
-                                              ),
-                                              child: Icon(
-                                                status.icon,
-                                                size: 18,
-                                                color: status.color,
-                                              ),
-                                            ),
-                                            const SizedBox(width: AppPadding.medium),
-                                            Column(
-                                              crossAxisAlignment: CrossAxisAlignment.start,
-                                              children: [
-                                                Text(
-                                                  status.label,
-                                                  style: TextStyle(
-                                                    fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                                                    color: isSelected ? status.color : AppColors.textPrimary,
-                                                  ),
-                                                ),
-                                                Text(
-                                                  status.description,
-                                                  style: const TextStyle(
-                                                    fontSize: 12,
-                                                    color: AppColors.textSecondary,
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                            if (isSelected)
-                                              const Padding(
-                                                padding: EdgeInsets.only(left: AppPadding.medium),
-                                                child: Icon(Icons.check, color: AppColors.primary),
-                                              ),
-                                          ],
-                                        ),
-                                      );
-                                    }).toList();
-                                  },
-                                  child: Stack(
-                                    children: [
-                                      Container(
-                                        decoration: BoxDecoration(
-                                          gradient: LinearGradient(
-                                            colors: [
-                                              (user?.status ?? VolunteerStatus.available).color.withValues(alpha: 0.9),
-                                              (user?.status ?? VolunteerStatus.available).color.withValues(alpha: 0.7),
-                                            ],
-                                          ),
-                                          borderRadius: BorderRadius.circular(AppBorderRadius.medium + 2),
-                                          border: Border.all(
-                                            color: Colors.white.withValues(alpha: 0.3),
-                                            width: 1.5,
-                                          ),
-                                          boxShadow: [
-                                            BoxShadow(
-                                              color: (user?.status ?? VolunteerStatus.available).color.withValues(alpha: 0.4),
-                                              blurRadius: 12,
-                                              offset: const Offset(0, 4),
-                                            ),
-                                          ],
-                                        ),
-                                        child: Padding(
-                                          padding: const EdgeInsets.symmetric(
-                                            horizontal: AppPadding.medium,
-                                            vertical: AppPadding.small + 2,
-                                          ),
-                                          child: Row(
-                                            mainAxisSize: MainAxisSize.min,
-                                            children: [
-                                              Icon(
-                                                (user?.status ?? VolunteerStatus.available).icon,
-                                                color: Colors.white,
-                                                size: 20,
-                                              ),
-                                              const SizedBox(width: 6),
-                                              Text(
-                                                user?.status?.label ?? 'Available',
-                                                style: const TextStyle(
-                                                  color: Colors.white,
-                                                  fontWeight: FontWeight.bold,
-                                                  fontSize: 13,
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
+                                  onSelected: _updateVolunteerStatus,
+                                  itemBuilder: (context) => VolunteerStatus.values.map((status) {
+                                    return PopupMenuItem(
+                                      value: status,
+                                      child: Row(
+                                        children: [
+                                          Icon(status.icon, color: status.color),
+                                          const SizedBox(width: 8),
+                                          Text("volunteerStatus.${status.name}".tr(context)),
+                                        ],
                                       ),
-                                      if (_isUpdatingStatus)
-                                        Positioned(
-                                          right: 8,
-                                          top: 8,
-                                          child: Container(
-                                            width: 16,
-                                            height: 16,
-                                            decoration: BoxDecoration(
-                                              shape: BoxShape.circle,
-                                              color: Colors.white.withValues(alpha: 0.3),
-                                            ),
-                                            child: const CircularProgressIndicator(
-                                              strokeWidth: 2,
-                                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                                            ),
+                                    );
+                                  }).toList(),
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                    decoration: BoxDecoration(
+                                      color: (user?.status ?? VolunteerStatus.available).color,
+                                      borderRadius: BorderRadius.circular(20),
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        Icon(
+                                          (user?.status ?? VolunteerStatus.available).icon,
+                                          color: Colors.white,
+                                          size: 16,
+                                        ),
+                                        const SizedBox(width: 4),
+                                        Text(
+                                          "volunteerStatus.${user?.status?.name ?? 'available'}".tr(context),
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                            fontWeight: FontWeight.bold,
                                           ),
                                         ),
-                                    ],
-                                  ),
-                                ),
-                                const SizedBox(width: AppPadding.medium),
-                                // Settings Icon
-                                Container(
-                                  decoration: BoxDecoration(
-                                    gradient: LinearGradient(
-                                      colors: [
-                                        Colors.white.withValues(alpha: 0.3),
-                                        Colors.white.withValues(alpha: 0.15),
                                       ],
                                     ),
-                                    borderRadius: BorderRadius.circular(AppBorderRadius.medium + 2),
-                                    border: Border.all(
-                                      color: Colors.white.withValues(alpha: 0.3),
-                                      width: 1.5,
-                                    ),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: Colors.black.withValues(alpha: 0.15),
-                                        blurRadius: 12,
-                                        offset: const Offset(0, 4),
-                                      ),
-                                    ],
                                   ),
-                                  child: IconButton(
-                                    icon: const Icon(Icons.settings_applications),
-                                    color: AppColors.onPrimary,
-                                    iconSize: 24,
-                                    tooltip: 'Settings',
-                                    onPressed: _showSettingsMenu,
-                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                IconButton(
+                                  icon: const Icon(Icons.settings, color: Colors.white),
+                                  onPressed: _showSettingsMenu,
                                 ),
                               ],
                             ),
@@ -687,452 +553,156 @@ class _VolunteerDashboardScreenState
                     ),
                   ),
 
-                  // Welcome Card and rest of the dashboard...
                   Expanded(
                     child: SingleChildScrollView(
+                      physics: const BouncingScrollPhysics(),
                       child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          // Enhanced Welcome Card with Statistics
+                          // Stats Card
                           allTasksAsync.when(
                             data: (allTasks) {
-                              final pendingCount = allTasks.where((t) => t.status == TaskStatus.pending).length;
-                              final activeCount = allTasks.where((t) => t.status == TaskStatus.inProgress || t.status == TaskStatus.accepted).length;
-                              final completedCount = allTasks.where((t) => t.status == TaskStatus.completed).length;
-                              final email = authState.value?.email ?? '';
-                              final userName = email.isNotEmpty ? email.split('@').first : 'Volunteer';
-                              final formattedUserName = userName.isNotEmpty
-                                  ? userName.substring(0, 1).toUpperCase() + userName.substring(1)
-                                  : 'Volunteer';
+                              final user = authState.value;
+                              final myTasks = allTasks.where((t) {
+                                if (user == null) return false;
+                                return t.assignedTo == user.uid || t.status == TaskStatus.pending;
+                              }).toList();
+                              
+                              final pending = myTasks.where((t) => t.status == TaskStatus.pending).length;
+                              final active = myTasks.where((t) => t.status == TaskStatus.inProgress).length;
+                              final done = myTasks.where((t) => t.status == TaskStatus.completed).length;
 
                               return Container(
-                                margin: const EdgeInsets.fromLTRB(
-                                  AppPadding.large,
-                                  AppPadding.small,
-                                  AppPadding.large,
-                                  AppPadding.medium,
-                                ),
-                                padding: const EdgeInsets.all(AppPadding.large + 4),
+                                margin: const EdgeInsets.all(AppPadding.large),
+                                padding: const EdgeInsets.all(AppPadding.large),
                                 decoration: BoxDecoration(
                                   color: Colors.white,
                                   borderRadius: BorderRadius.circular(24),
                                   boxShadow: [
                                     BoxShadow(
-                                      color: Colors.red.withValues(alpha: 0.2),
-                                      blurRadius: 30,
+                                      color: Colors.black.withValues(alpha: 0.05),
+                                      blurRadius: 20,
                                       offset: const Offset(0, 10),
-                                      spreadRadius: -5,
                                     ),
                                   ],
                                 ),
                                 child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Row(
-                                      children: [
-                                        Container(
-                                          padding: const EdgeInsets.all(AppPadding.medium + 4),
-                                          decoration: BoxDecoration(
-                                            gradient: LinearGradient(
-                                              colors: [Colors.red.shade500, Colors.red.shade700],
-                                              begin: Alignment.topLeft,
-                                              end: Alignment.bottomRight,
-                                            ),
-                                            borderRadius: BorderRadius.circular(AppBorderRadius.large + 2),
-                                            boxShadow: [
-                                              BoxShadow(
-                                                color: Colors.red.withValues(alpha: 0.4),
-                                                blurRadius: 16,
-                                                offset: const Offset(0, 6),
-                                              ),
-                                            ],
-                                          ),
-                                          child: const Icon(
-                                            Icons.volunteer_activism,
-                                            color: AppColors.onPrimary,
-                                            size: 36,
-                                          ),
-                                        ),
-                                        const SizedBox(width: AppPadding.large),
-                                        Expanded(
-                                          child: Column(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
-                                            children: [
-                                              Text(
-                                                'Welcome back,',
-                                                style: textTheme.bodyMedium?.copyWith(
-                                                  color: AppColors.textSecondary,
-                                                  fontSize: 14,
-                                                  fontWeight: FontWeight.w500,
-                                                ),
-                                              ),
-                                              const SizedBox(height: 4),
-                                              Text(
-                                                formattedUserName,
-                                                style: textTheme.headlineSmall?.copyWith(
-                                                  fontWeight: FontWeight.bold,
-                                                  color: AppColors.textPrimary,
-                                                  fontSize: 26,
-                                                  letterSpacing: 0.3,
-                                                  height: 1.2,
-                                                ),
-                                                overflow: TextOverflow.ellipsis,
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                      ],
+                                    Text(
+                                      "dashboard.welcome".tr(context),
+                                      style: textTheme.titleMedium,
                                     ),
-                                    const SizedBox(height: AppPadding.large + 4),
+                                    const SizedBox(height: 16),
                                     Row(
                                       children: [
-                                        Expanded(
-                                          child: _buildStatCard(
-                                            label: 'Pending',
-                                            count: pendingCount,
-                                            color: Colors.orange.shade600,
-                                            icon: Icons.pending_actions,
-                                          ),
-                                        ),
-                                        const SizedBox(width: AppPadding.medium + 2),
-                                        Expanded(
-                                          child: _buildStatCard(
-                                            label: 'Active',
-                                            count: activeCount,
-                                            color: Colors.blue.shade600,
-                                            icon: Icons.trending_up,
-                                          ),
-                                        ),
-                                        const SizedBox(width: AppPadding.medium + 2),
-                                        Expanded(
-                                          child: _buildStatCard(
-                                            label: 'Done',
-                                            count: completedCount,
-                                            color: Colors.green.shade600,
-                                            icon: Icons.check_circle,
-                                          ),
-                                        ),
+                                        Expanded(child: _buildStatCard(
+                                          label: "dashboard.pending".tr(context),
+                                          count: pending,
+                                          color: Colors.orange,
+                                          icon: Icons.pending_actions,
+                                        )),
+                                        const SizedBox(width: 8),
+                                        Expanded(child: _buildStatCard(
+                                          label: "dashboard.active".tr(context),
+                                          count: active,
+                                          color: Colors.blue,
+                                          icon: Icons.run_circle,
+                                        )),
+                                        const SizedBox(width: 8),
+                                        Expanded(child: _buildStatCard(
+                                          label: "dashboard.done".tr(context),
+                                          count: done,
+                                          color: Colors.green,
+                                          icon: Icons.check_circle,
+                                        )),
                                       ],
                                     ),
                                   ],
                                 ),
                               );
                             },
-                            loading: () => Container(
-                              margin: const EdgeInsets.symmetric(horizontal: AppPadding.large, vertical: AppPadding.small),
-                              padding: const EdgeInsets.all(AppPadding.xLarge),
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(24),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.red.withValues(alpha: 0.15),
-                                    blurRadius: 25,
-                                    offset: const Offset(0, 8),
-                                  ),
-                                ],
-                              ),
-                              child: const Center(
-                                child: CircularProgressIndicator(color: AppColors.primary, strokeWidth: 3),
-                              ),
-                            ),
-                            error: (e, s) => const SizedBox.shrink(),
+                            loading: () => const Center(child: CircularProgressIndicator()),
+                            error: (_,__) => const SizedBox.shrink(),
                           ),
 
-                          const SizedBox(height: AppPadding.small),
-
-                          // Enhanced Situational Awareness Section
+                          // Situational Awareness
                           Padding(
                             padding: const EdgeInsets.symmetric(horizontal: AppPadding.large),
-                            child: Row(
-                              children: [
-                                Container(
-                                  padding: const EdgeInsets.all(9),
-                                  decoration: BoxDecoration(
-                                    gradient: LinearGradient(
-                                      colors: [
-                                        AppColors.primary.withValues(alpha: 0.15),
-                                        AppColors.primary.withValues(alpha: 0.08),
-                                      ],
-                                    ),
-                                    borderRadius: BorderRadius.circular(12),
-                                    border: Border.all(
-                                      color: AppColors.primary.withValues(alpha: 0.3),
-                                      width: 1.5,
-                                    ),
-                                  ),
-                                  child: const Icon(
-                                    Icons.radar,
-                                    color: AppColors.primary,
-                                    size: 22,
-                                  ),
-                                ),
-                                const SizedBox(width: AppPadding.medium + 2),
-                                Text(
-                                  'Situational Awareness',
-                                  style: textTheme.titleMedium?.copyWith(
-                                    fontWeight: FontWeight.bold,
-                                    color: AppColors.textPrimary,
-                                    fontSize: 19,
-                                    letterSpacing: 0.4,
-                                  ),
-                                ),
-                              ],
+                            child: Text(
+                              "dashboard.situationalAwareness".tr(context),
+                              style: textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
                             ),
                           ),
-                          const SizedBox(height: AppPadding.medium),
-
-                          // Enhanced Horizontal Scrollable Cards
+                          const SizedBox(height: 16),
                           SizedBox(
                             height: 160,
                             child: ListView(
                               scrollDirection: Axis.horizontal,
                               padding: const EdgeInsets.symmetric(horizontal: AppPadding.large),
-                              physics: const BouncingScrollPhysics(),
                               children: [
                                 _buildAwarenessCard(
-                                  title: 'Live Heatmap',
-                                  subtitle: 'Disaster hotspots',
-                                  icon: Icons.local_fire_department,
-                                  gradient: LinearGradient(
-                                    colors: [Colors.amber.shade600, Colors.deepOrange.shade700],
-                                    begin: Alignment.topLeft,
-                                    end: Alignment.bottomRight,
-                                  ),
+                                  title: "dashboard.heatmapTitle".tr(context),
+                                  subtitle: "dashboard.heatmapSubtitle".tr(context),
+                                  icon: Icons.map,
+                                  gradient: const LinearGradient(colors: [Colors.orange, Colors.deepOrange]),
                                   onTap: () => context.go('/heatmap'),
                                 ),
-                                const SizedBox(width: AppPadding.medium + 4),
+                                const SizedBox(width: 16),
                                 _buildAwarenessCard(
-                                  title: 'Find Shelters',
-                                  subtitle: 'Safe locations',
-                                  icon: Icons.maps_home_work_rounded,
-                                  gradient: LinearGradient(
-                                    colors: [Colors.green.shade500, Colors.teal.shade700],
-                                    begin: Alignment.topLeft,
-                                    end: Alignment.bottomRight,
-                                  ),
+                                  title: "dashboard.sheltersTitle".tr(context),
+                                  subtitle: "dashboard.sheltersSubtitle".tr(context),
+                                  icon: Icons.home,
+                                  gradient: const LinearGradient(colors: [Colors.green, Colors.teal]),
                                   onTap: () => context.go('/shelter-map'),
                                 ),
-                                const SizedBox(width: AppPadding.medium + 4),
+                                const SizedBox(width: 16),
                                 _buildAwarenessCard(
-                                  title: 'View Alerts',
-                                  subtitle: 'Stay informed',
-                                  icon: Icons.notifications_active,
-                                  gradient: LinearGradient(
-                                    colors: [Colors.blue.shade500, Colors.indigo.shade700],
-                                    begin: Alignment.topLeft,
-                                    end: Alignment.bottomRight,
-                                  ),
+                                  title: "dashboard.alertsTitle".tr(context),
+                                  subtitle: "dashboard.alertsSubtitle".tr(context),
+                                  icon: Icons.notifications,
+                                  gradient: const LinearGradient(colors: [Colors.blue, Colors.indigo]),
                                   onTap: () => context.go('/alerts'),
                                 ),
                               ],
                             ),
                           ),
 
-                          const SizedBox(height: AppPadding.large),
-
-                          // Enhanced Filter Section
+                          const SizedBox(height: 24),
+                          
+                          // Task Filter & List
                           Padding(
                             padding: const EdgeInsets.symmetric(horizontal: AppPadding.large),
-                            child: Row(
-                              children: [
-                                Container(
-                                  padding: const EdgeInsets.all(9),
-                                  decoration: BoxDecoration(
-                                    gradient: LinearGradient(
-                                      colors: [
-                                        AppColors.primary.withValues(alpha: 0.15),
-                                        AppColors.primary.withValues(alpha: 0.08),
-                                      ],
-                                    ),
-                                    borderRadius: BorderRadius.circular(12),
-                                    border: Border.all(
-                                      color: AppColors.primary.withValues(alpha: 0.3),
-                                      width: 1.5,
-                                    ),
-                                  ),
-                                  child: const Icon(
-                                    Icons.tune,
-                                    color: AppColors.primary,
-                                    size: 22,
-                                  ),
-                                ),
-                                const SizedBox(width: AppPadding.medium + 2),
-                                Text(
-                                  'Filter Tasks',
-                                  style: textTheme.titleMedium?.copyWith(
-                                    fontWeight: FontWeight.bold,
-                                    color: AppColors.textPrimary,
-                                    fontSize: 19,
-                                    letterSpacing: 0.4,
-                                  ),
-                                ),
-                              ],
-                            ),
+                            child: _buildFilterChips(context, ref),
                           ),
-                          const SizedBox(height: AppPadding.medium + 2),
-
-                          // Enhanced Filter Chips
-                          _buildFilterChips(context, ref),
-
-                          const SizedBox(height: AppPadding.large),
-
-                          // Enhanced Task List Header
+                          
+                          const SizedBox(height: 16),
+                          
                           filteredTasksAsync.when(
-                            data: (tasks) => Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: AppPadding.large),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Row(
-                                    children: [
-                                      Container(
-                                        padding: const EdgeInsets.all(9),
-                                        decoration: BoxDecoration(
-                                          gradient: LinearGradient(
-                                            colors: [
-                                              Colors.red.withValues(alpha: 0.15),
-                                              Colors.red.withValues(alpha: 0.08),
-                                            ],
-                                          ),
-                                          borderRadius: BorderRadius.circular(12),
-                                          border: Border.all(
-                                            color: Colors.red.withValues(alpha: 0.3),
-                                            width: 1.5,
-                                          ),
-                                        ),
-                                        child: const Icon(
-                                          Icons.assignment_turned_in,
-                                          color: Colors.red,
-                                          size: 22,
-                                        ),
-                                      ),
-                                      const SizedBox(width: AppPadding.medium + 2),
-                                      Text(
-                                        'Assigned Tasks',
-                                        style: textTheme.titleLarge?.copyWith(
-                                          fontWeight: FontWeight.bold,
-                                          color: AppColors.textPrimary,
-                                          fontSize: 22,
-                                          letterSpacing: 0.4,
-                                        ),
-                                      ),
-                                    ],
+                            data: (tasks) {
+                              if (tasks.isEmpty) {
+                                return Center(
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(32.0),
+                                    child: Text("tasks.noTasks".tr(context)),
                                   ),
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: AppPadding.medium + 4,
-                                      vertical: AppPadding.small + 2,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      gradient: LinearGradient(
-                                        colors: [Colors.red.shade500, Colors.red.shade600],
-                                      ),
-                                      borderRadius: BorderRadius.circular(AppBorderRadius.large),
-                                      boxShadow: [
-                                        BoxShadow(
-                                          color: Colors.red.withValues(alpha: 0.3),
-                                          blurRadius: 12,
-                                          offset: const Offset(0, 4),
-                                        ),
-                                      ],
-                                    ),
-                                    child: Text(
-                                      '${tasks.length}',
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 17,
-                                        letterSpacing: 0.3,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            loading: () => const SizedBox.shrink(),
-                            error: (e, s) => const SizedBox.shrink(),
-                          ),
-
-                          const SizedBox(height: AppPadding.medium),
-
-                          // Task List Section
-                          filteredTasksAsync.when(
-                            loading: () => const Center(
-                              child: CircularProgressIndicator(
-                                color: AppColors.primary,
-                                strokeWidth: 3,
-                              ),
-                            ),
-                            error: (err, stack) => const SizedBox.shrink(),
-                            data: (tasks) => tasks.isEmpty
-                                ? Center(
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Container(
-                                    padding: const EdgeInsets.all(AppPadding.xLarge + 8),
-                                    decoration: BoxDecoration(
-                                      gradient: LinearGradient(
-                                        colors: [
-                                          Colors.red.withValues(alpha: 0.1),
-                                          Colors.red.withValues(alpha: 0.05),
-                                        ],
-                                      ),
-                                      shape: BoxShape.circle,
-                                      border: Border.all(
-                                        color: Colors.red.withValues(alpha: 0.2),
-                                        width: 2,
-                                      ),
-                                    ),
-                                    child: Icon(
-                                      Icons.task_alt,
-                                      size: 80,
-                                      color: Colors.red.withValues(alpha: 0.4),
-                                    ),
-                                  ),
-                                  const SizedBox(height: AppPadding.large + 4),
-                                  Text(
-                                    'No tasks found',
-                                    style: textTheme.titleLarge?.copyWith(
-                                      fontWeight: FontWeight.bold,
-                                      color: AppColors.textPrimary,
-                                      fontSize: 24,
-                                      letterSpacing: 0.3,
-                                    ),
-                                  ),
-                                  const SizedBox(height: AppPadding.small + 4),
-                                  Padding(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: AppPadding.xLarge + 8,
-                                    ),
-                                    child: Text(
-                                      'No tasks match the current filter.\nTry selecting a different filter.',
-                                      textAlign: TextAlign.center,
-                                      style: textTheme.bodyLarge?.copyWith(
-                                        color: AppColors.textSecondary,
-                                        fontSize: 16,
-                                        height: 1.5,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            )
-                                : ListView.builder(
-                              padding: const EdgeInsets.all(AppPadding.large),
-                              physics: const BouncingScrollPhysics(),
-                              shrinkWrap: true,
-                              itemCount: tasks.length,
-                              itemBuilder: (context, index) {
-                                return Padding(
-                                  padding: const EdgeInsets.only(
-                                    bottom: AppPadding.medium + 4,
-                                  ),
-                                  child: TaskCard(task: tasks[index]),
                                 );
-                              },
-                            ),
+                              }
+                              return ListView.builder(
+                                shrinkWrap: true,
+                                physics: const NeverScrollableScrollPhysics(),
+                                itemCount: tasks.length,
+                                padding: const EdgeInsets.symmetric(horizontal: AppPadding.large, vertical: 8),
+                                itemBuilder: (context, index) => Padding(
+                                  padding: const EdgeInsets.only(bottom: 12),
+                                  child: TaskCard(task: tasks[index]),
+                                ),
+                              );
+                            },
+                            loading: () => const Center(child: CircularProgressIndicator()),
+                            error: (e,__) => Center(child: Text('Error: $e')),
                           ),
+                          
+                          const SizedBox(height: 80), // Fab spacing
                         ],
                       ),
                     ),
@@ -1153,73 +723,56 @@ class _VolunteerDashboardScreenState
     required Gradient gradient,
     required VoidCallback onTap,
   }) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(AppBorderRadius.large + 2),
-        child: Container(
-          width: 190,
-          padding: const EdgeInsets.all(AppPadding.large),
-          decoration: BoxDecoration(
-            gradient: gradient,
-            borderRadius: BorderRadius.circular(AppBorderRadius.large + 2),
-            boxShadow: [
-              BoxShadow(
-                color: gradient.colors.first.withValues(alpha: 0.4),
-                blurRadius: 20,
-                offset: const Offset(0, 8),
-                spreadRadius: -2,
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        width: 160,
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          gradient: gradient,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: gradient.colors.first.withValues(alpha: 0.3),
+              blurRadius: 8,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.2),
+                borderRadius: BorderRadius.circular(8),
               ),
-            ],
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(AppPadding.medium),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.25),
-                  borderRadius: BorderRadius.circular(AppBorderRadius.medium + 2),
-                  border: Border.all(
-                    color: Colors.white.withValues(alpha: 0.3),
-                    width: 1.5,
+              child: Icon(icon, color: Colors.white),
+            ),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
                   ),
                 ),
-                child: Icon(
-                  icon,
-                  color: Colors.white,
-                  size: 28,
+                Text(
+                  subtitle,
+                  style: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.9),
+                    fontSize: 12,
+                  ),
                 ),
-              ),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: const TextStyle(
-                      fontSize: 17,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                      letterSpacing: 0.4,
-                      height: 1.2,
-                    ),
-                  ),
-                  const SizedBox(height: 3),
-                  Text(
-                    subtitle,
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: Colors.white.withValues(alpha: 0.95),
-                      fontWeight: FontWeight.w500,
-                      letterSpacing: 0.2,
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
+              ],
+            ),
+          ],
         ),
       ),
     );
@@ -1232,58 +785,32 @@ class _VolunteerDashboardScreenState
     required IconData icon,
   }) {
     return Container(
-      padding: const EdgeInsets.all(AppPadding.medium + 2),
+      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            color.withValues(alpha: 0.12),
-            color.withValues(alpha: 0.06),
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(AppBorderRadius.large),
-        border: Border.all(
-          color: color.withValues(alpha: 0.25),
-          width: 1.5,
-        ),
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: color.withValues(alpha: 0.2)),
       ),
       child: Column(
         children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [color.withValues(alpha: 0.2), color.withValues(alpha: 0.1)],
-              ),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(
-              icon,
-              color: color,
-              size: 24,
-            ),
-          ),
-          const SizedBox(height: 10),
+          Icon(icon, color: color),
+          const SizedBox(height: 8),
           Text(
             count.toString(),
             style: TextStyle(
-              fontSize: 28,
+              fontSize: 24,
               fontWeight: FontWeight.bold,
               color: color,
-              letterSpacing: -0.5,
-              height: 1,
             ),
           ),
-          const SizedBox(height: 4),
           Text(
             label,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 12,
-              color: AppColors.textSecondary,
+              color: color,
               fontWeight: FontWeight.w600,
-              letterSpacing: 0.3,
             ),
+            textAlign: TextAlign.center,
           ),
         ],
       ),
@@ -1291,103 +818,24 @@ class _VolunteerDashboardScreenState
   }
 
   Widget _buildFilterChips(BuildContext context, WidgetRef ref) {
-    final currentFilter = ref.watch(taskFilterProvider);
-
+    final current = ref.watch(taskFilterProvider);
     return SizedBox(
-      height: 56,
+      height: 40,
       child: ListView(
         scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: AppPadding.large),
-        physics: const BouncingScrollPhysics(),
         children: TaskFilter.values.map((filter) {
-          final isSelected = filter == currentFilter;
-
-          IconData filterIcon;
-          Color filterColor;
-          switch (filter) {
-            case TaskFilter.all:
-              filterIcon = Icons.grid_view_rounded;
-              filterColor = AppColors.primary;
-              break;
-            case TaskFilter.pending:
-              filterIcon = Icons.pending_actions;
-              filterColor = Colors.orange.shade600;
-              break;
-            case TaskFilter.inProgress:
-              filterIcon = Icons.trending_up;
-              filterColor = Colors.blue.shade600;
-              break;
-            case TaskFilter.completed:
-              filterIcon = Icons.check_circle;
-              filterColor = Colors.green.shade600;
-              break;
-            default:
-              filterIcon = Icons.filter_list;
-              filterColor = AppColors.primary;
-          }
-
+          final isSelected = current == filter;
           return Padding(
-            padding: const EdgeInsets.only(right: AppPadding.medium + 2),
-            child: Material(
-              color: Colors.transparent,
-              child: InkWell(
-                onTap: () {
-                  ref.read(taskFilterProvider.notifier).state = filter;
-                },
-                borderRadius: BorderRadius.circular(AppBorderRadius.large),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: AppPadding.large,
-                    vertical: AppPadding.medium,
-                  ),
-                  decoration: BoxDecoration(
-                    gradient: isSelected
-                        ? LinearGradient(
-                      colors: [filterColor, filterColor.withValues(alpha: 0.85)],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    )
-                        : null,
-                    color: isSelected ? null : Colors.white,
-                    borderRadius: BorderRadius.circular(AppBorderRadius.large),
-                    border: Border.all(
-                      color: isSelected
-                          ? filterColor
-                          : AppColors.textSecondary.withValues(alpha: 0.25),
-                      width: isSelected ? 2 : 1.5,
-                    ),
-                    boxShadow: isSelected
-                        ? [
-                      BoxShadow(
-                        color: filterColor.withValues(alpha: 0.35),
-                        blurRadius: 12,
-                        offset: const Offset(0, 4),
-                      ),
-                    ]
-                        : null,
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        filterIcon,
-                        size: 20,
-                        color: isSelected ? Colors.white : filterColor,
-                      ),
-                      const SizedBox(width: AppPadding.small + 2),
-                      Text(
-                        filter.name[0].toUpperCase() +
-                            filter.name.substring(1).replaceAll(RegExp(r'([A-Z])'), ' P'),
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: isSelected ? Colors.white : AppColors.textPrimary,
-                          fontSize: 15,
-                          letterSpacing: 0.4,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+            padding: const EdgeInsets.only(right: 8),
+            child: FilterChip(
+              label: Text("taskFilters.${filter.name}".tr(context).toUpperCase()),
+              selected: isSelected,
+              onSelected: (val) => ref.read(taskFilterProvider.notifier).state = filter,
+              selectedColor: AppColors.primary,
+              checkmarkColor: Colors.white,
+              labelStyle: TextStyle(
+                color: isSelected ? Colors.white : Colors.black87,
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
               ),
             ),
           );

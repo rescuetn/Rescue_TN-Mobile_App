@@ -1,4 +1,6 @@
+import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:rescuetn/models/alert_model.dart';
 import 'package:rescuetn/models/incident_model.dart';
@@ -26,7 +28,8 @@ abstract class DatabaseService {
 
   // Task operations
   Stream<List<Task>> getTasksStream();
-  Future<void> updateTaskStatus(String taskId, TaskStatus newStatus);
+  Future<Task?> getTask(String taskId);
+  Future<void> updateTaskStatus(String taskId, TaskStatus newStatus, {String? completionImageUrl});
 
   // Person Status operations
   Future<void> addPersonStatus(PersonStatus personStatus);
@@ -82,12 +85,23 @@ class FirestoreDatabaseService implements DatabaseService {
         .collection('users')
         .doc(uid)
         .snapshots()
-        .map((doc) {
-          if (doc.exists && doc.data() != null) {
-            return AppUser.fromMap(doc.data()!);
-          }
-          return null;
-        });
+        .transform(StreamTransformer.fromHandlers(
+          handleData: (doc, sink) {
+            if (doc.exists && doc.data() != null) {
+              sink.add(AppUser.fromMap(doc.data()!));
+            } else {
+              sink.add(null);
+            }
+          },
+          handleError: (error, stackTrace, sink) {
+             // Suppress permission errors specifically during logout transitions
+             if (error.toString().contains('permission-denied')) {
+               sink.add(null);
+             } else {
+               sink.addError(error, stackTrace);
+             }
+          },
+        ));
   }
 
   // --- INCIDENT METHODS ---
@@ -103,12 +117,16 @@ class FirestoreDatabaseService implements DatabaseService {
         .orderBy('timestamp', descending: true)
         .limit(20)
         .snapshots()
-        .map((snapshot) => snapshot.docs
-            .map((doc) => Incident.fromMap(doc.data(), doc.id))
-            .toList())
-        .handleError((error) {
-      return <Incident>[];
-    });
+        .transform(StreamTransformer.fromHandlers(
+          handleData: (snapshot, sink) {
+            sink.add(snapshot.docs
+                .map((doc) => Incident.fromMap(doc.data(), doc.id))
+                .toList());
+          },
+          handleError: (error, stackTrace, sink) {
+            sink.add(<Incident>[]);
+          },
+        ));
   }
 
   // --- TASK METHODS ---
@@ -117,27 +135,59 @@ class FirestoreDatabaseService implements DatabaseService {
     return _firestore
         .collection('tasks')
         .snapshots()
-        .map((snapshot) => snapshot.docs
-            .map((doc) {
-              try {
-                return Task.fromMap(doc.data(), doc.id);
-              } catch (e) {
-                return null;
-              }
-            })
-            .whereType<Task>()
-            .toList())
-        .handleError((error) {
-          return <Task>[];
-        });
+        .transform(StreamTransformer.fromHandlers(
+          handleData: (snapshot, sink) {
+            sink.add(snapshot.docs
+                .map((doc) {
+                  try {
+                    return Task.fromMap(doc.data(), doc.id);
+                  } catch (e, s) {
+                    debugPrint('Error parsing task ${doc.id}: $e');
+                    debugPrint(s.toString());
+                    return null;
+                  }
+                })
+                .whereType<Task>()
+                .toList());
+          },
+          handleError: (error, stackTrace, sink) {
+            debugPrint('Error getting tasks stream: $error');
+            sink.add(<Task>[]);
+          },
+        ));
   }
 
   @override
-  Future<void> updateTaskStatus(String taskId, TaskStatus newStatus) {
-    return _firestore
-        .collection('tasks')
-        .doc(taskId)
-        .update({'status': newStatus.name});
+  Future<Task?> getTask(String taskId) async {
+    try {
+      final doc = await _firestore.collection('tasks').doc(taskId).get();
+      if (doc.exists && doc.data() != null) {
+        return Task.fromMap(doc.data()!, doc.id);
+      }
+      return null;
+    } catch (e, s) {
+      debugPrint('Error fetching task $taskId: $e');
+      debugPrint(s.toString());
+      return null;
+    }
+  }
+
+  @override
+  Future<void> updateTaskStatus(String taskId, TaskStatus newStatus, {String? completionImageUrl}) async {
+    final Map<String, dynamic> updates = {
+      'status': newStatus.name,
+      'updatedAt': FieldValue.serverTimestamp(),
+    };
+
+    if (newStatus == TaskStatus.completed) {
+      if (completionImageUrl != null) {
+        updates['completionImageUrl'] = completionImageUrl;
+      }
+      // Set completedAt only if not already set (or always update if you prefer)
+      updates['completedAt'] = FieldValue.serverTimestamp();
+    }
+
+    await _firestore.collection('tasks').doc(taskId).update(updates);
   }
 
   // --- PERSON STATUS METHODS ---
@@ -186,6 +236,7 @@ class FirestoreDatabaseService implements DatabaseService {
         await batch.commit();
       }
     } catch (e) {
+      // Silently fail or log to crashlytics in production
       rethrow;
     }
   }
@@ -197,18 +248,20 @@ class FirestoreDatabaseService implements DatabaseService {
         .doc(userId)
         .collection('preparedness_plan')
         .snapshots()
-        .map((snapshot) {
-          try {
-            return snapshot.docs
-                .map((doc) => PreparednessItem.fromMap(doc.data(), doc.id))
-                .toList();
-          } catch (e) {
-            return <PreparednessItem>[];
-          }
-        })
-        .handleError((error) {
-          return <PreparednessItem>[];
-        });
+        .transform(StreamTransformer.fromHandlers(
+          handleData: (snapshot, sink) {
+            try {
+              sink.add(snapshot.docs
+                  .map((doc) => PreparednessItem.fromMap(doc.data(), doc.id))
+                  .toList());
+            } catch (e) {
+              sink.add(<PreparednessItem>[]);
+            }
+          },
+          handleError: (error, stackTrace, sink) {
+            sink.add(<PreparednessItem>[]);
+          },
+        ));
   }
 
   @override
@@ -228,12 +281,16 @@ class FirestoreDatabaseService implements DatabaseService {
     return _firestore
         .collection('shelters')
         .snapshots()
-        .map((snapshot) => snapshot.docs
-            .map((doc) => Shelter.fromMap(doc.data(), doc.id))
-            .toList())
-        .handleError((error) {
-      return <Shelter>[];
-    });
+        .transform(StreamTransformer.fromHandlers(
+          handleData: (snapshot, sink) {
+            sink.add(snapshot.docs
+                .map((doc) => Shelter.fromMap(doc.data(), doc.id))
+                .toList());
+          },
+          handleError: (error, stackTrace, sink) {
+            sink.add(<Shelter>[]);
+          },
+        ));
   }
 
   // --- ALERTS METHODS ---
@@ -243,26 +300,28 @@ class FirestoreDatabaseService implements DatabaseService {
         .collection('emergency_alerts')
         .orderBy('createdAt', descending: true)
         .snapshots()
-        .map((snapshot) => snapshot.docs
-            .map((doc) {
-              try {
-                return Alert.fromMap(doc.data(), doc.id);
-              } catch (e) {
-                // Return a placeholder alert if parsing fails
-                return Alert(
-                  id: doc.id,
-                  title: 'Error loading alert',
-                  message: 'Could not parse alert data',
-                  level: AlertLevel.info,
-                  timestamp: DateTime.now(),
-                );
-              }
-            })
-            .toList())
-        .handleError((error) {
-          // If ordering fails, try without ordering
-          return <Alert>[];
-        });
+        .transform(StreamTransformer.fromHandlers(
+          handleData: (snapshot, sink) {
+            sink.add(snapshot.docs
+                .map((doc) {
+                  try {
+                    return Alert.fromMap(doc.data(), doc.id);
+                  } catch (e) {
+                    return Alert(
+                      id: doc.id,
+                      title: 'Error loading alert',
+                      message: 'Could not parse alert data',
+                      level: AlertLevel.info,
+                      timestamp: DateTime.now(),
+                    );
+                  }
+                })
+                .toList());
+          },
+          handleError: (error, stackTrace, sink) {
+            sink.add(<Alert>[]);
+          },
+        ));
   }
 
   @override

@@ -6,6 +6,7 @@ import 'package:rescuetn/app/constants.dart';
 import 'package:rescuetn/common_widgets/custom_button.dart';
 import 'package:rescuetn/core/services/connectivity_service.dart';
 import 'package:rescuetn/features/1_auth/providers/auth_provider.dart';
+import 'package:rescuetn/core/providers/locale_provider.dart';
 
 enum LoginRole { public, volunteer }
 
@@ -73,14 +74,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: const Row(
+              content: Row(
                 children: [
-                  Icon(Icons.wifi_off, color: AppColors.onPrimary),
-                  SizedBox(width: AppPadding.small),
+                  const Icon(Icons.wifi_off, color: AppColors.onPrimary),
+                  const SizedBox(width: AppPadding.small),
                   Expanded(
                     child: Text(
-                      'No internet connection. Please check your network and try again.',
-                      style: TextStyle(color: AppColors.onPrimary),
+                      "auth.noInternet".tr(context),
+                      style: const TextStyle(color: AppColors.onPrimary),
                     ),
                   ),
                 ],
@@ -108,10 +109,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
     } on FirebaseAuthException catch (e) {
       // Handle specific Firebase errors for better user feedback.
       String errorMessage = 'An error occurred. Please try again.';
-      if (e.code == 'user-not-found' ||
-          e.code == 'wrong-password' ||
-          e.code == 'invalid-credential') {
-        errorMessage = 'Invalid email/phone or password.';
+      if (mounted) {
+        if (e.code == 'user-not-found' ||
+            e.code == 'wrong-password' ||
+            e.code == 'invalid-credential') {
+          errorMessage = "auth.invalidCreds".tr(context);
+        }
       }
 
       if (mounted) {
@@ -140,8 +143,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
     } catch (e) {
       // Handle any other errors (database, network, etc.)
       String errorMessage = 'An error occurred. Please try again.';
-      if (e is Exception && e.toString().contains('User data not found')) {
-        errorMessage = 'User profile not found. Please contact support.';
+      if (mounted) {
+        if (e is Exception && e.toString().contains('User data not found')) {
+          errorMessage = "auth.errorOccurred".tr(context);
+        }
       }
 
       if (mounted) {
@@ -319,7 +324,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                             ),
                             const SizedBox(width: AppPadding.small),
                             Text(
-                              'Welcome Back!',
+                              "auth.welcomeBack".tr(context),
                               textAlign: TextAlign.center,
                               style: textTheme.titleMedium?.copyWith(
                                 color: AppColors.textPrimary,
@@ -374,7 +379,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                                 ),
                                 const SizedBox(width: AppPadding.small),
                                 Text(
-                                  'Select Your Role',
+                                  "auth.selectRole".tr(context),
                                   style: textTheme.titleMedium?.copyWith(
                                     fontWeight: FontWeight.bold,
                                     color: AppColors.textPrimary,
@@ -384,7 +389,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                             ),
                             const SizedBox(height: AppPadding.small),
                             Text(
-                              'Choose how you want to sign in',
+                              "auth.chooseRole".tr(context),
                               style: textTheme.bodySmall?.copyWith(
                                 color: AppColors.textSecondary,
                               ),
@@ -396,7 +401,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                                 Expanded(
                                   child: _buildRoleCard(
                                     role: LoginRole.public,
-                                    title: 'Public User',
+                                    title: "auth.publicUser".tr(context),
                                     icon: Icons.person,
                                     color: AppColors.primary,
                                   ),
@@ -405,7 +410,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                                 Expanded(
                                   child: _buildRoleCard(
                                     role: LoginRole.volunteer,
-                                    title: 'Volunteer',
+                                    title: "dashboard.volunteer".tr(context),
                                     icon: Icons.health_and_safety,
                                     color: AppColors.error,
                                   ),
@@ -420,8 +425,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                       // Email or Phone Field
                       _buildTextField(
                         controller: _emailController,
-                        label: 'Email or Phone Number',
-                        hint: 'Enter your email or phone number',
+                        label: "auth.emailOrPhone".tr(context),
+                        hint: "auth.enterEmail".tr(context),
                         prefixIcon: Icons.alternate_email,
                         keyboardType: TextInputType.text,
                         validator: (v) {
@@ -435,7 +440,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                           final isPhone = RegExp(r'^[0-9]+$').hasMatch(cleanedPhone) && cleanedPhone.length >= 10;
                           
                           if (!isEmail && !isPhone) {
-                            return 'Please enter a valid email or phone number';
+                            return "auth.invalidCreds".tr(context);
                           }
                           return null;
                         },
@@ -446,8 +451,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                       // Password Field
                       _buildTextField(
                         controller: _passwordController,
-                        label: 'Password',
-                        hint: 'Enter your password',
+                        label: "auth.password".tr(context),
+                        hint: "auth.enterPassword".tr(context),
                         prefixIcon: Icons.lock_outline,
                         obscureText: _obscureText,
                         suffixIcon: IconButton(
@@ -473,9 +478,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                           style: TextButton.styleFrom(
                             foregroundColor: AppColors.primary,
                           ),
-                          child: const Text(
-                            'Forgot Password?',
-                            style: TextStyle(fontWeight: FontWeight.w600),
+                          child: Text(
+                            "auth.forgotPassword".tr(context),
+                            style: const TextStyle(fontWeight: FontWeight.w600),
                           ),
                         ),
                       ),
@@ -483,7 +488,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
 
                       // Sign In Button
                       CustomButton(
-                        text: 'Sign In',
+                        text: "auth.signIn".tr(context),
                         onPressed: _login,
                         isLoading: _isLoading,
                       ),
@@ -497,13 +502,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                               color: AppColors.textSecondary.withValues(alpha: 0.3),
                             ),
                           ),
-                          const Padding(
-                            padding: EdgeInsets.symmetric(
+                          Padding(
+                            padding: const EdgeInsets.symmetric(
                               horizontal: AppPadding.medium,
                             ),
                             child: Text(
-                              'OR',
-                              style: TextStyle(
+                              "auth.or".tr(context),
+                              style: const TextStyle(
                                 color: AppColors.textSecondary,
                                 fontWeight: FontWeight.w600,
                               ),
@@ -533,7 +538,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Text(
-                              "Don't have an account?",
+                              "auth.noAccount".tr(context),
                               style: textTheme.bodyMedium?.copyWith(
                                 color: AppColors.textSecondary,
                               ),
@@ -543,9 +548,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                               style: TextButton.styleFrom(
                                 foregroundColor: AppColors.primary,
                               ),
-                              child: const Text(
-                                'Sign Up',
-                                style: TextStyle(
+                              child: Text(
+                                "auth.signUp".tr(context),
+                                style: const TextStyle(
                                   fontWeight: FontWeight.bold,
                                   fontSize: 15,
                                 ),

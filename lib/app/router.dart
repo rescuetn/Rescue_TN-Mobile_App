@@ -23,15 +23,12 @@ import 'package:rescuetn/features/8_person_registry/screens/add_person_status_fo
 import 'package:rescuetn/features/8_person_registry/screens/person_registry_screen.dart';
 import 'package:rescuetn/features/9_heatmap/screens/heatmap_screen.dart';
 import 'package:rescuetn/models/user_model.dart';
+import 'package:rescuetn/models/task_model.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
-  final authState = ref.watch(authStateChangesProvider);
-
   return GoRouter(
     initialLocation: '/login',
-    refreshListenable:
-    // ignore: deprecated_member_use
-    GoRouterRefreshStream(ref.watch(authStateChangesProvider.stream)),
+    refreshListenable: GoRouterRefreshStream(ref.watch(authStateChangesProvider.stream)),
     routes: [
       GoRoute(path: '/login', builder: (context, state) => const LoginScreen()),
       GoRoute(path: '/register', builder: (context, state) => const RegisterScreen()),
@@ -39,7 +36,9 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/home',
         builder: (context, state) {
-          final user = authState.value;
+          // Use ref.watch inside the builder so the screen updates if user role changes 
+          // (though usually role change implies a new User object and thus potentially a redirect check)
+          final user = ref.watch(authStateChangesProvider).value;
           if (user?.role == UserRole.volunteer) {
             return const VolunteerDashboardScreen();
           }
@@ -48,7 +47,13 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(path: '/report-incident', builder: (context, state) => const ReportIncidentScreen()),
       GoRoute(path: '/shelter-map', builder: (context, state) => const ShelterMapScreen()),
-      GoRoute(path: '/task-details', builder: (context, state) => const TaskDetailsScreen()),
+      GoRoute(
+        path: '/task-details', 
+        builder: (context, state) {
+          final task = state.extra as Task?;
+          return TaskDetailsScreen(initialTask: task);
+        }
+      ),
       GoRoute(path: '/profile', builder: (context, state) => const ProfileScreen()),
       GoRoute(path: '/edit-profile', builder: (context, state) => const EditProfileScreen()),
       GoRoute(path: '/change-password', builder: (context, state) => const ChangePasswordScreen()),
@@ -62,7 +67,18 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/heatmap', builder: (context, state) => const HeatmapScreen()),
     ],
     redirect: (context, state) {
-      final isLoggedIn = authState.value != null;
+      final authState = ref.read(authStateChangesProvider);
+      
+      // If loading and we have no value, we wait.
+      if (authState.isLoading && !authState.hasValue && !authState.hasError) {
+         return null; 
+      }
+
+      // If we have an error, treat as not logged in (safest fallback) or show error screen?
+      // For now, treat null or error as not logged in.
+      final user = authState.valueOrNull;
+      final isLoggedIn = user != null;
+      
       final isAuthRoute = state.matchedLocation == '/login' || 
           state.matchedLocation == '/register' || 
           state.matchedLocation == '/forgot-password';

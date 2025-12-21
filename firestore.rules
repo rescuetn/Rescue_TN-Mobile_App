@@ -31,7 +31,7 @@ service cloud.firestore {
       // Inherits the path from parent match
       match /preparedness_plan/{itemId} {
         // Explicitly allow owner access
-        allow read, write: if request.auth.uid == userId;
+        allow read, write: if isAuthenticated() && request.auth.uid == userId;
       }
     }
     

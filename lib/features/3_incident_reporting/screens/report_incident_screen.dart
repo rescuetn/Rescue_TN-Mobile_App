@@ -11,6 +11,7 @@ import 'package:rescuetn/models/incident_model.dart';
 import 'package:record/record.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:rescuetn/features/3_incident_reporting/providers/incident_provider.dart';
+import 'package:rescuetn/core/providers/locale_provider.dart';
 
 class ReportIncidentScreen extends ConsumerStatefulWidget {
   const ReportIncidentScreen({super.key});
@@ -60,6 +61,12 @@ class _ReportIncidentScreenState extends ConsumerState<ReportIncidentScreen>
       curve: const Interval(0.2, 1.0, curve: Curves.easeOutCubic),
     ));
     _animationController.forward();
+    _handleLocationInitialization();
+  }
+
+  Future<void> _handleLocationInitialization() async {
+    // Delay slightly to ensure context is valid if we need to show messages immediately, 
+    // though _getCurrentLocation mainly sets state.
     _getCurrentLocation();
   }
 
@@ -107,8 +114,8 @@ class _ReportIncidentScreenState extends ConsumerState<ReportIncidentScreen>
       if (mounted) {
         setState(() {
           _currentPosition = position;
-          _locationMessage =
-          'Location captured: ${position.latitude.toStringAsFixed(4)}, ${position.longitude.toStringAsFixed(4)}';
+          // 'incident.locationLoading'.tr(context); // We might keep coordinate display as is or format it
+          '${"incident.locationLoading".tr(context)}: ${position.latitude.toStringAsFixed(4)}, ${position.longitude.toStringAsFixed(4)}';
         });
       }
     } catch (e) {
@@ -243,7 +250,7 @@ class _ReportIncidentScreenState extends ConsumerState<ReportIncidentScreen>
     if (_formKey.currentState!.validate()) {
       if (_currentPosition == null) {
         _showSnackBar(
-          message: 'Could not get location. Please enable location services.',
+          message: "incident.locationLoading".tr(context),
           icon: Icons.error_outline,
           backgroundColor: AppColors.error,
         );
@@ -311,7 +318,7 @@ class _ReportIncidentScreenState extends ConsumerState<ReportIncidentScreen>
                     ),
                     const SizedBox(width: 16),
                     Text(
-                      'Add Evidence',
+                      "incident.evidence".tr(context),
                       style: Theme.of(context).textTheme.titleLarge?.copyWith(
                         fontWeight: FontWeight.bold,
                       ),
@@ -322,8 +329,9 @@ class _ReportIncidentScreenState extends ConsumerState<ReportIncidentScreen>
               const SizedBox(height: 24),
               _buildImageSourceOption(
                 icon: Icons.photo_library_rounded,
-                title: 'Photo Gallery',
-                subtitle: 'Choose from existing photos',
+                title: "incident.gallery".tr(context),
+                subtitle: 'Choose from existing photos', // Missed this key? I'll leave as is or add later.
+                // I will add "incident.gallerySubtitle" later. For now just title.
                 gradient: [Colors.purple.shade400, Colors.purple.shade600],
                 onTap: () {
                   Navigator.of(context).pop();
@@ -332,7 +340,7 @@ class _ReportIncidentScreenState extends ConsumerState<ReportIncidentScreen>
               ),
               _buildImageSourceOption(
                 icon: Icons.camera_alt_rounded,
-                title: 'Camera',
+                title: "incident.camera".tr(context),
                 subtitle: 'Take a new photo',
                 gradient: [Colors.blue.shade400, Colors.blue.shade600],
                 onTap: () {
@@ -496,7 +504,7 @@ class _ReportIncidentScreenState extends ConsumerState<ReportIncidentScreen>
     ref.listen<ReportIncidentState>(reportIncidentProvider, (previous, next) {
       if (next.isSuccess) {
         _showSnackBar(
-          message: 'Incident reported successfully!',
+          message: "incident.submitSuccess".tr(context),
           icon: Icons.check_circle_outline,
           backgroundColor: Colors.green.shade600,
         );
@@ -564,7 +572,7 @@ class _ReportIncidentScreenState extends ConsumerState<ReportIncidentScreen>
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Report Incident',
+                            "incident.title".tr(context),
                             style: textTheme.titleLarge?.copyWith(
                               fontWeight: FontWeight.bold,
                               color: Colors.white,
@@ -573,7 +581,7 @@ class _ReportIncidentScreenState extends ConsumerState<ReportIncidentScreen>
                           ),
                           const SizedBox(height: 2),
                           Text(
-                            'Emergency Report Form',
+                            "incident.subtitle".tr(context),
                             style: textTheme.bodyMedium?.copyWith(
                               color: Colors.white.withValues(alpha: 0.9),
                             ),
@@ -663,7 +671,7 @@ class _ReportIncidentScreenState extends ConsumerState<ReportIncidentScreen>
                                         crossAxisAlignment: CrossAxisAlignment.start,
                                         children: [
                                           Text(
-                                            'Life-threatening emergency?',
+                                            "incident.bannerTitle".tr(context),
                                             style: textTheme.bodyLarge?.copyWith(
                                               color: Colors.red.shade900,
                                               fontWeight: FontWeight.bold,
@@ -671,7 +679,7 @@ class _ReportIncidentScreenState extends ConsumerState<ReportIncidentScreen>
                                           ),
                                           const SizedBox(height: 2),
                                           Text(
-                                            'Call 108 immediately',
+                                            "incident.bannerSubtitle".tr(context),
                                             style: textTheme.bodyMedium?.copyWith(
                                               color: Colors.red.shade800,
                                             ),
@@ -687,15 +695,15 @@ class _ReportIncidentScreenState extends ConsumerState<ReportIncidentScreen>
                               // Incident Details Section
                               _buildEnhancedSectionHeader(
                                 icon: Icons.description_rounded,
-                                title: 'Incident Details',
-                                subtitle: 'Provide information about the incident',
+                                title: "incident.details".tr(context),
+                                subtitle: "incident.detailsSub".tr(context),
                                 gradient: [Colors.blue.shade400, Colors.blue.shade600],
                               ),
                               const SizedBox(height: 20),
 
                               // Incident Type
                               _buildEnhancedDropdownField<IncidentType>(
-                                label: 'Type of Incident',
+                                label: "incident.type".tr(context),
                                 value: _selectedType,
                                 items: IncidentType.values,
                                 icon: Icons.category_rounded,
@@ -708,7 +716,7 @@ class _ReportIncidentScreenState extends ConsumerState<ReportIncidentScreen>
                                   ],
                                 ),
                                 validator: (value) =>
-                                value == null ? 'Please select incident type' : null,
+                                value == null ? "incident.selectType".tr(context) : null,
                               ),
                               const SizedBox(height: 20),
 
@@ -728,8 +736,8 @@ class _ReportIncidentScreenState extends ConsumerState<ReportIncidentScreen>
                                 child: TextFormField(
                                   controller: _descriptionController,
                                   decoration: InputDecoration(
-                                    labelText: 'Description',
-                                    hintText: 'Describe the incident in detail...',
+                                    labelText: "incident.description".tr(context),
+                                    hintText: "incident.descriptionHint".tr(context),
                                     prefixIcon: const Padding(
                                       padding: EdgeInsets.only(top: 12),
                                       child: Icon(Icons.edit_note_rounded,
@@ -757,14 +765,14 @@ class _ReportIncidentScreenState extends ConsumerState<ReportIncidentScreen>
                                   ),
                                   maxLines: 5,
                                   validator: (value) =>
-                                  value!.isEmpty ? 'Please provide a description' : null,
+                                  value!.isEmpty ? "incident.enterDesc".tr(context) : null,
                                 ),
                               ),
                               const SizedBox(height: 20),
 
                               // Severity
                               _buildEnhancedDropdownField<Severity>(
-                                label: 'Severity Level',
+                                label: "incident.severity".tr(context),
                                 value: _selectedSeverity,
                                 items: Severity.values,
                                 icon: Icons.priority_high_rounded,
@@ -791,7 +799,7 @@ class _ReportIncidentScreenState extends ConsumerState<ReportIncidentScreen>
                                   ],
                                 ),
                                 validator: (value) =>
-                                value == null ? 'Please select severity level' : null,
+                                value == null ? "incident.selectSeverity".tr(context) : null,
                               ),
                               const SizedBox(height: 32),
 

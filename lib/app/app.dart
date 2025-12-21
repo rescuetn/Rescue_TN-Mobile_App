@@ -6,6 +6,8 @@ import 'package:rescuetn/app/router.dart';
 import 'package:rescuetn/app/theme.dart';
 import 'package:rescuetn/core/services/notification_service.dart';
 import 'package:rescuetn/features/1_auth/providers/auth_provider.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:rescuetn/core/providers/locale_provider.dart';
 
 class RescueTNApp extends ConsumerWidget {
   const RescueTNApp({super.key});
@@ -36,6 +38,7 @@ class RescueTNApp extends ConsumerWidget {
     });
 
     final router = ref.watch(routerProvider);
+    final locale = ref.watch(localeProvider);
 
     // Listen to the notification stream and show banner for relevant alerts
     ref.listen(notificationStreamProvider, (_, next) {
@@ -63,6 +66,17 @@ class RescueTNApp extends ConsumerWidget {
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
       routerConfig: router,
+      locale: locale,
+      localizationsDelegates: const [
+        AppLocalizations.delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: const [
+        Locale('en', ''),
+        Locale('ta', ''),
+      ],
     );
   }
 

@@ -5,6 +5,7 @@ import 'package:rescuetn/app/constants.dart';
 import 'package:rescuetn/features/5_task_management/providers/task_data_provider.dart';
 import 'package:rescuetn/features/5_task_management/widgets/status_update_bottom_sheet.dart';
 import 'package:rescuetn/models/task_model.dart';
+import 'package:rescuetn/core/providers/locale_provider.dart';
 
 class TaskCard extends ConsumerWidget {
   final Task task;
@@ -47,7 +48,7 @@ class TaskCard extends ConsumerWidget {
                     size: 16, color: Colors.orange),
                 const SizedBox(width: AppPadding.small),
                 Text(
-                  'Severity: ${task.severity.name[0].toUpperCase()}${task.severity.name.substring(1)}',
+                  '${"tasks.severity".tr(context)}: ${task.severity.name[0].toUpperCase()}${task.severity.name.substring(1)}',
                   style: textTheme.bodyMedium,
                 ),
                 const Spacer(),
@@ -56,9 +57,9 @@ class TaskCard extends ConsumerWidget {
                     // Set the selected task's ID in the provider
                     ref.read(selectedTaskIdProvider.notifier).state = task.id;
                     // Navigate to the details screen
-                    context.go('/task-details');
+                    context.push('/task-details', extra: task);
                   },
-                  child: const Text('View Details'),
+                  child: Text("tasks.viewDetails".tr(context)),
                 )
               ],
             )
@@ -70,7 +71,12 @@ class TaskCard extends ConsumerWidget {
 
   Widget _buildStatusChip(BuildContext context, TaskStatus status) {
     Color chipColor;
-    String statusText = status.name[0].toUpperCase() + status.name.substring(1);
+    // Use the taskFilters keys for status translation since they match strictly
+    String statusText = "taskFilters.${status.name}".tr(context);
+
+    // Capitalize first letter if language is English (optional, generic workaround)
+    // Actually, tr() handles the string directly. If we want Title Case for English, 
+    // the json value should be Title Case. The json has "Active", "Pending".
 
     switch (status) {
       case TaskStatus.pending:

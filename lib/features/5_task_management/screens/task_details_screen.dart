@@ -4,10 +4,15 @@ import 'package:rescuetn/app/constants.dart';
 import 'package:rescuetn/features/5_task_management/providers/task_data_provider.dart';
 import 'package:rescuetn/core/services/database_service.dart';
 import 'package:rescuetn/models/task_model.dart';
+import 'package:rescuetn/core/providers/locale_provider.dart';
+import 'dart:io';
 import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:rescuetn/core/services/storage_service.dart';
 
 class TaskDetailsScreen extends ConsumerStatefulWidget {
-  const TaskDetailsScreen({super.key});
+  final Task? initialTask;
+  const TaskDetailsScreen({super.key, this.initialTask});
 
   @override
   ConsumerState<TaskDetailsScreen> createState() => _TaskDetailsScreenState();
@@ -98,88 +103,282 @@ class _TaskDetailsScreenState extends ConsumerState<TaskDetailsScreen>
   }
 
   void _showStatusUpdateDialog() {
-    final task = ref.read(selectedTaskProvider);
+    final task = ref.read(selectedTaskProvider).value;
     if (task == null) return;
+
+    // Local state for the modal
+    File? selectedImage;
+    bool isUploading = false;
+    TaskStatus? selectedStatus;
 
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
-      builder: (context) => Container(
-        decoration: const BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.only(
-            topLeft: Radius.circular(24),
-            topRight: Radius.circular(24),
+      builder: (context) => StatefulBuilder(
+        builder: (context, setModalState) => Container(
+          decoration: const BoxDecoration(
+            color: AppColors.surface,
+            borderRadius: BorderRadius.only(
+              topLeft: Radius.circular(24),
+              topRight: Radius.circular(24),
+            ),
           ),
-        ),
-        child: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                // Handle bar
-                Center(
-                  child: Container(
-                    width: 48,
-                    height: 5,
-                    decoration: BoxDecoration(
-                      color: AppColors.textSecondary.withValues(alpha: 0.3),
-                      borderRadius: BorderRadius.circular(3),
+          child: SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  // Handle bar
+                  Center(
+                    child: Container(
+                      width: 48,
+                      height: 5,
+                      decoration: BoxDecoration(
+                        color: AppColors.textSecondary.withValues(alpha: 0.3),
+                        borderRadius: BorderRadius.circular(3),
+                      ),
                     ),
                   ),
-                ),
-                const SizedBox(height: 24),
-                Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [
-                            AppColors.primary.withValues(alpha: 0.2),
-                            AppColors.accent.withValues(alpha: 0.2),
+                  const SizedBox(height: 24),
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [
+                              AppColors.primary.withValues(alpha: 0.2),
+                              AppColors.accent.withValues(alpha: 0.2),
+                            ],
+                          ),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Icon(
+                          Icons.update_rounded,
+                          color: AppColors.primary,
+                          size: 24,
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Text(
+                        "tasks.updateStatus".tr(context),
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+
+                  if (isUploading) ...[
+                    Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(32.0),
+                        child: Column(
+                          children: [
+                            const CircularProgressIndicator(),
+                            const SizedBox(height: 16),
+                            Text("tasks.uploadProof".tr(context)),
                           ],
                         ),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: const Icon(
-                        Icons.update_rounded,
-                        color: AppColors.primary,
-                        size: 24,
                       ),
                     ),
-                    const SizedBox(width: 16),
-                    Text(
-                      'Update Task Status',
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.bold,
+                  ] else ...[
+                    // Status Options
+                    if (task.status == TaskStatus.pending)
+                      _buildEnhancedStatusOption(
+                        TaskStatus.inProgress,
+                        [Colors.blue.shade400, Colors.blue.shade600],
+                        Icons.work_rounded,
+                        onTap: () => _updateStatus(TaskStatus.inProgress),
                       ),
-                    ),
+
+                    if (task.status == TaskStatus.inProgress || task.status == TaskStatus.accepted) ...[
+                      // Only show 'Mark Completed' button if not yet selected or already selecting completion
+                      if (selectedStatus != TaskStatus.completed)
+                        _buildEnhancedStatusOption(
+                          TaskStatus.completed,
+                          [Colors.green.shade400, Colors.green.shade600],
+                          Icons.check_circle_rounded,
+                          onTap: () {
+                            setModalState(() {
+                              selectedStatus = TaskStatus.completed;
+                            });
+                          },
+                        ),
+                    ],
+
+                    // Completion Flow with Image Upload
+                    if (selectedStatus == TaskStatus.completed) ...[
+                      const SizedBox(height: 16),
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Colors.grey.shade50,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: Colors.grey.shade200),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  "tasks.proofTitle".tr(context),
+                                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                IconButton(
+                                  icon: const Icon(Icons.close),
+                                  onPressed: () => setModalState(() => selectedStatus = null),
+                                  padding: EdgeInsets.zero,
+                                  constraints: const BoxConstraints(),
+                                  iconSize: 20,
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              "tasks.uploadInstruction".tr(context),
+                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                color: AppColors.textSecondary,
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+
+                            if (selectedImage != null)
+                              Stack(
+                                children: [
+                                  ClipRRect(
+                                    borderRadius: BorderRadius.circular(12),
+                                    child: Image.file(
+                                      selectedImage!,
+                                      height: 200,
+                                      width: double.infinity,
+                                      fit: BoxFit.cover,
+                                    ),
+                                  ),
+                                  Positioned(
+                                    top: 8,
+                                    right: 8,
+                                    child: GestureDetector(
+                                      onTap: () => setModalState(() => selectedImage = null),
+                                      child: Container(
+                                        padding: const EdgeInsets.all(4),
+                                        decoration: const BoxDecoration(
+                                          color: Colors.black54,
+                                          shape: BoxShape.circle,
+                                        ),
+                                        child: const Icon(Icons.close, color: Colors.white, size: 20),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              )
+                            else
+                              InkWell(
+                                onTap: () async {
+                                  final ImagePicker picker = ImagePicker();
+                                  final XFile? image = await picker.pickImage(source: ImageSource.gallery);
+                                  if (image != null) {
+                                    setModalState(() => selectedImage = File(image.path));
+                                  }
+                                },
+                                borderRadius: BorderRadius.circular(12),
+                                child: Container(
+                                  height: 120,
+                                  width: double.infinity,
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(
+                                      color: AppColors.primary,
+                                      style: BorderStyle.solid,
+                                    ),
+                                  ),
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      const Icon(Icons.add_a_photo_rounded, color: AppColors.primary, size: 32),
+                                      const SizedBox(height: 8),
+                                      Text(
+                                        "tasks.selectPhoto".tr(context),
+                                        style: const TextStyle(
+                                          color: AppColors.primary,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+
+                            const SizedBox(height: 24),
+                            ElevatedButton(
+                              onPressed: selectedImage == null
+                                  ? null
+                                  : () async {
+                                setModalState(() => isUploading = true);
+                                try {
+                                  // Upload image
+                                  final storageService = ref.read(storageServiceProvider);
+                                  final imageUrl = await storageService.uploadTaskCompletionImage(
+                                    task.id,
+                                    selectedImage!,
+                                  );
+
+                                  if (context.mounted) {
+                                    // Close modal first
+                                    Navigator.pop(context);
+                                    
+                                    // Then update status
+                                    await _updateStatus(
+                                      TaskStatus.completed,
+                                      completionImageUrl: imageUrl,
+                                    );
+                                  }
+                                } catch (e) {
+                                  setModalState(() => isUploading = false);
+                                  if (context.mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text('${"tasks.errorUpdating".tr(context)}: $e'),
+                                        backgroundColor: Colors.red,
+                                      ),
+                                    );
+                                  }
+                                }
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppColors.primary,
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(vertical: 16),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                minimumSize: const Size(double.infinity, 50),
+                              ),
+                              child: Text(
+                                "tasks.submitCompletion".tr(context),
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ],
-                ),
-                const SizedBox(height: 24),
-                _buildEnhancedStatusOption(
-                  TaskStatus.pending,
-                  [Colors.orange.shade400, Colors.orange.shade600],
-                  Icons.pending_actions_rounded,
-                ),
-                const SizedBox(height: 12),
-                _buildEnhancedStatusOption(
-                  TaskStatus.inProgress,
-                  [Colors.blue.shade400, Colors.blue.shade600],
-                  Icons.work_rounded,
-                ),
-                const SizedBox(height: 12),
-                _buildEnhancedStatusOption(
-                  TaskStatus.completed,
-                  [Colors.green.shade400, Colors.green.shade600],
-                  Icons.check_circle_rounded,
-                ),
-                const SizedBox(height: 16),
-              ],
+                  const SizedBox(height: 16),
+                ],
+              ),
             ),
           ),
         ),
@@ -187,57 +386,56 @@ class _TaskDetailsScreenState extends ConsumerState<TaskDetailsScreen>
     );
   }
 
+  Future<void> _updateStatus(TaskStatus status, {String? completionImageUrl}) async {
+    final currentTask = ref.read(selectedTaskProvider).value ?? widget.initialTask;
+    if (currentTask != null) {
+      try {
+        await ref
+            .read(databaseServiceProvider)
+            .updateTaskStatus(currentTask.id, status, completionImageUrl: completionImageUrl);
+            
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Row(
+                children: [
+                  const Icon(Icons.check_circle_outline, color: Colors.white),
+                  const SizedBox(width: 12),
+                  Text('${"tasks.statusUpdated".tr(context)} ${status.name}'),
+                ],
+              ),
+              backgroundColor: Colors.green,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              margin: const EdgeInsets.all(16),
+            ),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('${"tasks.errorUpdating".tr(context)}: $e'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    }
+  }
+
   Widget _buildEnhancedStatusOption(
       TaskStatus status,
       List<Color> gradient,
       IconData icon,
+      {VoidCallback? onTap}
       ) {
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        onTap: () async {
-          Navigator.pop(context);
-          final currentTask = ref.read(selectedTaskProvider);
-          if (currentTask != null) {
-            try {
-              await ref
-                  .read(databaseServiceProvider)
-                  .updateTaskStatus(currentTask.id, status);
-                  
-              if (mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Row(
-                      children: [
-                        const Icon(Icons.check_circle_outline, color: Colors.white),
-                        const SizedBox(width: 12),
-                        Text(
-                          'Status updated to ${status.name}',
-                          style: const TextStyle(color: Colors.white),
-                        ),
-                      ],
-                    ),
-                    backgroundColor: gradient[1],
-                    behavior: SnackBarBehavior.floating,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    margin: const EdgeInsets.all(16),
-                  ),
-                );
-              }
-            } catch (e) {
-              if (mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('Error updating status: $e'),
-                    backgroundColor: Colors.red,
-                  ),
-                );
-              }
-            }
-          }
-        },
+        onTap: onTap,
         borderRadius: BorderRadius.circular(16),
         child: Container(
           padding: const EdgeInsets.all(16),
@@ -269,7 +467,7 @@ class _TaskDetailsScreenState extends ConsumerState<TaskDetailsScreen>
               const SizedBox(width: 16),
               Expanded(
                 child: Text(
-                  status == TaskStatus.inProgress ? 'ACTIVE' : status.name.toUpperCase(),
+                  "taskFilters.${status.name}".tr(context).toUpperCase(),
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
@@ -291,69 +489,144 @@ class _TaskDetailsScreenState extends ConsumerState<TaskDetailsScreen>
 
   @override
   Widget build(BuildContext context) {
-    final task = ref.watch(selectedTaskProvider);
+    final taskAsync = ref.watch(selectedTaskProvider);
+    final volunteerAsync = ref.watch(volunteerDetailsProvider);
     final textTheme = Theme.of(context).textTheme;
 
-    if (task == null) {
-      return Scaffold(
-        body: Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                Colors.red.shade700,
-                Colors.red.shade600,
-                Colors.red.shade500,
-                AppColors.background,
-              ],
-              stops: const [0.0, 0.15, 0.3, 0.3],
+    // Use initialTask to show immediate content while loading or if error occurs (and we have initial data)
+    final effectiveTaskState = (widget.initialTask != null && (taskAsync.isLoading || taskAsync.hasError || taskAsync.value == null))
+        ? AsyncData(widget.initialTask)
+        : taskAsync;
+
+    return effectiveTaskState.when(
+      loading: () => const Scaffold(
+        body: Center(
+          child: CircularProgressIndicator(),
+        ),
+      ),
+      error: (err, stack) {
+        final isPermissionError = err.toString().contains('permission-denied');
+        return Scaffold(
+          appBar: AppBar(title: Text("error".tr(context))),
+          body: Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24.0),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    isPermissionError ? Icons.lock_person_rounded : Icons.error_outline_rounded,
+                    size: 64,
+                    color: Colors.red,
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    isPermissionError ? "tasks.accessDenied".tr(context) : "tasks.errorLoading".tr(context),
+                    style: textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    isPermissionError 
+                        ? "tasks.permissionError".tr(context)
+                        : '${"tasks.unexpectedError".tr(context)}: $err',
+                    textAlign: TextAlign.center,
+                    style: textTheme.bodyMedium,
+                  ),
+                  const SizedBox(height: 24),
+                  if (widget.initialTask != null) 
+                     ElevatedButton.icon(
+                      onPressed: () {
+                         // Force displaying initial task implies ignoring error for now, 
+                         // but we are inside 'error' builder which returns a widget.
+                         // This path effectively won't be reached because we construct 'effectiveTaskState' above.
+                         // But if we decide not to wrap in AsyncData above to verify fresh data, this would be needed.
+                         // Since we DO wrap above, this error widget only shows if BOTH provider fails and initialTask is null.
+                      },
+                      icon: const Icon(Icons.refresh),
+                      label: Text("tasks.retry".tr(context)),
+                     ),
+                  if (isPermissionError)
+                    ElevatedButton.icon(
+                      onPressed: () {
+                        // Navigate to profile or trigger logout
+                        // Since we can't easily logout here without context loop, advise user
+                        ScaffoldMessenger.of(context).showSnackBar(
+                           SnackBar(content: Text("tasks.goToProfile".tr(context))),
+                        );
+                        context.go('/profile');
+                      },
+                      icon: const Icon(Icons.logout),
+                      label: Text("tasks.goToProfile".tr(context)),
+                    ),
+                ],
+              ),
             ),
           ),
-          child: SafeArea(
-            child: Column(
-              children: [
-                Padding(
-                  padding: const EdgeInsets.all(20),
-                  child: Row(
-                    children: [
-                      Container(
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.25),
-                          borderRadius: BorderRadius.circular(14),
-                          border: Border.all(
-                            color: Colors.white.withValues(alpha: 0.3),
-                            width: 1,
-                          ),
-                        ),
-                        child: IconButton(
-                          icon: const Icon(Icons.arrow_back_rounded,
-                              color: Colors.white),
-                          onPressed: () {
-                            context.go('/home');
-                          },
-                        ),
-                      ),
-                    ],
-                  ),
+        );
+      },
+      data: (task) {
+        // If we wrapped initialTask, 'task' here is actually AsyncData(initialTask).value which is Task?.
+        // But invalid tasks might be null.
+        if (task == null) {
+          return Scaffold(
+            body: Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    Colors.red.shade700,
+                    Colors.red.shade600,
+                    Colors.red.shade500,
+                    AppColors.background,
+                  ],
+                  stops: const [0.0, 0.15, 0.3, 0.3],
                 ),
-                const Expanded(
-                  child: Center(
-                    child: Text(
-                      'Task not found.',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w500,
+              ),
+              child: SafeArea(
+                child: Column(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.all(20),
+                      child: Row(
+                        children: [
+                          Container(
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.25),
+                              borderRadius: BorderRadius.circular(14),
+                              border: Border.all(
+                                color: Colors.white.withValues(alpha: 0.3),
+                                width: 1,
+                              ),
+                            ),
+                            child: IconButton(
+                              icon: const Icon(Icons.arrow_back_rounded,
+                                  color: Colors.white),
+                              onPressed: () {
+                                context.go('/home');
+                              },
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                  ),
+                    Expanded(
+                      child: Center(
+                        child: Text(
+                          "tasks.notFound".tr(context),
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-              ],
+              ),
             ),
-          ),
-        ),
-      );
-    }
+          );
+        }
 
     final statusGradient = _getStatusGradient(task.status.name);
     final severityColor = _getSeverityColor(task.severity.name);
@@ -410,7 +683,7 @@ class _TaskDetailsScreenState extends ConsumerState<TaskDetailsScreen>
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Task Details',
+                            "tasks.detailsTitle".tr(context),
                             style: textTheme.titleLarge?.copyWith(
                               fontWeight: FontWeight.bold,
                               color: Colors.white,
@@ -419,7 +692,7 @@ class _TaskDetailsScreenState extends ConsumerState<TaskDetailsScreen>
                           ),
                           const SizedBox(height: 2),
                           Text(
-                            'View and manage task',
+                            "tasks.detailsSubtitle".tr(context),
                             style: textTheme.bodyMedium?.copyWith(
                               color: Colors.white.withValues(alpha: 0.9),
                             ),
@@ -599,6 +872,146 @@ class _TaskDetailsScreenState extends ConsumerState<TaskDetailsScreen>
                           ),
                           const SizedBox(height: 16),
 
+                          // --- NEW: Location Card ---
+                          if (task.location != null && task.location!.isNotEmpty) ...[
+                            _buildEnhancedDetailCard(
+                              title: 'Location',
+                              content: task.location!,
+                              icon: Icons.location_on_rounded,
+                              gradient: [Colors.red.shade400, Colors.red.shade600],
+                            ),
+                            const SizedBox(height: 16),
+                          ],
+
+                          // --- NEW: Assignment Card ---
+                          if (task.volunteerName != null || task.assignedBy != null || task.assignedTo != null) ...[
+                             Container(
+                              padding: const EdgeInsets.all(24),
+                              decoration: BoxDecoration(
+                                color: AppColors.surface,
+                                borderRadius: BorderRadius.circular(24),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: AppColors.textPrimary.withValues(alpha: 0.06),
+                                    blurRadius: 16,
+                                    offset: const Offset(0, 4),
+                                  ),
+                                ],
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Container(
+                                        padding: const EdgeInsets.all(10),
+                                        decoration: BoxDecoration(
+                                          gradient: LinearGradient(
+                                            colors: [
+                                              Colors.teal.shade400,
+                                              Colors.teal.shade600,
+                                            ],
+                                          ),
+                                          borderRadius: BorderRadius.circular(12),
+                                          boxShadow: [
+                                            BoxShadow(
+                                              color: Colors.teal.shade300
+                                                  .withValues(alpha: 0.3),
+                                              blurRadius: 8,
+                                              offset: const Offset(0, 4),
+                                            ),
+                                          ],
+                                        ),
+                                        child: const Icon(
+                                          Icons.person_rounded,
+                                          color: Colors.white,
+                                          size: 20,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 12),
+                                      Text(
+                                        'Assignment Details',
+                                        style: textTheme.titleMedium?.copyWith(
+                                          fontWeight: FontWeight.bold,
+                                          color: AppColors.textPrimary,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 20),
+                                  
+                                  // Volunteer Details (Async from Provider)
+                                  if (volunteerAsync.isLoading)
+                                    const Padding(
+                                      padding: EdgeInsets.all(8.0),
+                                      child: Center(child: SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2))),
+                                    )
+                                  else if (volunteerAsync.hasValue && volunteerAsync.value != null) ...[
+                                      _buildEnhancedInfoRow(
+                                        Icons.badge_rounded,
+                                        'Assigned To',
+                                        (volunteerAsync.value!.fullName?.isNotEmpty ?? false) ? volunteerAsync.value!.fullName! : (task.volunteerName ?? 'Unknown'),
+                                        Colors.teal.shade400,
+                                      ),
+                                      if (volunteerAsync.value!.phoneNumber.isNotEmpty) ...[
+                                        const SizedBox(height: 12),
+                                          Divider(
+                                            color: AppColors.textSecondary.withValues(alpha: 0.1),
+                                            height: 1,
+                                          ),
+                                        const SizedBox(height: 12),
+                                        Row(
+                                          children: [
+                                            Expanded(
+                                              child: _buildEnhancedInfoRow(
+                                                Icons.phone_rounded,
+                                                'Contact',
+                                                volunteerAsync.value!.phoneNumber,
+                                                Colors.green.shade400,
+                                              ),
+                                            ),
+                                            IconButton(
+                                              icon: const Icon(Icons.call, color: Colors.green),
+                                              onPressed: () {
+                                                // Functionality to launch dialer could be added here
+                                                // launchUrl(Uri.parse('tel:${volunteerAsync.value!.phoneNumber}'));
+                                              }, 
+                                              visualDensity: VisualDensity.compact,
+                                            ),
+                                          ],
+                                        ),
+                                      ]
+                                  ] else if (task.volunteerName != null) ...[
+                                     // Fallback to task document data if provider fetches nothing
+                                    _buildEnhancedInfoRow(
+                                      Icons.badge_rounded,
+                                      'Assigned To',
+                                      task.volunteerName!,
+                                      Colors.teal.shade400,
+                                    ),
+                                  ],
+
+                                  const SizedBox(height: 12),
+                                  if (task.assignedByName != null) ...[
+                                    Divider(
+                                      color:
+                                          AppColors.textSecondary.withValues(alpha: 0.1),
+                                      height: 1,
+                                    ),
+                                    const SizedBox(height: 12),
+                                    _buildEnhancedInfoRow(
+                                      Icons.admin_panel_settings_rounded,
+                                      'Assigned By',
+                                      task.assignedByName!,
+                                      Colors.purple.shade400,
+                                    ),
+                                  ],
+                                ],
+                              ),
+                             ),
+                             const SizedBox(height: 16),
+                          ],
+
                           // Enhanced Timeline Card
                           Container(
                             padding: const EdgeInsets.all(24),
@@ -655,25 +1068,37 @@ class _TaskDetailsScreenState extends ConsumerState<TaskDetailsScreen>
                                   ],
                                 ),
                                 const SizedBox(height: 20),
-                                _buildEnhancedInfoRow(
-                                  Icons.calendar_today_rounded,
-                                  'Created',
-                                  'Today at 10:30 AM',
-                                  Colors.blue.shade400,
-                                ),
-                                const SizedBox(height: 12),
-                                Divider(
-                                  color:
-                                  AppColors.textSecondary.withValues(alpha: 0.1),
-                                  height: 1,
-                                ),
-                                const SizedBox(height: 12),
-                                _buildEnhancedInfoRow(
-                                  Icons.update_rounded,
-                                  'Last Updated',
-                                  '2 hours ago',
-                                  Colors.green.shade400,
-                                ),
+                                if (task.assignedAt != null)
+                                  _buildEnhancedInfoRow(
+                                    Icons.calendar_today_rounded,
+                                    'Assigned',
+                                    _formatDate(task.assignedAt!),
+                                    Colors.blue.shade400,
+                                  ),
+                                if (task.updatedAt != null) ...[
+                                  const SizedBox(height: 12),
+                                  Divider(
+                                    color:
+                                    AppColors.textSecondary.withValues(alpha: 0.1),
+                                    height: 1,
+                                  ),
+                                  const SizedBox(height: 12),
+                                  _buildEnhancedInfoRow(
+                                    Icons.update_rounded,
+                                    'Last Updated',
+                                    _formatDate(task.updatedAt!),
+                                    Colors.green.shade400,
+                                  ),
+                                ],
+                                if (task.completedAt != null) ...[
+                                  const SizedBox(height: 12),
+                                  _buildEnhancedInfoRow(
+                                    Icons.check_circle_rounded,
+                                    'Completed',
+                                    _formatDate(task.completedAt!),
+                                    Colors.teal.shade400,
+                                  ),
+                                ],
                               ],
                             ),
                           ),
@@ -746,6 +1171,8 @@ class _TaskDetailsScreenState extends ConsumerState<TaskDetailsScreen>
           ),
         ),
       ),
+    );
+      },
     );
   }
 
@@ -912,5 +1339,10 @@ class _TaskDetailsScreenState extends ConsumerState<TaskDetailsScreen>
         ),
       ],
     );
+  }
+
+  String _formatDate(DateTime date) {
+    // Simple formatter, can use intl package if available
+    return "${date.day}/${date.month}/${date.year} ${date.hour}:${date.minute.toString().padLeft(2, '0')}";
   }
 }

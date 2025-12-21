@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:rescuetn/app/constants.dart';
 import 'package:rescuetn/features/5_task_management/providers/task_data_provider.dart';
 import 'package:rescuetn/features/5_task_management/widgets/task_card.dart';
+import 'package:rescuetn/core/providers/locale_provider.dart';
 
 class TaskListScreen extends ConsumerWidget {
   const TaskListScreen({super.key});
@@ -15,7 +16,7 @@ class TaskListScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('All Assigned Tasks'),
+        title: Text("tasks.availableTasks".tr(context)),
       ),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -24,7 +25,7 @@ class TaskListScreen extends ConsumerWidget {
           Padding(
             padding: const EdgeInsets.all(AppPadding.medium),
             child: Text(
-              'Filter by Status',
+              "tasks.filterByStatus".tr(context),
               style: textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
             ),
           ),
@@ -38,11 +39,11 @@ class TaskListScreen extends ConsumerWidget {
               error: (err, stack) => Center(child: Text('Error: $err')),
               data: (tasks) {
                 if (tasks.isEmpty) {
-                  return const Center(
+                  return Center(
                     child: Padding(
-                      padding: EdgeInsets.all(AppPadding.large),
+                      padding: const EdgeInsets.all(AppPadding.large),
                       child: Text(
-                        'No tasks match the current filter.',
+                        "tasks.noTasks".tr(context),
                         textAlign: TextAlign.center,
                       ),
                     ),

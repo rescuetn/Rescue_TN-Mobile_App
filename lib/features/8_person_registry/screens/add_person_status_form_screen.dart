@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:rescuetn/core/providers/locale_provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:rescuetn/app/constants.dart';
@@ -94,7 +95,7 @@ class _AddPersonStatusScreenState extends ConsumerState<AddPersonStatusScreen>
         // 1. Get the current user from the live auth provider
         final user = ref.read(authStateChangesProvider).value;
         if (user == null) {
-          throw Exception('You must be logged in to submit a report.');
+          throw Exception("personStatus.loginError".tr(context));
         }
 
         // 2. Create the PersonStatus object with all necessary data
@@ -114,14 +115,14 @@ class _AddPersonStatusScreenState extends ConsumerState<AddPersonStatusScreen>
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: const Row(
+              content: Row(
                 children: [
-                  Icon(Icons.check_circle_outline, color: Colors.white),
-                  SizedBox(width: 12),
+                  const Icon(Icons.check_circle_outline, color: Colors.white),
+                  const SizedBox(width: 12),
                   Expanded(
                     child: Text(
-                      'Person status reported successfully!',
-                      style: TextStyle(color: Colors.white),
+                      "personStatus.success".tr(context),
+                      style: const TextStyle(color: Colors.white),
                     ),
                   ),
                 ],
@@ -151,7 +152,7 @@ class _AddPersonStatusScreenState extends ConsumerState<AddPersonStatusScreen>
                   const SizedBox(width: 12),
                   Expanded(
                     child: Text(
-                      'Failed to submit report: $e',
+                      '${"personStatus.failure".tr(context)}: $e',
                       style: const TextStyle(color: Colors.white),
                     ),
                   ),
@@ -233,7 +234,7 @@ class _AddPersonStatusScreenState extends ConsumerState<AddPersonStatusScreen>
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Report Person Status',
+                            "personStatus.title".tr(context),
                             style: textTheme.titleLarge?.copyWith(
                               fontWeight: FontWeight.bold,
                               color: Colors.white,
@@ -242,7 +243,7 @@ class _AddPersonStatusScreenState extends ConsumerState<AddPersonStatusScreen>
                           ),
                           const SizedBox(height: 2),
                           Text(
-                            'Add to safety registry',
+                            "personStatus.subtitle".tr(context),
                             style: textTheme.bodyMedium?.copyWith(
                               color: Colors.white.withValues(alpha: 0.9),
                             ),
@@ -329,7 +330,7 @@ class _AddPersonStatusScreenState extends ConsumerState<AddPersonStatusScreen>
                                         CrossAxisAlignment.start,
                                         children: [
                                           Text(
-                                            'Important Information',
+                                            "personStatus.infoTitle".tr(context),
                                             style: TextStyle(
                                               fontWeight: FontWeight.bold,
                                               fontSize: 14,
@@ -338,7 +339,7 @@ class _AddPersonStatusScreenState extends ConsumerState<AddPersonStatusScreen>
                                           ),
                                           const SizedBox(height: 4),
                                           Text(
-                                            'Please provide accurate information to help locate or confirm safety.',
+                                            "personStatus.infoMessage".tr(context),
                                             style: TextStyle(
                                               fontSize: 12,
                                               color: Colors.blue.shade800,
@@ -355,8 +356,8 @@ class _AddPersonStatusScreenState extends ConsumerState<AddPersonStatusScreen>
                               // Person Details Section
                               _buildSectionHeader(
                                 icon: Icons.person_rounded,
-                                title: 'Person Details',
-                                subtitle: 'Provide basic information',
+                                title: "personStatus.detailsTitle".tr(context),
+                                subtitle: "personStatus.detailsSubtitle".tr(context),
                                 gradient: [
                                   Colors.purple.shade400,
                                   Colors.purple.shade600
@@ -367,31 +368,31 @@ class _AddPersonStatusScreenState extends ConsumerState<AddPersonStatusScreen>
                               // Name Field
                               _buildTextField(
                                 controller: _nameController,
-                                label: 'Full Name',
-                                hint: 'Enter person\'s full name',
+                                label: "personStatus.nameLabel".tr(context),
+                                hint: "personStatus.nameHint".tr(context),
                                 icon: Icons.badge_rounded,
                                 validator: (v) =>
-                                v!.isEmpty ? 'Name is required' : null,
+                                v!.isEmpty ? "personStatus.nameError".tr(context) : null,
                               ),
                               const SizedBox(height: 16),
 
                               // Age Field
                               _buildTextField(
                                 controller: _ageController,
-                                label: 'Age',
-                                hint: 'Enter age',
+                                label: "personStatus.ageLabel".tr(context),
+                                hint: "personStatus.ageHint".tr(context),
                                 icon: Icons.cake_rounded,
                                 keyboardType: TextInputType.number,
                                 validator: (v) =>
-                                v!.isEmpty ? 'Age is required' : null,
+                                v!.isEmpty ? "personStatus.ageError".tr(context) : null,
                               ),
                               const SizedBox(height: 32),
 
                               // Location Section
                               _buildSectionHeader(
                                 icon: Icons.location_on_rounded,
-                                title: 'Location Details',
-                                subtitle: 'Where was the person last seen',
+                                title: "personStatus.locationSectionTitle".tr(context),
+                                subtitle: "personStatus.locationSectionSubtitle".tr(context),
                                 gradient: [
                                   Colors.red.shade400,
                                   Colors.red.shade600
@@ -402,20 +403,20 @@ class _AddPersonStatusScreenState extends ConsumerState<AddPersonStatusScreen>
                               // Location Field
                               _buildTextField(
                                 controller: _locationController,
-                                label: 'Last Known Location',
-                                hint: 'Enter address or area',
+                                label: "personStatus.locationLabel".tr(context),
+                                hint: "personStatus.locationHint".tr(context),
                                 icon: Icons.place_rounded,
                                 maxLines: 3,
                                 validator: (v) =>
-                                v!.isEmpty ? 'Location is required' : null,
+                                v!.isEmpty ? "personStatus.locationError".tr(context) : null,
                               ),
                               const SizedBox(height: 32),
 
                               // Status Section
                               _buildSectionHeader(
                                 icon: Icons.flag_rounded,
-                                title: 'Safety Status',
-                                subtitle: 'Select current status',
+                                title: "personStatus.statusTitle".tr(context),
+                                subtitle: "personStatus.statusSubtitle".tr(context),
                                 gradient: statusGradient,
                               ),
                               const SizedBox(height: 20),
@@ -423,16 +424,16 @@ class _AddPersonStatusScreenState extends ConsumerState<AddPersonStatusScreen>
                               // Status Options
                               _buildStatusOption(
                                 PersonSafetyStatus.safe,
-                                'Marked Safe',
-                                'Person is safe and accounted for',
+                                "personStatus.safeTitle".tr(context),
+                                "personStatus.safeDesc".tr(context),
                                 Icons.check_circle_rounded,
                                 [Colors.green.shade400, Colors.green.shade600],
                               ),
                               const SizedBox(height: 12),
                               _buildStatusOption(
                                 PersonSafetyStatus.missing,
-                                'Reported Missing',
-                                'Person is missing or unaccounted for',
+                                "personStatus.missingTitle".tr(context),
+                                "personStatus.missingDesc".tr(context),
                                 Icons.error_rounded,
                                 [
                                   Colors.orange.shade400,
@@ -443,7 +444,7 @@ class _AddPersonStatusScreenState extends ConsumerState<AddPersonStatusScreen>
 
                               // Submit Button
                               CustomButton(
-                                text: 'Submit Report',
+                                text: "personStatus.submit".tr(context),
                                 onPressed: _submitReport,
                                 isLoading: _isLoading,
                               ),

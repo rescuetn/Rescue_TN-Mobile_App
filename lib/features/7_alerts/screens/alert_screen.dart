@@ -5,6 +5,7 @@ import 'package:rescuetn/app/constants.dart';
 import 'package:rescuetn/features/7_alerts/providers/alert_provider.dart';
 import 'package:rescuetn/features/7_alerts/widgets/alert_card_widget.dart';
 import 'package:rescuetn/models/alert_model.dart';
+import 'package:rescuetn/core/providers/locale_provider.dart';
 
 class AlertsScreen extends ConsumerStatefulWidget {
   const AlertsScreen({super.key});
@@ -126,7 +127,7 @@ class _AlertsScreenState extends ConsumerState<AlertsScreen>
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                'Emergency Alerts',
+                                "alerts.title".tr(context),
                                 style: textTheme.titleLarge?.copyWith(
                                   fontWeight: FontWeight.bold,
                                   color: Colors.white,
@@ -137,18 +138,18 @@ class _AlertsScreenState extends ConsumerState<AlertsScreen>
                               // Live alert count from Firebase
                               allAlertsAsync.when(
                                 data: (alerts) => Text(
-                                  '${alerts.length} active ${alerts.length == 1 ? 'alert' : 'alerts'}',
+                                  '${alerts.length} ${"alerts.active".tr(context)}',
                                   style: textTheme.bodyMedium?.copyWith(
                                     color: Colors.white.withValues(alpha: 0.9),
                                   ),
                                 ),
-                                loading: () => const Text(
-                                  'Loading...',
-                                  style: TextStyle(color: Colors.white70),
+                                loading: () => Text(
+                                  "alerts.loading".tr(context),
+                                  style: const TextStyle(color: Colors.white70),
                                 ),
-                                error: (e, s) => const Text(
-                                  'Could not load alerts',
-                                  style: TextStyle(color: Colors.white70),
+                                error: (e, s) => Text(
+                                  "alerts.error".tr(context),
+                                  style: const TextStyle(color: Colors.white70),
                                 ),
                               ),
                             ],
@@ -196,11 +197,11 @@ class _AlertsScreenState extends ConsumerState<AlertsScreen>
                     fontWeight: FontWeight.w600,
                     fontSize: 13,
                   ),
-                  tabs: const [
-                    Tab(text: 'All'),
-                    Tab(text: 'Severe'),
-                    Tab(text: 'Warning'),
-                    Tab(text: 'Info'),
+                  tabs: [
+                    Tab(text: "alerts.tabAll".tr(context)),
+                    Tab(text: "alerts.tabSevere".tr(context)),
+                    Tab(text: "alerts.tabWarning".tr(context)),
+                    Tab(text: "alerts.tabInfo".tr(context)),
                   ],
                 ),
               ),
@@ -235,7 +236,7 @@ class _AlertsScreenState extends ConsumerState<AlertsScreen>
                               ),
                               const SizedBox(height: 16),
                               Text(
-                                'Failed to load alerts',
+                                "alerts.failed".tr(context),
                                 style: textTheme.titleLarge?.copyWith(
                                   fontWeight: FontWeight.bold,
                                   color: AppColors.textPrimary,
@@ -322,26 +323,26 @@ class _AlertsScreenState extends ConsumerState<AlertsScreen>
 
     switch (filter) {
       case AlertFilter.severe:
-        title = 'No Severe Alerts';
-        message = 'There are no critical emergencies reported at this time.';
+        title = "alerts.emptySevereTitle".tr(context);
+        message = "alerts.emptySevereMessage".tr(context);
         icon = Icons.check_circle_outline;
         color = Colors.green;
         break;
       case AlertFilter.warning:
-        title = 'No Warnings';
-        message = 'No warning-level alerts active right now.';
+        title = "alerts.emptyWarningTitle".tr(context);
+        message = "alerts.emptyWarningMessage".tr(context);
         icon = Icons.warning_amber_rounded;
         color = Colors.orange;
         break;
       case AlertFilter.info:
-        title = 'No Info Alerts';
-        message = 'No general information announcements available.';
+        title = "alerts.emptyInfoTitle".tr(context);
+        message = "alerts.emptyInfoMessage".tr(context);
         icon = Icons.info_outline;
         color = Colors.blue;
         break;
       case AlertFilter.all:
-        title = 'All Clear!';
-        message = 'No active emergency alerts at the moment.\nStay safe and prepared.';
+        title = "alerts.emptyAllTitle".tr(context);
+        message = "alerts.emptyAllMessage".tr(context);
         icon = Icons.check_circle_rounded;
         color = Colors.green;
         break;

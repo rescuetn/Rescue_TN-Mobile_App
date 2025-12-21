@@ -7,6 +7,7 @@ import 'package:rescuetn/app/constants.dart';
 import 'package:rescuetn/features/4_shelter_locator/provider/shelter_provider.dart';
 import 'package:rescuetn/features/4_shelter_locator/widgets/shelter_details_bottom_sheet.dart';
 import 'package:rescuetn/models/shelter_model.dart';
+import 'package:rescuetn/core/providers/locale_provider.dart';
 
 class ShelterMapScreen extends ConsumerStatefulWidget {
   const ShelterMapScreen({super.key});
@@ -281,7 +282,7 @@ class _ShelterMapScreenState extends ConsumerState<ShelterMapScreen>
                   ),
                   const SizedBox(height: 16),
                   Text(
-                    'Failed to load shelters',
+                    "shelter.error".tr(context),
                     style: textTheme.titleLarge?.copyWith(
                       fontWeight: FontWeight.bold,
                       color: AppColors.textPrimary,
@@ -305,7 +306,7 @@ class _ShelterMapScreenState extends ConsumerState<ShelterMapScreen>
                       ref.invalidate(shelterStreamProvider);
                     },
                     icon: const Icon(Icons.refresh),
-                    label: const Text('Retry'),
+                    label: Text("shelter.retry".tr(context)),
                   ),
                 ],
               ),
@@ -438,14 +439,14 @@ class _ShelterMapScreenState extends ConsumerState<ShelterMapScreen>
                                       crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
                                         Text(
-                                          'Nearby Shelters',
+                                          "shelter.nearby".tr(context),
                                           style: textTheme.titleLarge?.copyWith(
                                             fontWeight: FontWeight.bold,
                                             color: AppColors.textPrimary,
                                           ),
                                         ),
                                         Text(
-                                          '${shelters.length} total • $availableCount available',
+                                          '${shelters.length} total • $availableCount ${"shelter.available".tr(context)}',
                                           style: textTheme.bodySmall?.copyWith(
                                             color: AppColors.textSecondary,
                                           ),
@@ -457,14 +458,14 @@ class _ShelterMapScreenState extends ConsumerState<ShelterMapScreen>
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
                                       Text(
-                                        'Nearby Shelters',
+                                        "shelter.nearby".tr(context),
                                         style: textTheme.titleLarge?.copyWith(
                                           fontWeight: FontWeight.bold,
                                           color: AppColors.textPrimary,
                                         ),
                                       ),
                                       Text(
-                                        'Loading...',
+                                        "shelter.loading".tr(context),
                                         style: textTheme.bodySmall?.copyWith(
                                           color: AppColors.textSecondary,
                                         ),
@@ -475,14 +476,14 @@ class _ShelterMapScreenState extends ConsumerState<ShelterMapScreen>
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
                                       Text(
-                                        'Nearby Shelters',
+                                        "shelter.nearby".tr(context),
                                         style: textTheme.titleLarge?.copyWith(
                                           fontWeight: FontWeight.bold,
                                           color: AppColors.textPrimary,
                                         ),
                                       ),
                                       Text(
-                                        'Error loading',
+                                        "shelter.error".tr(context),
                                         style: textTheme.bodySmall?.copyWith(
                                           color: AppColors.error,
                                         ),
@@ -622,7 +623,7 @@ class _ShelterMapScreenState extends ConsumerState<ShelterMapScreen>
                               _getCurrentLocation();
                             }
                           },
-                          tooltip: 'My Location',
+                          tooltip: "shelter.myLocation".tr(context),
                         ),
                       ),
 
@@ -766,7 +767,7 @@ class _ShelterMapScreenState extends ConsumerState<ShelterMapScreen>
               ),
               const SizedBox(width: AppPadding.small),
               Text(
-                'Legend',
+                "shelter.legend".tr(context),
                 style: textTheme.titleSmall?.copyWith(
                   fontWeight: FontWeight.bold,
                   color: AppColors.textPrimary,
@@ -785,14 +786,14 @@ class _ShelterMapScreenState extends ConsumerState<ShelterMapScreen>
           const SizedBox(height: AppPadding.medium),
           _buildLegendItem(
             color: Colors.green,
-            label: 'Available',
+            label: "shelter.available".tr(context),
             count: availableCount,
             percentage: total > 0 ? (availableCount / total * 100).toInt() : 0,
           ),
           const SizedBox(height: AppPadding.small),
           _buildLegendItem(
             color: Colors.orange,
-            label: 'Full',
+            label: "shelter.full".tr(context),
             count: fullCount,
             percentage: total > 0 ? (fullCount / total * 100).toInt() : 0,
           ),
