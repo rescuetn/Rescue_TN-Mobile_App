@@ -251,6 +251,8 @@ class NotificationService {
       switch (role) {
         case UserRole.volunteer:
           await subscribeToTopic('volunteers');
+          // Volunteers also need to receive public alerts/notifications
+           await subscribeToTopic('public-users');
           break;
         case UserRole.public:
           await subscribeToTopic('public-users');
@@ -270,6 +272,8 @@ class NotificationService {
       switch (role) {
         case UserRole.volunteer:
           await unsubscribeFromTopic('volunteers');
+          // Also unsubscribe from public alerts
+           await unsubscribeFromTopic('public-users');
           break;
         case UserRole.public:
           await unsubscribeFromTopic('public-users');

@@ -219,7 +219,14 @@
         "score": "Readiness Score",
         "startCreating": "Start creating your emergency plan",
         "itemsCompleted": "items completed",
-        "tapToToggle": "Tap to mark complete"
+        "tapToToggle": "Tap to mark complete",
+        "motivation": {
+            "start": "Just getting started! Keep going.",
+            "halfway": "Great progress! You're halfway there.",
+            "almost": "Almost ready! Just a few more items.",
+            "done": "Excellent! You're fully prepared.",
+            "ready": "Ready"
+        }
     },
     "shelter": {
         "nearby": "Nearby Shelters",

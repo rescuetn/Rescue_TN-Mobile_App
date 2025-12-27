@@ -28,12 +28,13 @@ service cloud.firestore {
       allow write: if isOwner(userId);
       
       // PREPAREDNESS PLAN (Subcollection)
-      // Inherits the path from parent match
-      match /preparedness_plan/{itemId} {
-        // Explicitly allow owner access
-        allow read, write: if isAuthenticated() && request.auth.uid == userId;
-      }
+      // Moved to top-level match to avoid any variable scoping ambiguity
+      // match /preparedness_plan/{itemId} {
+      //   allow read, write: if isAuthenticated() && request.auth.uid == userId;
+      // }
     }
+    
+
     
     // ============================================
     // PUBLIC / SHARED COLLECTIONS

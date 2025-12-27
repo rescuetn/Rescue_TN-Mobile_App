@@ -296,16 +296,16 @@ class _PreparednessPlanScreenState extends ConsumerState<PreparednessPlanScreen>
     IconData motivationIcon;
 
     if (percentage < 30) {
-      motivationText = 'Just getting started! Keep going.';
+      motivationText = 'preparedness.motivation.start'.tr(context);
       motivationIcon = Icons.rocket_launch_rounded;
     } else if (percentage < 70) {
-      motivationText = 'Great progress! You\'re halfway there.';
+      motivationText = 'preparedness.motivation.halfway'.tr(context);
       motivationIcon = Icons.trending_up_rounded;
     } else if (percentage < 100) {
-      motivationText = 'Almost ready! Just a few more items.';
+      motivationText = 'preparedness.motivation.almost'.tr(context);
       motivationIcon = Icons.star_half_rounded;
     } else {
-      motivationText = 'Excellent! You\'re fully prepared.';
+      motivationText = 'preparedness.motivation.done'.tr(context);
       motivationIcon = Icons.verified_rounded;
     }
 
@@ -368,7 +368,7 @@ class _PreparednessPlanScreenState extends ConsumerState<PreparednessPlanScreen>
                         ),
                       ),
                       Text(
-                        'Ready',
+                        'preparedness.motivation.ready'.tr(context),
                         style: textTheme.bodySmall?.copyWith(
                           color: progressColor,
                           fontWeight: FontWeight.w600,

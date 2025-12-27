@@ -31,6 +31,12 @@ class Alert {
     if (targetRoles == null || targetRoles!.isEmpty) {
       return true; // All roles receive it
     }
+    
+    // Volunteers should also receive public alerts
+    if (userRole == UserRole.volunteer && targetRoles!.contains('public')) {
+      return true;
+    }
+
     return targetRoles!.contains(userRole.name);
   }
 

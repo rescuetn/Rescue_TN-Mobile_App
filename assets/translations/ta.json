@@ -219,7 +219,14 @@
         "score": "தயார்நிலை மதிப்பெண்",
         "startCreating": "உங்கள் அவசர திட்டத்தை உருவாக்கத் தொடங்குங்கள்",
         "itemsCompleted": "உருப்படிகள் முடிந்தன",
-        "tapToToggle": "முடிந்ததாக குறிக்க தட்டவும்"
+        "tapToToggle": "முடிந்ததாக குறிக்க தட்டவும்",
+        "motivation": {
+            "start": "Just getting started! Keep going.",
+            "halfway": "Great progress! You're halfway there.",
+            "almost": "Almost ready! Just a few more items.",
+            "done": "Excellent! You're fully prepared.",
+            "ready": "Ready"
+        }
     },
     "shelter": {
         "nearby": "அருகிலுள்ள புகலிடங்கள்",

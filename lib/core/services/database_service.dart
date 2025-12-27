@@ -42,11 +42,7 @@ abstract class DatabaseService {
   Future<void> addPersonStatus(PersonStatus personStatus);
   Stream<List<PersonStatus>> getPersonStatusStream();
 
-  // Preparedness Plan operations
-  Future<void> checkAndCreateDefaultPlan(String userId);
-  Stream<List<PreparednessItem>> getPreparednessPlanStream(String userId);
-  Future<void> updatePreparednessItemStatus(
-      String userId, String itemId, bool newStatus);
+
 
   // Shelter operations
   Stream<List<Shelter>> getSheltersStream();
@@ -235,114 +231,7 @@ class FirestoreDatabaseService implements DatabaseService {
             .toList());
   }
 
-  @override
-  @override
-  Future<void> checkAndCreateDefaultPlan(String userId) async {
-    debugPrint('📋 checkAndCreateDefaultPlan called for user: $userId');
-    
-    try {
-      final planCollection = _firestore
-          .collection('users')
-          .doc(userId)
-          .collection('preparedness_plan');
-      
-      // Fetch current user's plan to check for missing items
-      debugPrint('📋 Fetching existing preparedness items...');
-      final snapshot = await planCollection.get();
-      final existingIds = snapshot.docs.map((doc) => doc.id).toSet();
-      debugPrint('📋 Found ${existingIds.length} existing items: $existingIds');
-      
-      // Use hardcoded defaults directly (government can add templates to backend later)
-      // This ensures users always get a plan even if backend templates don't exist
-      List<PreparednessItem> templates = List.from(_defaultPlan);
-      debugPrint('📋 Default templates count: ${templates.length}');
-      
-      // Try to fetch additional templates from backend (optional)
-      try {
-        final templatesSnapshot = await _firestore
-            .collection('preparedness_templates')
-            .get();
-        
-        debugPrint('📋 Backend templates found: ${templatesSnapshot.docs.length}');
-        
-        if (templatesSnapshot.docs.isNotEmpty) {
-          final backendTemplates = templatesSnapshot.docs
-              .map((doc) => PreparednessItem.fromMap(doc.data(), doc.id))
-              .toList();
-          // Sort by order field
-          backendTemplates.sort((a, b) => a.order.compareTo(b.order));
-          templates = backendTemplates;
-          debugPrint('📋 Using ${templates.length} backend templates');
-        }
-      } catch (e) {
-        debugPrint('📋 Backend templates not available, using defaults: $e');
-      }
-      
-      final batch = _firestore.batch();
-      int itemsToCreate = 0;
 
-      for (final item in templates) {
-        if (!existingIds.contains(item.id)) {
-          final docRef = planCollection.doc(item.id);
-          batch.set(docRef, item.toMap());
-          itemsToCreate++;
-          debugPrint('📋 Will create item: ${item.id} - ${item.title}');
-        }
-      }
-
-      if (itemsToCreate > 0) {
-        debugPrint('📋 Committing batch with $itemsToCreate new items...');
-        await batch.commit();
-        debugPrint('📋 ✅ Successfully created $itemsToCreate preparedness items for user $userId');
-      } else {
-        debugPrint('📋 No new items needed, user already has all templates');
-      }
-    } catch (e, stack) {
-      debugPrint('📋 ❌ Error in checkAndCreateDefaultPlan: $e');
-      debugPrint('📋 Stack trace: $stack');
-      // Don't rethrow - let the user see empty state rather than crash
-    }
-  }
-
-  @override
-  Stream<List<PreparednessItem>> getPreparednessPlanStream(String userId) {
-    return _firestore
-        .collection('users')
-        .doc(userId)
-        .collection('preparedness_plan')
-        .snapshots()
-        .transform(StreamTransformer.fromHandlers(
-          handleData: (snapshot, sink) {
-            try {
-              // If the snapshot is empty, it might mean the default plan hasn't been created yet.
-              // However, since we return a list, an empty list is a valid state (no items).
-              // The provider (preparednessPlanProvider) is responsible for triggering creation.
-              
-              sink.add(snapshot.docs
-                  .map((doc) => PreparednessItem.fromMap(doc.data(), doc.id))
-                  .toList());
-            } catch (e) {
-               debugPrint("Error parsing preparedness plan: $e");
-               sink.add(<PreparednessItem>[]);
-            }
-          },
-          handleError: (error, stackTrace, sink) {
-            debugPrint("Error in preparedness stream: $error");
-            sink.add(<PreparednessItem>[]); // Emit empty list instead of crashing
-          },
-        ));
-  }
-
-  @override
-  Future<void> updatePreparednessItemStatus(
-      String userId, String itemId, bool newStatus) {
-    return _firestore
-        .collection('users')
-        .doc(userId)
-        .collection('preparedness_plan')
-        .doc(itemId)
-        .update({'isCompleted': newStatus});
-  }
 
   // --- SHELTER METHOD ---
   @override
@@ -418,37 +307,4 @@ class FirestoreDatabaseService implements DatabaseService {
   }
 }
 
-// Helper list containing the default preparedness items for new users (fallback if backend empty).
-const List<PreparednessItem> _defaultPlan = [
-  PreparednessItem(
-      id: 'p-01',
-      title: 'Emergency Water Supply',
-      description: 'Store at least 1 gallon of water per person per day.',
-      category: PreparednessCategory.essentials,
-      order: 1),
-  PreparednessItem(
-      id: 'p-02',
-      title: 'Non-perishable Food',
-      description: 'Stock a 3-day supply of non-perishable food.',
-      category: PreparednessCategory.essentials,
-      order: 2),
-  PreparednessItem(
-      id: 'p-03',
-      title: 'First-Aid Kit',
-      description: 'Ensure your first-aid kit is fully stocked.',
-      category: PreparednessCategory.essentials,
-      order: 3),
-  PreparednessItem(
-      id: 'p-04',
-      title: 'Secure Important Documents',
-      description:
-          'Keep copies of passports, Aadhaar cards, etc., in a waterproof bag.',
-      category: PreparednessCategory.documents,
-      order: 4),
-  PreparednessItem(
-      id: 'p-05',
-      title: 'Know Your Evacuation Route',
-      description: 'Identify your local evacuation routes and have a plan.',
-      category: PreparednessCategory.actions,
-      order: 5),
-];
+

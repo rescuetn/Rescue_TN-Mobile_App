@@ -1,61 +1,22 @@
-import 'package:flutter/foundation.dart';
+import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:rescuetn/core/services/database_service.dart';
-import 'package:rescuetn/features/1_auth/providers/auth_provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:rescuetn/models/preparedness_model.dart';
+import 'package:flutter/foundation.dart';
 
-/// A provider that manages the business logic for the preparedness plan.
+// Provider for the controller
 final preparednessControllerProvider =
-StateNotifierProvider<PreparednessController, bool>((ref) {
-  return PreparednessController(ref);
+    StateNotifierProvider<PreparednessController, AsyncValue<List<PreparednessItem>>>((ref) {
+  return PreparednessController();
 });
 
-class PreparednessController extends StateNotifier<bool> {
-  final Ref _ref;
-  PreparednessController(this._ref) : super(false);
-
-  /// Toggles the completion status of a checklist item in Firestore.
-  Future<void> toggleItemStatus(String itemId, bool currentStatus) async {
-    // Get the current user from the live auth provider.
-    final user = _ref.read(authStateChangesProvider).value;
-    if (user == null) return; // Do nothing if the user is not logged in.
-
-    // Call the database service to update the item's status in Firestore.
-    await _ref
-        .read(databaseServiceProvider)
-        .updatePreparednessItemStatus(user.uid, itemId, !currentStatus);
-  }
-}
-
-/// A StreamProvider that provides a live stream of the user's preparedness plan from Firestore.
-///
-/// It ensures default plan items are created before streaming data.
-final preparednessPlanProvider = StreamProvider.autoDispose<List<PreparednessItem>>((ref) async* {
-  final userAsync = ref.watch(authStateChangesProvider);
-  
-  final user = userAsync.valueOrNull;
-  if (user == null) {
-    yield [];
-    return;
-  }
-
-  final dbService = ref.watch(databaseServiceProvider);
-
-  // First, ensure the default plan exists (await this to ensure it completes)
-  try {
-    await dbService.checkAndCreateDefaultPlan(user.uid);
-  } catch (e) {
-    debugPrint('Error preparing default plan: $e');
-  }
-  
-  // Then stream the live data
-  yield* dbService.getPreparednessPlanStream(user.uid);
+// Alias for backward compatibility if needed, or simply use controller state directly in UI
+final preparednessPlanProvider = Provider<AsyncValue<List<PreparednessItem>>>((ref) {
+  return ref.watch(preparednessControllerProvider);
 });
 
-/// A derived provider that calculates the completion percentage from the live data stream.
-/// It correctly handles the loading, error, and data states of the stream.
-final preparednessProgressProvider = Provider.autoDispose<AsyncValue<double>>((ref) {
-  final planAsync = ref.watch(preparednessPlanProvider);
+final preparednessProgressProvider = Provider<AsyncValue<double>>((ref) {
+  final planAsync = ref.watch(preparednessControllerProvider);
   return planAsync.when(
     data: (items) {
       if (items.isEmpty) return const AsyncData(0.0);
@@ -66,3 +27,66 @@ final preparednessProgressProvider = Provider.autoDispose<AsyncValue<double>>((r
     error: (e, st) => AsyncError(e, st),
   );
 });
+
+class PreparednessController extends StateNotifier<AsyncValue<List<PreparednessItem>>> {
+  PreparednessController() : super(const AsyncLoading()) {
+    _loadPlan();
+  }
+
+  static const String _storageKey = 'preparedness_plan_local';
+
+  Future<void> _loadPlan() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final String? jsonString = prefs.getString(_storageKey);
+
+      if (jsonString != null && jsonString.isNotEmpty) {
+        final List<dynamic> jsonList = json.decode(jsonString);
+        final items = jsonList
+            .map((json) => PreparednessItem.fromMap(json, json['id'] ?? 'unknown'))
+            .toList();
+            
+        // Sort by order
+        items.sort((a, b) => a.order.compareTo(b.order));
+        
+        state = AsyncData(items);
+      } else {
+        // First run: Use default plan
+        state = const AsyncData(PreparednessItem.defaultPlan);
+        _savePlan(PreparednessItem.defaultPlan);
+      }
+    } catch (e, st) {
+      debugPrint('Error loading preparedness plan: $e');
+      state = AsyncError(e, st);
+    }
+  }
+
+  Future<void> _savePlan(List<PreparednessItem> items) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final String jsonString = json.encode(items.map((e) {
+          // Add ID to map because toMap() might not include it if it was relying on doc ID
+          var map = e.toMap();
+          map['id'] = e.id; 
+          return map;
+      }).toList());
+      await prefs.setString(_storageKey, jsonString);
+    } catch (e) {
+      debugPrint('Error saving preparedness plan: $e');
+    }
+  }
+
+  Future<void> toggleItemStatus(String itemId, bool currentStatus) async {
+    state.whenData((items) {
+      final updatedItems = items.map((item) {
+        if (item.id == itemId) {
+          return item.copyWith(isCompleted: !currentStatus);
+        }
+        return item;
+      }).toList();
+
+      state = AsyncData(updatedItems);
+      _savePlan(updatedItems);
+    });
+  }
+}
