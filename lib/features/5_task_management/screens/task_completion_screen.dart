@@ -641,7 +641,7 @@ class _TaskCompletionScreenState extends ConsumerState<TaskCompletionScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text('Audio Recorded', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.green.shade700)),
-                      Text(_formatDuration(_recordingDuration), style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+                      Text(_formatDuration(_recordingDuration), style: const TextStyle(color: AppColors.textSecondary, fontSize: 12)),
                     ],
                   ),
                 ),

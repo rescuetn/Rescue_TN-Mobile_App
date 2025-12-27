@@ -463,7 +463,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
                             icon: const Icon(Icons.logout, size: 22),
                             label: Text(
                               "profile.logout".tr(context),
-                              style: TextStyle(
+                              style: const TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.bold,
                                 letterSpacing: 0.5,
@@ -688,7 +688,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
         ),
         content: Text(
           "profile.logoutConfirmMessage".tr(context),
-          style: TextStyle(fontSize: 15),
+          style: const TextStyle(fontSize: 15),
         ),
         actions: [
           TextButton(

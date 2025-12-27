@@ -5,7 +5,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:rescuetn/models/alert_model.dart';
 import 'package:rescuetn/models/incident_model.dart';
 import 'package:rescuetn/models/person_status_model.dart';
-import 'package:rescuetn/models/preparedness_model.dart';
 import 'package:rescuetn/models/shelter_model.dart';
 import 'package:rescuetn/models/task_model.dart';
 import 'package:rescuetn/models/user_model.dart';

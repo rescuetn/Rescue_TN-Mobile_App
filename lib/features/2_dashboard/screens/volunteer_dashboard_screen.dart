@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:rescuetn/app/constants.dart';
 import 'package:rescuetn/features/1_auth/providers/auth_provider.dart';
@@ -455,15 +456,15 @@ class _VolunteerDashboardScreenState
                             Row(
                               children: [
                                 Container(
-                                  padding: const EdgeInsets.all(AppPadding.medium),
+                                  padding: EdgeInsets.all(AppPadding.mediumR),
                                   decoration: BoxDecoration(
                                     color: Colors.white.withValues(alpha: 0.2),
-                                    borderRadius: BorderRadius.circular(AppBorderRadius.medium),
+                                    borderRadius: BorderRadius.circular(AppBorderRadius.mediumR),
                                   ),
-                                  child: const Icon(
+                                  child: Icon(
                                     Icons.health_and_safety,
                                     color: AppColors.onPrimary,
-                                    size: 28,
+                                    size: 28.r,
                                   ),
                                 ),
                                 const SizedBox(width: AppPadding.medium),
@@ -475,7 +476,7 @@ class _VolunteerDashboardScreenState
                                       style: textTheme.titleLarge?.copyWith(
                                         color: AppColors.onPrimary,
                                         fontWeight: FontWeight.bold,
-                                        fontSize: 24,
+                                        fontSize: 24.sp,
                                       ),
                                     ),
                                     Container(
@@ -515,11 +516,13 @@ class _VolunteerDashboardScreenState
                                   }).toList(),
                                   child: Container(
                                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                    constraints: BoxConstraints(maxWidth: 140.w),
                                     decoration: BoxDecoration(
                                       color: (user?.status ?? VolunteerStatus.available).color,
                                       borderRadius: BorderRadius.circular(20),
                                     ),
                                     child: Row(
+                                      mainAxisSize: MainAxisSize.min,
                                       children: [
                                         Icon(
                                           (user?.status ?? VolunteerStatus.available).icon,
@@ -527,11 +530,15 @@ class _VolunteerDashboardScreenState
                                           size: 16,
                                         ),
                                         const SizedBox(width: 4),
-                                        Text(
-                                          "volunteerStatus.${user?.status?.name ?? 'available'}".tr(context),
-                                          style: const TextStyle(
-                                            color: Colors.white,
-                                            fontWeight: FontWeight.bold,
+                                        Flexible(
+                                          child: Text(
+                                            "volunteerStatus.${user?.status?.name ?? 'available'}".tr(context),
+                                            style: const TextStyle(
+                                              color: Colors.white,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                            overflow: TextOverflow.ellipsis,
+                                            maxLines: 1,
                                           ),
                                         ),
                                       ],
@@ -573,16 +580,16 @@ class _VolunteerDashboardScreenState
                               final done = myTasks.where((t) => t.status == TaskStatus.completed).length;
 
                               return Container(
-                                margin: const EdgeInsets.all(AppPadding.large),
-                                padding: const EdgeInsets.all(AppPadding.large),
+                                margin: EdgeInsets.all(AppPadding.largeR),
+                                padding: EdgeInsets.all(AppPadding.largeR),
                                 decoration: BoxDecoration(
                                   color: Colors.white,
-                                  borderRadius: BorderRadius.circular(24),
+                                  borderRadius: BorderRadius.circular(24.r),
                                   boxShadow: [
                                     BoxShadow(
                                       color: Colors.black.withValues(alpha: 0.05),
-                                      blurRadius: 20,
-                                      offset: const Offset(0, 10),
+                                      blurRadius: 20.r,
+                                      offset: Offset(0, 10.h),
                                     ),
                                   ],
                                 ),
@@ -592,7 +599,7 @@ class _VolunteerDashboardScreenState
                                       "dashboard.welcome".tr(context),
                                       style: textTheme.titleMedium,
                                     ),
-                                    const SizedBox(height: 16),
+                                    SizedBox(height: 16.h),
                                     Row(
                                       children: [
                                         Expanded(child: _buildStatCard(
@@ -601,14 +608,14 @@ class _VolunteerDashboardScreenState
                                           color: Colors.orange,
                                           icon: Icons.pending_actions,
                                         )),
-                                        const SizedBox(width: 8),
+                                        SizedBox(width: 8.w),
                                         Expanded(child: _buildStatCard(
                                           label: "dashboard.active".tr(context),
                                           count: active,
                                           color: Colors.blue,
                                           icon: Icons.run_circle,
                                         )),
-                                        const SizedBox(width: 8),
+                                        SizedBox(width: 8.w),
                                         Expanded(child: _buildStatCard(
                                           label: "dashboard.done".tr(context),
                                           count: done,
@@ -635,7 +642,7 @@ class _VolunteerDashboardScreenState
                           ),
                           const SizedBox(height: 16),
                           SizedBox(
-                            height: 160,
+                            height: 160.h,
                             child: ListView(
                               scrollDirection: Axis.horizontal,
                               padding: const EdgeInsets.symmetric(horizontal: AppPadding.large),
@@ -647,7 +654,7 @@ class _VolunteerDashboardScreenState
                                   gradient: const LinearGradient(colors: [Colors.orange, Colors.deepOrange]),
                                   onTap: () => context.go('/heatmap'),
                                 ),
-                                const SizedBox(width: 16),
+                                SizedBox(width: 16.w),
                                 _buildAwarenessCard(
                                   title: "dashboard.sheltersTitle".tr(context),
                                   subtitle: "dashboard.sheltersSubtitle".tr(context),
@@ -655,7 +662,7 @@ class _VolunteerDashboardScreenState
                                   gradient: const LinearGradient(colors: [Colors.green, Colors.teal]),
                                   onTap: () => context.go('/shelter-map'),
                                 ),
-                                const SizedBox(width: 16),
+                                SizedBox(width: 16.w),
                                 _buildAwarenessCard(
                                   title: "dashboard.alertsTitle".tr(context),
                                   subtitle: "dashboard.alertsSubtitle".tr(context),
@@ -725,18 +732,18 @@ class _VolunteerDashboardScreenState
   }) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
+      borderRadius: BorderRadius.circular(16.r),
       child: Container(
-        width: 160,
-        padding: const EdgeInsets.all(16),
+        width: 160.w,
+        padding: EdgeInsets.all(16.r),
         decoration: BoxDecoration(
           gradient: gradient,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(16.r),
           boxShadow: [
             BoxShadow(
               color: gradient.colors.first.withValues(alpha: 0.3),
-              blurRadius: 8,
-              offset: const Offset(0, 4),
+              blurRadius: 8.r,
+              offset: Offset(0, 4.h),
             ),
           ],
         ),
@@ -745,30 +752,32 @@ class _VolunteerDashboardScreenState
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Container(
-              padding: const EdgeInsets.all(8),
+              padding: EdgeInsets.all(8.r),
               decoration: BoxDecoration(
                 color: Colors.white.withValues(alpha: 0.2),
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(8.r),
               ),
-              child: Icon(icon, color: Colors.white),
+              child: Icon(icon, color: Colors.white, size: 24.r),
             ),
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   title,
-                  style: const TextStyle(
+                  style: TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.bold,
-                    fontSize: 16,
+                    fontSize: 16.sp,
                   ),
                 ),
                 Text(
                   subtitle,
                   style: TextStyle(
                     color: Colors.white.withValues(alpha: 0.9),
-                    fontSize: 12,
+                    fontSize: 11.sp,
                   ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ],
             ),
@@ -785,20 +794,20 @@ class _VolunteerDashboardScreenState
     required IconData icon,
   }) {
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
+      padding: EdgeInsets.symmetric(vertical: 16.h, horizontal: 8.w),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(16.r),
         border: Border.all(color: color.withValues(alpha: 0.2)),
       ),
       child: Column(
         children: [
-          Icon(icon, color: color),
-          const SizedBox(height: 8),
+          Icon(icon, color: color, size: 24.r),
+          SizedBox(height: 8.h),
           Text(
             count.toString(),
             style: TextStyle(
-              fontSize: 24,
+              fontSize: 24.sp,
               fontWeight: FontWeight.bold,
               color: color,
             ),
@@ -806,11 +815,13 @@ class _VolunteerDashboardScreenState
           Text(
             label,
             style: TextStyle(
-              fontSize: 12,
+              fontSize: 11.sp,
               color: color,
               fontWeight: FontWeight.w600,
             ),
             textAlign: TextAlign.center,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
           ),
         ],
       ),

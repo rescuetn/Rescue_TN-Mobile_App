@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:rescuetn/app/constants.dart';
 import 'package:rescuetn/features/1_auth/providers/auth_provider.dart';
@@ -625,7 +626,7 @@ class _PublicDashboardScreenState extends ConsumerState<PublicDashboardScreen>
                       // Custom App Bar
                       SliverToBoxAdapter(
                         child: Padding(
-                          padding: const EdgeInsets.all(AppPadding.large),
+                          padding: EdgeInsets.all(AppPadding.largeR),
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
@@ -633,31 +634,31 @@ class _PublicDashboardScreenState extends ConsumerState<PublicDashboardScreen>
                               Row(
                                 children: [
                                   Container(
-                                    padding: const EdgeInsets.all(AppPadding.small + 2),
+                                    padding: EdgeInsets.all(AppPadding.smallR + 2),
                                     decoration: BoxDecoration(
                                       color: AppColors.onPrimary.withValues(alpha: 0.25),
-                                      borderRadius: BorderRadius.circular(AppBorderRadius.medium),
+                                      borderRadius: BorderRadius.circular(AppBorderRadius.mediumR),
                                       boxShadow: [
                                         BoxShadow(
                                           color: Colors.black.withValues(alpha: 0.1),
-                                          blurRadius: 8,
-                                          offset: const Offset(0, 2),
+                                          blurRadius: 8.r,
+                                          offset: Offset(0, 2.h),
                                         ),
                                       ],
                                     ),
-                                    child: const Icon(
+                                    child: Icon(
                                       Icons.health_and_safety,
                                       color: AppColors.onPrimary,
-                                      size: 26,
+                                      size: 26.r,
                                     ),
                                   ),
-                                  const SizedBox(width: AppPadding.medium),
+                                  SizedBox(width: AppPadding.mediumR),
                                   Text(
                                     'RescueTN',
                                     style: textTheme.titleLarge?.copyWith(
                                       color: AppColors.onPrimary,
                                       fontWeight: FontWeight.bold,
-                                      fontSize: 22,
+                                      fontSize: 22.sp,
                                       letterSpacing: 0.5,
                                     ),
                                   ),
@@ -1098,20 +1099,24 @@ class _PublicDashboardScreenState extends ConsumerState<PublicDashboardScreen>
                       Text(
                         title,
                         style: const TextStyle(
-                          fontSize: 17,
+                          fontSize: 16,
                           fontWeight: FontWeight.bold,
                           color: AppColors.textPrimary,
                           letterSpacing: 0.2,
                         ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
                       ),
                       const SizedBox(height: 4),
                       Text(
                         subtitle,
                         style: TextStyle(
-                          fontSize: 13,
+                          fontSize: 12,
                           color: AppColors.textSecondary.withValues(alpha: 0.8),
                           fontWeight: FontWeight.w500,
                         ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ],
                   ),

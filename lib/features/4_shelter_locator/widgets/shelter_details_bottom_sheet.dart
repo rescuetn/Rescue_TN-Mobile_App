@@ -736,27 +736,6 @@ class ShelterDetailsBottomSheet extends StatelessWidget {
     );
   }
 
-  Future<void> _openMapsForDirections(BuildContext context) async {
-    if (!shelter.hasValidCoordinates) return;
-    
-    final url = Uri.parse(
-      'https://www.google.com/maps/dir/?api=1&destination=${shelter.latitude},${shelter.longitude}'
-    );
-    
-    if (await canLaunchUrl(url)) {
-      await launchUrl(url, mode: LaunchMode.externalApplication);
-    } else {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Could not open maps'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    }
-  }
-
   Future<void> _makePhoneCall(BuildContext context) async {
     final phoneNumber = shelter.contactPhone.replaceAll(RegExp(r'[^\d+]'), '');
     final url = Uri.parse('tel:$phoneNumber');

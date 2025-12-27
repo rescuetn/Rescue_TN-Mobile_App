@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:rescuetn/app/constants.dart';
@@ -216,8 +217,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                         child: Hero(
                           tag: 'app_logo',
                           child: Container(
-                            height: 140,
-                            width: 140,
+                            height: 140.r,
+                            width: 140.r,
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
                               gradient: LinearGradient(
@@ -231,28 +232,28 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                               boxShadow: [
                                 BoxShadow(
                                   color: AppColors.primary.withValues(alpha: 0.3),
-                                  blurRadius: 40,
-                                  spreadRadius: 5,
-                                  offset: const Offset(0, 10),
+                                  blurRadius: 40.r,
+                                  spreadRadius: 5.r,
+                                  offset: Offset(0, 10.h),
                                 ),
                               ],
                             ),
                             child: Padding(
-                              padding: const EdgeInsets.all(4),
+                              padding: EdgeInsets.all(4.r),
                               child: Container(
                                 decoration: BoxDecoration(
                                   shape: BoxShape.circle,
                                   border: Border.all(
                                     color: AppColors.surface,
-                                    width: 3,
+                                    width: 3.r,
                                   ),
                                 ),
                                 child: ClipRRect(
-                                  borderRadius: BorderRadius.circular(70),
+                                  borderRadius: BorderRadius.circular(70.r),
                                   child: Image.asset(
                                     'assets/images/rescuetn.jpg',
-                                    height: 140,
-                                    width: 140,
+                                    height: 140.r,
+                                    width: 140.r,
                                     fit: BoxFit.cover,
                                   ),
                                 ),
@@ -323,12 +324,16 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                               size: 20,
                             ),
                             const SizedBox(width: AppPadding.small),
-                            Text(
-                              "auth.welcomeBack".tr(context),
-                              textAlign: TextAlign.center,
-                              style: textTheme.titleMedium?.copyWith(
-                                color: AppColors.textPrimary,
-                                fontWeight: FontWeight.bold,
+                            Flexible(
+                              child: Text(
+                                "auth.welcomeBack".tr(context),
+                                textAlign: TextAlign.center,
+                                style: textTheme.titleMedium?.copyWith(
+                                  color: AppColors.textPrimary,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
                               ),
                             ),
                           ],
@@ -378,11 +383,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                                   ),
                                 ),
                                 const SizedBox(width: AppPadding.small),
-                                Text(
-                                  "auth.selectRole".tr(context),
-                                  style: textTheme.titleMedium?.copyWith(
-                                    fontWeight: FontWeight.bold,
-                                    color: AppColors.textPrimary,
+                                Flexible(
+                                  child: Text(
+                                    "auth.selectRole".tr(context),
+                                    style: textTheme.titleMedium?.copyWith(
+                                      fontWeight: FontWeight.bold,
+                                      color: AppColors.textPrimary,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
                                   ),
                                 ),
                               ],
@@ -393,6 +402,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                               style: textTheme.bodySmall?.copyWith(
                                 color: AppColors.textSecondary,
                               ),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
                             ),
                             const SizedBox(
                                 height: AppPadding.medium + AppPadding.small),
@@ -537,10 +548,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Text(
-                              "auth.noAccount".tr(context),
-                              style: textTheme.bodyMedium?.copyWith(
-                                color: AppColors.textSecondary,
+                            Flexible(
+                              child: Text(
+                                "auth.noAccount".tr(context),
+                                style: textTheme.bodyMedium?.copyWith(
+                                  color: AppColors.textSecondary,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
                               ),
                             ),
                             TextButton(
@@ -617,10 +632,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
               title,
               textAlign: TextAlign.center,
               style: TextStyle(
-                fontSize: 13,
+                fontSize: 12,
                 fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
                 color: isSelected ? color : AppColors.textSecondary,
               ),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
             ),
           ],
         ),
