@@ -98,7 +98,7 @@ For detailed setup and usage instructions, see **📖_START_HERE.txt**
 
 ## 🎥 Project Demo Video
 
-**▶️ Watch the RescueTN working demo here:
+▶️ Watch the RescueTN working demo here:
 https://www.instagram.com/reel/DSmkQpiETy7/?igsh=MTZnaWljZ2NmcG1zMQ==
 
 ## 📞 Support
